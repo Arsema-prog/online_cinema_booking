@@ -1,0 +1,20 @@
+server:
+  port: 8084  # Support Service port
+
+spring:
+  application:
+    name: support-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/support_db
+    username: postgres
+    password: 4748
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
