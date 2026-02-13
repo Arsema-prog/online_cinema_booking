@@ -3,8 +3,11 @@ package com.cinema.coreservice.controller;
 import com.cinema.coreservice.model.Branch;
 import com.cinema.coreservice.repository.BranchRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 
 @RestController
@@ -14,34 +17,51 @@ public class BranchController {
     @Autowired
     private BranchRepository branchRepository;
 
+    // GET ALL
     @GetMapping
-    public List<Branch> getAllBranches() {
-        return branchRepository.findAll();
+    public ResponseEntity<List<Branch>> getAllBranches() {
+        List<Branch> branches = branchRepository.findAll();
+        return ResponseEntity.ok(branches);
     }
 
+    // GET BY ID
     @GetMapping("/{id}")
-    public Branch getBranchById(@PathVariable Long id) {
-        return branchRepository.findById(id).orElse(null);
+    public ResponseEntity<Branch> getBranchById(@PathVariable Long id) {
+        Branch branch = branchRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Branch not found with id: " + id));
+        return ResponseEntity.ok(branch);
     }
 
+    // CREATE
     @PostMapping
-    public Branch createBranch(@RequestBody Branch branch) {
-        return branchRepository.save(branch);
+    public ResponseEntity<Branch> createBranch(@RequestBody Branch branch) {
+        Branch savedBranch = branchRepository.save(branch);
+        return new ResponseEntity<>(savedBranch, HttpStatus.CREATED);
     }
 
+    // UPDATE
     @PutMapping("/{id}")
-    public Branch updateBranch(@PathVariable Long id, @RequestBody Branch branchDetails) {
-        Branch branch = branchRepository.findById(id).orElseThrow();
+    public ResponseEntity<Branch> updateBranch(@PathVariable Long id,
+                                               @RequestBody Branch branchDetails) {
+
+        Branch branch = branchRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Branch not found with id: " + id));
+
         branch.setName(branchDetails.getName());
         branch.setAddress(branchDetails.getAddress());
-        branch.setLatitude(branchDetails.getLatitude());
-        branch.setLongitude(branchDetails.getLongitude());
-        return branchRepository.save(branch);
+        Branch updatedBranch = branchRepository.save(branch);
+        return ResponseEntity.ok(updatedBranch);
     }
 
+    // DELETE
     @DeleteMapping("/{id}")
-    public void deleteBranch(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBranch(@PathVariable Long id) {
+
+        if (!branchRepository.existsById(id)) {
+            throw new EntityNotFoundException("Branch not found with id: " + id);
+        }
+
         branchRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
-
