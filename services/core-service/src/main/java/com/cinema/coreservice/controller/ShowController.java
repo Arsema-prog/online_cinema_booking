@@ -2,58 +2,61 @@ package com.cinema.coreservice.controller;
 
 import com.cinema.coreservice.model.Show;
 import com.cinema.coreservice.repository.ShowRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/shows")
 public class ShowController {
 
-    @Autowired
-    private ShowRepository showRepository;
+    private final ShowRepository showRepository;
+
+    public ShowController(ShowRepository showRepository) {
+        this.showRepository = showRepository;
+    }
 
     @GetMapping
-    public List<Show> getAllShows() {
-        return showRepository.findAll();
+    public ResponseEntity<List<Show>> getAll() {
+        return ResponseEntity.ok(showRepository.findAll());
     }
 
     @GetMapping("/{id}")
-    public Show getShowById(@PathVariable Long id) {
-        return showRepository.findById(id).orElse(null);
-    }
-
-    @GetMapping("/screen/{screenId}")
-    public List<Show> getShowsByScreen(@PathVariable Long screenId) {
-        return showRepository.findByScreenId(screenId);
-    }
-
-    @GetMapping("/between")
-    public List<Show> getShowsBetween(@RequestParam String start, @RequestParam String end) {
-        LocalDateTime startTime = LocalDateTime.parse(start);
-        LocalDateTime endTime = LocalDateTime.parse(end);
-        return showRepository.findByStartTimeBetween(startTime, endTime);
+    public ResponseEntity<Show> getById(@PathVariable Long id) {
+        Show show = showRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Show not found: " + id));
+        return ResponseEntity.ok(show);
     }
 
     @PostMapping
-    public Show createShow(@RequestBody Show show) {
-        return showRepository.save(show);
+    public ResponseEntity<Show> create(@RequestBody Show show) {
+        return new ResponseEntity<>(showRepository.save(show), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public Show updateShow(@PathVariable Long id, @RequestBody Show showDetails) {
-        Show show = showRepository.findById(id).orElseThrow();
-        show.setMovie(showDetails.getMovie());
-        show.setScreen(showDetails.getScreen());
-        show.setStartTime(showDetails.getStartTime());
-        show.setBasePrice(showDetails.getBasePrice());
-        return showRepository.save(show);
+    public ResponseEntity<Show> update(@PathVariable Long id,
+                                       @RequestBody Show updated) {
+        Show show = showRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Show not found: " + id));
+
+        show.setMovie(updated.getMovie());
+        show.setScreen(updated.getScreen());
+        show.setStartTime(updated.getStartTime());
+        show.setEndTime(updated.getEndTime());
+        show.setPrice(updated.getPrice());
+
+        return ResponseEntity.ok(showRepository.save(show));
     }
 
     @DeleteMapping("/{id}")
-    public void deleteShow(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!showRepository.existsById(id)) {
+            throw new EntityNotFoundException("Show not found: " + id);
+        }
         showRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
