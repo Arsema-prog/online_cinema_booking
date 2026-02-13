@@ -4,32 +4,44 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "show_table") // "show" is a reserved keyword in SQL
+@Table(name = "show_table") // match your existing table name
 public class Show {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private Double price;
     @ManyToOne
-    @JoinColumn(name = "movie_id")
-    private Movie movie;
-
-    @ManyToOne
-    @JoinColumn(name = "screen_id")
+    @JoinColumn(name = "screen_id", nullable = false)
     private Screen screen;
 
-    private LocalDateTime startTime;
-    private double basePrice;
+    @ManyToOne
+    @JoinColumn(name = "movie_id", nullable = false)
+    private Movie movie;
+
+    // Constructors
+    public Show() {}
 
     // Getters and setters
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Movie getMovie() { return movie; }
-    public void setMovie(Movie movie) { this.movie = movie; }
-    public Screen getScreen() { return screen; }
-    public void setScreen(Screen screen) { this.screen = screen; }
     public LocalDateTime getStartTime() { return startTime; }
     public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
-    public double getBasePrice() { return basePrice; }
-    public void setBasePrice(double basePrice) { this.basePrice = basePrice; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
+    public Screen getScreen() { return screen; }
+    public void setScreen(Screen screen) { this.screen = screen; }
+    public Movie getMovie() { return movie; }
+    public void setMovie(Movie movie) { this.movie = movie; }
 }
