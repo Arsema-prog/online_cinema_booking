@@ -2,7 +2,9 @@ package com.cinema.coreservice.controller;
 
 import com.cinema.coreservice.model.Movie;
 import com.cinema.coreservice.repository.MovieRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,38 +13,49 @@ import java.util.List;
 @RequestMapping("/movies")
 public class MovieController {
 
-    @Autowired
-    private MovieRepository movieRepository;
+    private final MovieRepository movieRepository;
+
+    public MovieController(MovieRepository movieRepository) {
+        this.movieRepository = movieRepository;
+    }
 
     @GetMapping
-    public List<Movie> getAllMovies() {
-        return movieRepository.findAll();
+    public ResponseEntity<List<Movie>> getAll() {
+        return ResponseEntity.ok(movieRepository.findAll());
     }
 
     @GetMapping("/{id}")
-    public Movie getMovieById(@PathVariable Long id) {
-        return movieRepository.findById(id).orElse(null);
+    public ResponseEntity<Movie> getById(@PathVariable Long id) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Movie not found: " + id));
+        return ResponseEntity.ok(movie);
     }
 
     @PostMapping
-    public Movie createMovie(@RequestBody Movie movie) {
-        return movieRepository.save(movie);
+    public ResponseEntity<Movie> create(@RequestBody Movie movie) {
+        return new ResponseEntity<>(movieRepository.save(movie), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public Movie updateMovie(@PathVariable Long id, @RequestBody Movie movieDetails) {
-        Movie movie = movieRepository.findById(id).orElseThrow();
-        movie.setTitle(movieDetails.getTitle());
-        movie.setSynopsis(movieDetails.getSynopsis());
-        movie.setDuration(movieDetails.getDuration());
-        movie.setRating(movieDetails.getRating());
-        movie.setPosterUrl(movieDetails.getPosterUrl());
-        movie.setTrailerUrl(movieDetails.getTrailerUrl());
-        return movieRepository.save(movie);
+    public ResponseEntity<Movie> update(@PathVariable Long id,
+                                        @RequestBody Movie updated) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Movie not found: " + id));
+
+        movie.setTitle(updated.getTitle());
+        movie.setGenre(updated.getGenre());
+        movie.setDuration(updated.getDuration());
+       // movie.setDescription(updated.getDescription());
+
+        return ResponseEntity.ok(movieRepository.save(movie));
     }
 
     @DeleteMapping("/{id}")
-    public void deleteMovie(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!movieRepository.existsById(id)) {
+            throw new EntityNotFoundException("Movie not found: " + id);
+        }
         movieRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

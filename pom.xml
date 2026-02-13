@@ -10,7 +10,12 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>backend/discovery-service</module>
-        <!-- Add future services here -->
+        <module>services/discovery-service</module>
+        <module>services/api-gateway</module>
+        <module>services/core-service</module>
+        <module>services/booking_service</module>
+        <module>services/payment-service</module>
+        <module>services/support-service</module>
     </modules>
+
 </project>

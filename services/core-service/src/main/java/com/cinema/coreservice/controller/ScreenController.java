@@ -2,7 +2,9 @@ package com.cinema.coreservice.controller;
 
 import com.cinema.coreservice.model.Screen;
 import com.cinema.coreservice.repository.ScreenRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,40 +13,48 @@ import java.util.List;
 @RequestMapping("/screens")
 public class ScreenController {
 
-    @Autowired
-    private ScreenRepository screenRepository;
+    private final ScreenRepository screenRepository;
+
+    public ScreenController(ScreenRepository screenRepository) {
+        this.screenRepository = screenRepository;
+    }
 
     @GetMapping
-    public List<Screen> getAllScreens() {
-        return screenRepository.findAll();
+    public ResponseEntity<List<Screen>> getAll() {
+        return ResponseEntity.ok(screenRepository.findAll());
     }
 
     @GetMapping("/{id}")
-    public Screen getScreenById(@PathVariable Long id) {
-        return screenRepository.findById(id).orElse(null);
-    }
-
-    @GetMapping("/branch/{branchId}")
-    public List<Screen> getScreensByBranch(@PathVariable Long branchId) {
-        return screenRepository.findByBranchId(branchId);
+    public ResponseEntity<Screen> getById(@PathVariable Long id) {
+        Screen screen = screenRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Screen not found: " + id));
+        return ResponseEntity.ok(screen);
     }
 
     @PostMapping
-    public Screen createScreen(@RequestBody Screen screen) {
-        return screenRepository.save(screen);
+    public ResponseEntity<Screen> create(@RequestBody Screen screen) {
+        return new ResponseEntity<>(screenRepository.save(screen), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public Screen updateScreen(@PathVariable Long id, @RequestBody Screen screenDetails) {
-        Screen screen = screenRepository.findById(id).orElseThrow();
-        screen.setName(screenDetails.getName());
-        screen.setBranch(screenDetails.getBranch());
-        return screenRepository.save(screen);
+    public ResponseEntity<Screen> update(@PathVariable Long id,
+                                         @RequestBody Screen updated) {
+        Screen screen = screenRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Screen not found: " + id));
+
+        screen.setName(updated.getName());
+        screen.setCapacity(updated.getCapacity());
+        screen.setBranch(updated.getBranch());
+
+        return ResponseEntity.ok(screenRepository.save(screen));
     }
 
     @DeleteMapping("/{id}")
-    public void deleteScreen(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!screenRepository.existsById(id)) {
+            throw new EntityNotFoundException("Screen not found: " + id);
+        }
         screenRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
-
