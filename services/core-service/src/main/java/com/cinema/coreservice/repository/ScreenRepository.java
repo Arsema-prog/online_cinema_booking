@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ScreenRepository extends JpaRepository<Screen, Long> {
-    List<Screen> findByBranchId(Long branchId);  // Useful for getting screens per branch
+    List<Screen> findByBranchId(Long branchId);
 }
