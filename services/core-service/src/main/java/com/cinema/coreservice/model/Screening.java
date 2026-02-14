@@ -1,11 +1,20 @@
 package com.cinema.coreservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-@Table(name = "show_table") // match your existing table name
-public class Show {
+@Table(name = "screening")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Screening {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,35 +22,16 @@ public class Show {
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private Double price;
-    @ManyToOne
-    @JoinColumn(name = "screen_id", nullable = false)
-    private Screen screen;
 
     @ManyToOne
     @JoinColumn(name = "movie_id", nullable = false)
     private Movie movie;
 
-    // Constructors
-    public Show() {}
+    @ManyToOne
+    @JoinColumn(name = "screen_id", nullable = false)
+    private Screen screen;
 
-    // Getters and setters
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public LocalDateTime getStartTime() { return startTime; }
-    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
-    public LocalDateTime getEndTime() { return endTime; }
-    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
-    public Screen getScreen() { return screen; }
-    public void setScreen(Screen screen) { this.screen = screen; }
-    public Movie getMovie() { return movie; }
-    public void setMovie(Movie movie) { this.movie = movie; }
+    @JsonIgnore
+    @OneToMany(mappedBy = "screening", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ScreeningSeat> screeningSeats;
 }

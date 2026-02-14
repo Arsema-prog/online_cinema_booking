@@ -1,7 +1,8 @@
-package com.cinema.coreservice.model;
+package com.cinema.coreservice.model.enums;
 
 public enum SeatStatus {
     AVAILABLE,
     HELD,
-    CONFIRMED
+    RESERVED,
+    CANCELLED
 }
