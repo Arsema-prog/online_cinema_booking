@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, Long> {
 
-    // Fetch all seats for a given screen
     List<Seat> findByScreen(Screen screen);
+    List<Seat> findByScreenId(Long screenId);
 }
