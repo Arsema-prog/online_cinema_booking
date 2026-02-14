@@ -1,6 +1,6 @@
 package com.cinema.coreservice.controller;
 
-import com.cinema.coreservice.model.Show;
+import com.cinema.coreservice.model.Screening;
 import com.cinema.coreservice.repository.ShowRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -20,26 +20,26 @@ public class ShowController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Show>> getAll() {
+    public ResponseEntity<List<Screening>> getAll() {
         return ResponseEntity.ok(showRepository.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Show> getById(@PathVariable Long id) {
-        Show show = showRepository.findById(id)
+    public ResponseEntity<Screening> getById(@PathVariable Long id) {
+        Screening show = showRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Show not found: " + id));
         return ResponseEntity.ok(show);
     }
 
     @PostMapping
-    public ResponseEntity<Show> create(@RequestBody Show show) {
+    public ResponseEntity<Screening> create(@RequestBody Screening show) {
         return new ResponseEntity<>(showRepository.save(show), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Show> update(@PathVariable Long id,
-                                       @RequestBody Show updated) {
-        Show show = showRepository.findById(id)
+    public ResponseEntity<Screening> update(@PathVariable Long id,
+                                            @RequestBody Screening updated) {
+        Screening show = showRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Show not found: " + id));
 
         show.setMovie(updated.getMovie());
