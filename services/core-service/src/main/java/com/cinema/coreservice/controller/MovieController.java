@@ -1,8 +1,8 @@
 package com.cinema.coreservice.controller;
 
 import com.cinema.coreservice.model.Movie;
-import com.cinema.coreservice.repository.MovieRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.cinema.coreservice.service.MovieService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,51 +11,35 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/movies")
+@RequiredArgsConstructor
 public class MovieController {
 
-    private final MovieRepository movieRepository;
-
-    public MovieController(MovieRepository movieRepository) {
-        this.movieRepository = movieRepository;
-    }
+    private final MovieService movieService;
 
     @GetMapping
-    public ResponseEntity<List<Movie>> getAll() {
-        return ResponseEntity.ok(movieRepository.findAll());
+    public ResponseEntity<List<Movie>> getAllMovies() {
+        return ResponseEntity.ok(movieService.getAllMovies());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Movie> getById(@PathVariable Long id) {
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Movie not found: " + id));
-        return ResponseEntity.ok(movie);
+    public ResponseEntity<Movie> getMovieById(@PathVariable Long id) {
+        return ResponseEntity.ok(movieService.getMovieById(id));
     }
 
     @PostMapping
-    public ResponseEntity<Movie> create(@RequestBody Movie movie) {
-        return new ResponseEntity<>(movieRepository.save(movie), HttpStatus.CREATED);
+    public ResponseEntity<Movie> createMovie(@RequestBody Movie movie) {
+        Movie createdMovie = movieService.createMovie(movie);
+        return new ResponseEntity<>(createdMovie, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Movie> update(@PathVariable Long id,
-                                        @RequestBody Movie updated) {
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Movie not found: " + id));
-
-        movie.setTitle(updated.getTitle());
-        movie.setGenre(updated.getGenre());
-        movie.setDuration(updated.getDuration());
-       // movie.setDescription(updated.getDescription());
-
-        return ResponseEntity.ok(movieRepository.save(movie));
+    public ResponseEntity<Movie> updateMovie(@PathVariable Long id, @RequestBody Movie updated) {
+        return ResponseEntity.ok(movieService.updateMovie(id, updated));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!movieRepository.existsById(id)) {
-            throw new EntityNotFoundException("Movie not found: " + id);
-        }
-        movieRepository.deleteById(id);
+    public ResponseEntity<Void> deleteMovie(@PathVariable Long id) {
+        movieService.deleteMovie(id);
         return ResponseEntity.noContent().build();
     }
 }
