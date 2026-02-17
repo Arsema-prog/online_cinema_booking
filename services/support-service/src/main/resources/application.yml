@@ -5,16 +5,23 @@ spring:
   application:
     name: support-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/support_db
+    url: jdbc:postgresql://localhost:15432/cinema_db?currentSchema=support
     username: postgres
-    password: 4748
+    password: postgres
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: http://localhost:8761/eureka/
+
+keycloak:
+  admin:
+    server-url: http://localhost:8180
+    realm: cinema-realm
+    client-id: support-service
+    client-secret: ${KEYCLOAK_CLIENT_SECRET}
