@@ -13,6 +13,12 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/cinema-realm
 
 # eureka:
 #   client:
