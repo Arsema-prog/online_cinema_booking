@@ -1,4 +1,4 @@
-package com.cinema.booking_service.model.enums;
+package com.cinema.booking_service.domain.enums;
 
 public enum BookingStatus {
     CREATED,
