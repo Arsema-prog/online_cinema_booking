@@ -16,10 +16,10 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String stripeEventId;   // Stripe event id for idempotency
 
-    @Column(nullable = false)
+    @Column
     private String stripeSessionId;
 
     @Column(nullable = false)
