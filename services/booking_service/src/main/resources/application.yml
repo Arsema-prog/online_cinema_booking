@@ -12,7 +12,19 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: booking
+        format_sql: true
     show-sql: true
+  sql:
+    init:
+      mode: never
+  RabbitMQ:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
 eureka:
   client:

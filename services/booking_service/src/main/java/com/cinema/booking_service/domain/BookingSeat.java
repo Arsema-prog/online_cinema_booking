@@ -1,14 +1,19 @@
 package com.cinema.booking_service.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.cinema.booking_service.domain.enums.BookingStatus;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.UUID;
 
 @Entity
-@Table(name = "seat_hold", schema = "booking")
+@Table(
+        name = "booking_seat",
+        schema = "booking",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"show_id", "seat_id"})
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,11 +22,19 @@ import java.util.UUID;
 public class BookingSeat {
 
     @Id
+    @Column(name = "id", nullable = false)
     private UUID id;
 
+    @Column(name = "booking_id", nullable = false)
     private UUID bookingId;
+
+    @Column(name = "show_id", nullable = false)
+    private UUID showId;
+
+    @Column(name = "seat_id", nullable = false)
     private UUID seatId;
 
-    private String status; // HELD / BOOKED / RELEASED
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BookingStatus status; // CONFIRMED, CANCELLED
 }
-
