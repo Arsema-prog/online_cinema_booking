@@ -31,3 +31,7 @@ keycloak:
     realm: cinema-realm
     client-id: support-service
     client-secret: ${KEYCLOAK_CLIENT_SECRET}
+
+logging:
+  level:
+    org.springframework.security: DEBUG

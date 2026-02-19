@@ -1,17 +1,17 @@
-package com.cinema.supportservice.config;
+package com.cinema.paymentservice.config;
 
-import com.cinema.supportservice.security.KeycloakJwtAuthenticationConverter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.cinema.paymentservice.security.KeycloakJwtAuthenticationConverter;
+
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -22,8 +22,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/api/auth/register").permitAll()   // registration is public
+                .requestMatchers("/api/payments/webhook").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
