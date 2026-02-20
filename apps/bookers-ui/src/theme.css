@@ -1,0 +1,64 @@
+/* Global theme */
+body {
+  font-family: "Inter", Arial, sans-serif;
+  background-color: #000000; /* black background */
+  margin: 0;
+  padding: 0;
+  color: #00ff00; /* dark green text */
+}
+
+h1, h2, h3, h4 {
+  color: #00ff00;
+}
+
+button {
+  font-family: inherit;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button.primary {
+  background-color: #00cc66;
+  color: black;
+}
+
+button.primary:hover {
+  background-color: #00994d;
+  transform: translateY(-2px);
+}
+
+/* Card component for shows */
+.show-card {
+  background-color: #111; /* dark card */
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 204, 102, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.show-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 204, 102, 0.4);
+}
+
+/* Grid layout */
+.show-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  width: 100%;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
