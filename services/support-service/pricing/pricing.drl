@@ -1,0 +1,53 @@
+package cinema.pricing
+
+import com.cinema.supportservice.dto.PriceEvaluationRequest;
+import com.cinema.supportservice.dto.PriceEvaluationResponse.BreakdownItem;
+import java.util.List;
+
+global List breakdown;
+
+rule "VIP multiplier"
+    when
+        $req: PriceEvaluationRequest( seatCategory == "VIP" )
+    then
+        modify( $req ) {
+            setFinalPrice( java.lang.Math.round( $req.getBasePrice() * 1.5 ) )
+        };
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("VIP multiplier");
+        item.setDescription("VIP seats have 1.5x multiplier");
+        item.setAppliedValue(1.5);
+        breakdown.add(item);
+end
+
+rule "SUMMER promo 10% off"
+    when
+        $req: PriceEvaluationRequest( promoCode == "SUMMER" )
+    then
+        Long current = $req.getFinalPrice();
+        if (current == null) {
+            current = $req.getBasePrice();
+        }
+        modify( $req ) {
+            setFinalPrice( java.lang.Math.round( current * 0.9 ) )
+        };
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("SUMMER promo");
+        item.setDescription("10% off with SUMMER code");
+        item.setAppliedValue(0.9);
+        breakdown.add(item);
+end
+
+rule "Base price"
+    when
+        $req: PriceEvaluationRequest( finalPrice == null )
+    then
+        modify( $req ) {
+            setFinalPrice( $req.getBasePrice() )
+        };
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("Base price");
+        item.setDescription("No discount applied");
+        item.setAppliedValue(1.0);
+        breakdown.add(item);
+end
