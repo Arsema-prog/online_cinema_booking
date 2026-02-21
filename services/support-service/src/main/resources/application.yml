@@ -5,29 +5,63 @@ spring:
   application:
     name: support-service
   datasource:
-    url: jdbc:postgresql://localhost:15432/cinema_db?currentSchema=support
+    url: jdbc:postgresql://localhost:5432/support_db
     username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-  
+    password: 4748
+    jpa:
+      hibernate:
+        ddl-auto: validate # or update for dev, none for prod
+      show-sql: true
+      properties:
+        hibernate:
+          format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8180/realms/cinema-realm
 
-# eureka:
-#   client:
-#     service-url:
-#       defaultZone: http://localhost:8761/eureka/
+  RabbitMQ:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    template:
+      retry:
+        enabled: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: arsema.tesfaye@aastustudent.edu.et
+    password: hyvo uzzc yvjw fsmq
+    protocol: smtp
+    properties:
+          mail:
+            smtp:
+              auth: true
+              starttls.enable: true
+rabbitmq:
+  queue:
+    bookingConfirmed: booking.confirmed.queue
+
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://localhost:8761/eureka/
 
 keycloak:
   admin:
     server-url: http://localhost:8180
     realm: cinema-realm
     client-id: support-service
-    client-secret: ${KEYCLOAK_CLIENT_SECRET}
+    client-secret: YOpTwCgPWWEjUmlguFbCmW8tqzmNpbdh
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: tickets
