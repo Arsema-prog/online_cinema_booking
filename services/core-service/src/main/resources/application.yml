@@ -5,9 +5,9 @@ spring:
   application:
     name: core-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/core_db
+    url: jdbc:postgresql://localhost:15432/cinema_db?currentSchema=core
     username: postgres
-    password: 4748
+    password: postgres
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
