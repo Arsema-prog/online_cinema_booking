@@ -13,7 +13,12 @@ services:
       - ./pg_init:/docker-entrypoint-initdb.d
     networks:
       - cinema_network
-  
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: cinema_keycloak
