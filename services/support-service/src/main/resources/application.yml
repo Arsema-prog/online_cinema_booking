@@ -5,15 +5,15 @@ spring:
   application:
     name: support-service
   datasource:
-    url: jdbc:postgresql://localhost:15432/cinema_db?currentSchema=support
+    url: jdbc:postgresql://localhost:5432/support_db?currentSchema=support
     username: postgres
-    password: postgres
+    password: 4748
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-  
+
   security:
     oauth2:
       resourceserver:
@@ -30,4 +30,4 @@ keycloak:
     server-url: http://localhost:8180
     realm: cinema-realm
     client-id: support-service
-    client-secret: ${KEYCLOAK_CLIENT_SECRET}
+    client-secret: YOpTwCgPWWEjUmlguFbCmW8tqzmNpbdh
