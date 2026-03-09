@@ -20,7 +20,7 @@ export const MoviesPage: React.FC = () => {
           gap: 16
         }}
       >
-        {movies.map(movie => (
+        {!movies && movies.map(movie => (
           <div
             key={movie.id}
             style={{

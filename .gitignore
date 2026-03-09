@@ -26,3 +26,5 @@ replay_pid*
 /node_modules
 /dist
 /build
+apps/bookers-ui/node_modules
+apps/node_modules

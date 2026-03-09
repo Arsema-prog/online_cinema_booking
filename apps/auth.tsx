@@ -30,7 +30,7 @@ const keycloak = new Keycloak({
 });
 (window as any).keycloak = keycloak;
 console.log("Keycloak clientId:", env.keycloakClientId);
-let keycloakInitialized = false;
+let initPromise: Promise<boolean> | null = null;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children
@@ -41,21 +41,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [roles, setRoles] = useState<Role[]>([]);
 
   useEffect(() => {
-       if (keycloakInitialized) {
-          setLoading(false);
-          return;
-        }
-
-        keycloakInitialized = true;
-
     let isMounted = true;
 
-    keycloak
-      .init({
-           onLoad: "login-required",
-           pkceMethod: "S256",
-           checkLoginIframe: false
-      })
+    if (!initPromise) {
+      initPromise = keycloak.init({
+        onLoad: "check-sso",
+        pkceMethod: "S256",
+        checkLoginIframe: false
+      });
+    }
+
+    initPromise
       .then(auth => {
         if (!isMounted) return;
         setIsAuthenticated(auth);
