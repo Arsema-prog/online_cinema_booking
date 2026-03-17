@@ -30,4 +30,7 @@ keycloak:
     server-url: http://localhost:8180
     realm: cinema-realm
     client-id: support-service
-    client-secret: YOpTwCgPWWEjUmlguFbCmW8tqzmNpbdh
+    client-secret: CJY9mCjohlteyHOiqZFikZhxkzBEKurF
+logging:
+  level:
+    org.springframework.security: DEBUG
