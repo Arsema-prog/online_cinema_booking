@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bookers UI</title>
+  </head>
+  <body>
+    <script>
+      // Clean up URL fragment on page load
+      if (window.location.hash && (
+        window.location.hash.includes('error=') || 
+        window.location.hash.includes('code=') || 
+        window.location.hash.includes('state=')
+      )) {
+        window.history.replaceState(
+          null, 
+          document.title, 
+          window.location.pathname + window.location.search
+        );
+        console.log('URL fragment cleaned up by inline script');
+      }
+    </script>
+    <div id="root"></div>
+    <script>
+  // Log when page is about to unload/reload
+  window.addEventListener('beforeunload', function() {
+    console.log('🔴 Page is about to unload/reload at', new Date().toISOString());
+    console.log('🔴 Current URL:', window.location.href);
+    console.log('🔴 Stack trace:', new Error().stack);
+  });
+
+  // Log when page loads
+  window.addEventListener('load', function() {
+    console.log('🟢 Page loaded at', new Date().toISOString());
+    console.log('🟢 Current URL:', window.location.href);
+  });
+</script>
+    <script type="module" src="././src/main.tsx"></script>
+  </body>
+</html>
