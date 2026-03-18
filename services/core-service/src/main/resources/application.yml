@@ -1,13 +1,13 @@
 server:
-  port: 8081  # Core service port
+  port: 8081
 
 spring:
   application:
     name: core-service
   datasource:
-    url: jdbc:postgresql://localhost:15432/cinema_db?currentSchema=core
+    url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=core
     username: postgres
-    password: postgres
+    password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -16,10 +16,18 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
