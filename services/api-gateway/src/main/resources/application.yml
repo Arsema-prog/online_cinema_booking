@@ -4,30 +4,44 @@ server:
 spring:
   application:
     name: api-gateway
-  main:
-    web-application-type: reactive
   cloud:
     gateway:
-      server:
-        web flux:
-          routes:
-            - id: core-service
-              uri: lb://CORE-SERVICE
-              predicates:
-                - Path=/core/**
-            - id: discovery-service
-              uri: lb://DISCOVERY-SERVICE
-              predicates:
-                - Path=/discovery/**
-
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: core-service
+          uri: lb://core-service
+          predicates:
+            - Path=/api/v1/core/**
+        - id: booking-service
+          uri: lb://booking-service
+          predicates:
+            - Path=/api/v1/booking/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payment/**
+        - id: support-service
+          uri: lb://support-service
+          predicates:
+            - Path=/api/v1/support/**
   security:
     oauth2:
-      resource server:
+      resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/cinema-realm
+          issuer-uri: http://keycloak:8080/realms/cinema-realm
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

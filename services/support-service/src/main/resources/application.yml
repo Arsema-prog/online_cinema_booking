@@ -1,35 +1,32 @@
 server:
-  port: 8084  # Support Service port
+  port: 8084
 
 spring:
   application:
     name: support-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/support_db
+    url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=support
     username: postgres
-    password: 4748
+    password: ${POSTGRES_PASSWORD:postgres}
   jpa:
     hibernate:
-      ddl-auto: validate # or update for dev, none for prod
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
-        format_sql: true
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
+
 
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/cinema-realm
+          issuer-uri: http://keycloak:8080/realms/cinema-realm
 
-  RabbitMQ:
-    host: localhost
+  rabbitmq:
+    host: rabbitmq
     port: 5672
     username: guest
-    password: guest
+    password: ${RABBITMQ_PASSWORD:guest}
     template:
       retry:
         enabled: true
@@ -37,7 +34,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: arsema.tesfaye@aastustudent.edu.et
-    password: hyvo uzzc yvjw fsmq
+    password: ${MAIL_PASSWORD}
     protocol: smtp
     properties:
       mail:
@@ -51,21 +48,30 @@ rabbitmq:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
 
 keycloak:
   admin:
-    server-url: http://localhost:8180
+    server-url: http://keycloak:8080
     realm: cinema-realm
     client-id: support-service
     client-secret: ${KEYCLOAK_CLIENT_SECRET}
 
 minio:
-  endpoint: http://localhost:9000
+  endpoint: http://minio:9000
   access-key: minioadmin
-  secret-key: minioadmin
+  secret-key: ${MINIO_ROOT_PASSWORD:minioadmin}
   bucket: tickets
 
 logging:
   level:
     org.springframework.security: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
