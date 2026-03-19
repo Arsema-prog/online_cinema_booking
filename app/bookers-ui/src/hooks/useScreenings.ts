@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+// hooks/useScreenings.ts
+import { useEffect, useState, useCallback } from "react";
 import { getScreenings } from "../api/screeningApi";
 import { Screening } from "../types";
 
@@ -7,20 +8,27 @@ export const useScreenings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadScreenings = async () => {
-      try {
-        const data = await getScreenings();
-        setScreenings(data);
-      } catch (err) {
-        setError("Failed to load screenings");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadScreenings();
+  const loadScreenings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getScreenings();
+      setScreenings(data);
+      setError(null);
+    } catch (err) {
+      setError("Failed to load screenings");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { screenings, loading, error };
+  useEffect(() => {
+    loadScreenings();
+  }, [loadScreenings]);
+
+  const refreshScreenings = useCallback(async () => {
+    await loadScreenings();
+  }, [loadScreenings]);
+
+  return { screenings, loading, error, refreshScreenings };
 };

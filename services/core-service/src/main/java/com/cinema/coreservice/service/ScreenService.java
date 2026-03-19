@@ -35,7 +35,7 @@ public class ScreenService {
         for (int i = 1; i <= numberOfSeats; i++) {
             Seat seat = new Seat();
             seat.setScreen(savedScreen);
-            seat.setSeatNumber("S" + i);
+            seat.setSeatNumber(("S" + i));
             seats.add(seat);
         }
         seatRepository.saveAll(seats);

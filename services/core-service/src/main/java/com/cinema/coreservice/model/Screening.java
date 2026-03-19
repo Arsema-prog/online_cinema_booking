@@ -13,13 +13,15 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+//@Builder
 public class Screening {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private Double price;
+    private Integer availableSeats;
+    private Integer totalSeats;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 

@@ -1,15 +1,25 @@
-// pages/BookingPage.tsx
+// pages/BookingPage.tsx - Update the handlers
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useBooking } from "../hooks/useBooking";
-import { ChevronLeft, Ticket, Users, CreditCard, Info } from 'lucide-react';
+import { ChevronLeft, Ticket, Users, CreditCard, Info, RefreshCw } from 'lucide-react';
 
 export const BookingPage: React.FC = () => {
   const { screeningId } = useParams<{ screeningId: string }>();
   const navigate = useNavigate();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [processing, setProcessing] = useState(false);
-  
+  const [refreshing, setRefreshing] = useState(false);
+  const [showUuid, setShowUuid] = useState<string>('');
+
+  // Generate a UUID from screeningId (temporary solution)
+  useEffect(() => {
+    if (screeningId) {
+      const paddedId = screeningId.padStart(12, '0');
+      setShowUuid(`00000000-0000-0000-0000-${paddedId}`);
+    }
+  }, [screeningId]);
+
   const {
     seats,
     loading,
@@ -17,10 +27,56 @@ export const BookingPage: React.FC = () => {
     selectedSeats,
     toggleSeat,
     holdSelectedSeats,
-    confirmBooking,
+    confirmSelectedBooking,
+    refreshSeats,
     totalAmount,
-    hasSelectedSeats
-  } = useBooking(Number(screeningId));
+    hasSelectedSeats,
+    holdingSeats,
+    holdResponse
+  } = useBooking(Number(screeningId), showUuid);
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    await refreshSeats();
+    setRefreshing(false);
+  };
+
+  const handleProceedToPayment = async () => {
+    setProcessing(true);
+    try {
+      await holdSelectedSeats();
+      await refreshSeats(); // Refresh after hold
+      setShowConfirmModal(true);
+    } catch (error) {
+      alert("Failed to hold seats. Please try again.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleConfirmBooking = async () => {
+    setProcessing(true);
+    try {
+      await confirmSelectedBooking();
+      await refreshSeats(); // Refresh after confirm
+      alert("Booking confirmed! Check your email for tickets.");
+      navigate('/bookers');
+    } catch (error) {
+      alert("Failed to confirm booking. Please try again.");
+    } finally {
+      setProcessing(false);
+      setShowConfirmModal(false);
+    }
+  };
+
+  // Auto-refresh every 15 seconds to keep seat map updated
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshSeats();
+    }, 15000);
+    
+    return () => clearInterval(interval);
+  }, [refreshSeats]);
 
   // Group seats by row
   const seatsByRow = seats.reduce((acc, seat) => {
@@ -33,52 +89,30 @@ export const BookingPage: React.FC = () => {
   const rows = Object.keys(seatsByRow).sort();
 
   // Get seat color based on status
-  const getSeatColor = (seat: typeof seats[0]) => {
-    if (selectedSeats.some(s => s.id === seat.id)) {
-      return '#10b981'; // Selected - green
-    }
-    switch (seat.status) {
-      case 'RESERVED':
-        return '#ef4444'; // Reserved - red
-      case 'HELD':
-        return '#f59e0b'; // Held - orange/amber
-      case 'CANCELLED':
-        return '#6b7280'; // Cancelled - gray
-      default:
-        return '#1e293b'; // Available - dark blue
-    }
-  };
-
-  const handleProceedToPayment = async () => {
-    setProcessing(true);
-    try {
-      // First hold the seats
-      await holdSelectedSeats();
-      // Then show confirmation modal
-      setShowConfirmModal(true);
-    } catch (error) {
-      alert("Failed to hold seats. Please try again.");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleConfirmBooking = async () => {
-    setProcessing(true);
-    try {
-      await confirmBooking();
-      // Navigate to confirmation page or show success message
-      alert("Booking confirmed! Check your email for tickets.");
-      navigate('/bookers');
-    } catch (error) {
-      alert("Failed to confirm booking. Please try again.");
-    } finally {
-      setProcessing(false);
-      setShowConfirmModal(false);
-    }
-  };
-
-  if (loading) {
+ // In BookingPage.tsx, update the getSeatColor function
+const getSeatColor = (seat: typeof seats[0]) => {
+  console.log('Seat status:', seat.status); // Add this to debug
+  
+  if (selectedSeats.some(s => s.id === seat.id)) {
+    return '#10b981'; // Selected - green
+  }
+  
+  // Make sure these match the actual status strings from API
+  switch (seat.status) {
+    case 'RESERVED':
+      return '#ef4444'; // Reserved - red
+    case 'HELD':
+      return '#f59e0b'; // Held - orange/amber
+    case 'CANCELLED':
+      return '#6b7280'; // Cancelled - gray
+    case 'AVAILABLE':
+      return '#1e293b'; // Available - dark blue
+    default:
+      console.log('Unknown status:', seat.status);
+      return '#1e293b'; // Default to available
+  }
+};
+  if (loading && seats.length === 0) {
     return (
       <div style={{ 
         minHeight: '100vh', 
@@ -124,7 +158,7 @@ export const BookingPage: React.FC = () => {
           <h2 style={{ color: '#ef4444', marginBottom: 16 }}>Error</h2>
           <p style={{ color: '#94a3b8', marginBottom: 24 }}>{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={handleManualRefresh}
             style={{
               padding: '12px 24px',
               background: '#8b5cf6',
@@ -150,33 +184,61 @@ export const BookingPage: React.FC = () => {
       paddingBottom: hasSelectedSeats ? 120 : 40
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
-        {/* Header with back button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+        {/* Header with back button and refresh */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: 24 
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <button
+              onClick={() => navigate(-1)}
+              style={{
+                background: '#1e293b',
+                border: 'none',
+                color: 'white',
+                width: 40,
+                height: 40,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#8b5cf6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#1e293b';
+              }}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <h1 style={{ fontSize: 28, margin: 0 }}>Select Your Seats</h1>
+          </div>
+          
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleManualRefresh}
+            disabled={refreshing}
             style={{
-              background: '#1e293b',
-              border: 'none',
-              color: 'white',
-              width: 40,
-              height: 40,
-              borderRadius: 8,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#8b5cf6';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#1e293b';
+              gap: 8,
+              padding: '10px 20px',
+              background: '#1e293b',
+              border: 'none',
+              borderRadius: 30,
+              color: 'white',
+              fontSize: 14,
+              cursor: refreshing ? 'not-allowed' : 'pointer',
+              opacity: refreshing ? 0.5 : 1
             }}
           >
-            <ChevronLeft size={20} />
+            <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
-          <h1 style={{ fontSize: 28, margin: 0 }}>Select Your Seats</h1>
         </div>
 
         {/* Screen visualization */}
@@ -239,86 +301,93 @@ export const BookingPage: React.FC = () => {
           overflowX: 'auto',
           boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)'
         }}>
-          <div style={{ minWidth: rows.length * 70 }}>
-            {rows.map(row => (
-              <div key={row} style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 16,
-                marginBottom: 12
+          {rows.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
+              No seats available for this screening
+            </div>
+          ) : (
+            <>
+              <div style={{ minWidth: rows.length * 70 }}>
+                {rows.map(row => (
+                  <div key={row} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 16,
+                    marginBottom: 12
+                  }}>
+                    <div style={{ 
+                      width: 40, 
+                      fontWeight: 'bold',
+                      color: '#94a3b8',
+                      fontSize: 18
+                    }}>
+                      {row}
+                    </div>
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 8,
+                      flexWrap: 'wrap'
+                    }}>
+                      {seatsByRow[row]?.map((seat, index) => {
+                        const isAisle = index === 7;
+                        
+                        return (
+                          <React.Fragment key={seat.id}>
+                            {isAisle && <div style={{ width: 24 }} />}
+                            <button
+                              onClick={() => toggleSeat(seat)}
+                              disabled={seat.status !== 'AVAILABLE'}
+                              style={{
+                                width: 45,
+                                height: 45,
+                                background: getSeatColor(seat),
+                                border: selectedSeats.some(s => s.id === seat.id)
+                                  ? '3px solid #8b5cf6'
+                                  : 'none',
+                                borderRadius: 10,
+                                color: 'white',
+                                fontSize: 13,
+                                fontWeight: 'bold',
+                                cursor: seat.status === 'AVAILABLE' ? 'pointer' : 'not-allowed',
+                                opacity: seat.status !== 'AVAILABLE' ? 0.5 : 1,
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title={`Row ${seat.seat.rowLabel}, Seat ${seat.seat.seatNumber} - $${seat.price} (${seat.status})`}
+                            >
+                              {seat.seat.seatNumber.replace(seat.seat.rowLabel, '')}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Aisle indicators */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 80,
+                marginTop: 24,
+                color: '#94a3b8',
+                fontSize: 13
               }}>
-                <div style={{ 
-                  width: 40, 
-                  fontWeight: 'bold',
-                  color: '#94a3b8',
-                  fontSize: 18
-                }}>
-                  {row}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 2, height: 24, background: '#334155' }} />
+                  <span>Left Aisle</span>
                 </div>
-                <div style={{ 
-                  display: 'flex', 
-                  gap: 8,
-                  flexWrap: 'wrap'
-                }}>
-                  {seatsByRow[row].map((seat, index) => {
-                    // Create aisle gap after every 7 seats
-                    const isAisle = index === 7;
-                    
-                    return (
-                      <React.Fragment key={seat.id}>
-                        {isAisle && <div style={{ width: 24 }} />}
-                        <button
-                          onClick={() => toggleSeat(seat)}
-                          disabled={seat.status !== 'AVAILABLE'}
-                          style={{
-                            width: 45,
-                            height: 45,
-                            background: getSeatColor(seat),
-                            border: selectedSeats.some(s => s.id === seat.id)
-                              ? '3px solid #8b5cf6'
-                              : 'none',
-                            borderRadius: 10,
-                            color: 'white',
-                            fontSize: 13,
-                            fontWeight: 'bold',
-                            cursor: seat.status === 'AVAILABLE' ? 'pointer' : 'not-allowed',
-                            opacity: seat.status === 'RESERVED' || seat.status === 'CANCELLED' ? 0.5 : 1,
-                            transition: 'all 0.2s ease',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                          title={`Row ${seat.seat.rowLabel}, Seat ${seat.seat.seatNumber} - $${seat.price}`}
-                        >
-                          {seat.seat.seatNumber.replace(seat.seat.rowLabel, '')}
-                        </button>
-                      </React.Fragment>
-                    );
-                  })}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 2, height: 24, background: '#334155' }} />
+                  <span>Right Aisle</span>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Aisle indicators */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: 80,
-            marginTop: 24,
-            color: '#94a3b8',
-            fontSize: 13
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 2, height: 24, background: '#334155' }} />
-              <span>Left Aisle</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 2, height: 24, background: '#334155' }} />
-              <span>Right Aisle</span>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -396,25 +465,25 @@ export const BookingPage: React.FC = () => {
 
               <button
                 onClick={handleProceedToPayment}
-                disabled={processing}
+                disabled={processing || holdingSeats}
                 style={{
                   padding: '16px 40px',
-                  background: processing ? '#334155' : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                  background: processing || holdingSeats ? '#334155' : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
                   color: 'white',
                   border: 'none',
                   borderRadius: 40,
                   fontSize: 18,
                   fontWeight: 'bold',
-                  cursor: processing ? 'not-allowed' : 'pointer',
+                  cursor: processing || holdingSeats ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
-                  opacity: processing ? 0.5 : 1
+                  opacity: processing || holdingSeats ? 0.5 : 1
                 }}
                 onMouseEnter={(e) => {
-                  if (!processing) {
+                  if (!processing && !holdingSeats) {
                     e.currentTarget.style.transform = 'scale(1.05)';
                     e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.5)';
                   }
@@ -425,7 +494,7 @@ export const BookingPage: React.FC = () => {
                 }}
               >
                 <CreditCard size={20} />
-                {processing ? 'Processing...' : 'Proceed to Payment'}
+                {processing || holdingSeats ? 'Processing...' : 'Proceed to Payment'}
               </button>
             </div>
           </div>
@@ -557,6 +626,9 @@ export const BookingPage: React.FC = () => {
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        .spin {
+          animation: spin 1s linear infinite;
         }
       `}</style>
     </div>

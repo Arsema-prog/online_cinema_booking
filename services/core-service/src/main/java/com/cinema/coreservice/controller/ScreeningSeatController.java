@@ -1,12 +1,9 @@
 package com.cinema.coreservice.controller;
 
 import com.cinema.coreservice.model.ScreeningSeat;
-import com.cinema.coreservice.repository.ScreeningSeatRepository;
+import com.cinema.coreservice.service.ScreeningSeatService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,10 +12,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ScreeningSeatController {
 
-    private final ScreeningSeatRepository screeningSeatRepository;
+    private final ScreeningSeatService screeningSeatService;
 
-    @GetMapping("/{screeningId}")
-    public List<ScreeningSeat> getSeatsForScreening(@PathVariable Long screeningId) {
-        return screeningSeatRepository.findByScreeningId(screeningId);
+    @GetMapping("/screening/{screeningId}")
+    public List<ScreeningSeat> getSeatsByScreening(@PathVariable Long screeningId) {
+        return screeningSeatService.getSeatsByScreeningId(screeningId);
     }
+
 }
