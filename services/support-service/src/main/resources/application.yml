@@ -65,7 +65,6 @@ minio:
   access-key: minioadmin
   secret-key: minioadmin
   bucket: tickets
-
 logging:
   level:
     org.springframework.security: DEBUG
