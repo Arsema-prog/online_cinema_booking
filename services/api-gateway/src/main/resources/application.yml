@@ -6,31 +6,42 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-      routes:
-        - id: core-service
-          uri: lb://core-service
-          predicates:
-            - Path=/api/v1/core/**
-        - id: booking-service
-          uri: lb://booking-service
-          predicates:
-            - Path=/api/v1/booking/**
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/v1/payment/**
-        - id: support-service
-          uri: lb://support-service
-          predicates:
-            - Path=/api/v1/support/**
+
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+          routes:
+            - id: core-service
+              uri: lb://core-service
+              predicates:
+                - Path=/api/v1/core/**
+              filters:
+                - StripPrefix=3
+            - id: booking-service
+              uri: lb://booking-service
+              predicates:
+                - Path=/api/v1/booking/**
+              filters:
+                - StripPrefix=3
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/v1/payment/**
+              filters:
+                - StripPrefix=3
+            - id: support-service
+              uri: lb://support-service
+              predicates:
+                - Path=/api/v1/support/**
+              filters:
+                - StripPrefix=3
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://keycloak:8080/realms/cinema-realm
+          jwk-set-uri: http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs
 
 eureka:
   client:
