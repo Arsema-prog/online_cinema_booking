@@ -14,8 +14,8 @@ public class BookingConfirmedEvent implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
-    private Long bookingId;
-    private Long userId;
+    private UUID bookingId;
+    private UUID userId;
     private String userEmail;       // Booker's email
     private String movieTitle;
     private String branchName;

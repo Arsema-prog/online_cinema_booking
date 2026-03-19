@@ -38,7 +38,9 @@ public class TicketService {
     @Transactional
     public List<String> generateTickets(BookingConfirmedEvent event) {
 
-        if (ticketRepository.existsByBookingId(event.getBookingId())) {
+        // Convert UUID to Long for repository check
+        Long bookingIdAsLong = convertToLong(event.getBookingId());
+        if (ticketRepository.existsByBookingId(bookingIdAsLong)) {
             return List.of(); // prevent duplicates
         }
 
@@ -51,8 +53,10 @@ public class TicketService {
             UUID ticketId = UUID.randomUUID();
             Ticket ticket = new Ticket();
 
-            ticket.setBookingId(event.getBookingId());
-            ticket.setUserId(event.getUserId());
+            // CONVERT UUID TO LONG HERE
+            ticket.setBookingId(convertToLong(event.getBookingId()));
+            ticket.setUserId(convertToLong(event.getUserId()));
+
             ticket.setMovieTitle(event.getMovieTitle());
             ticket.setBranchName(event.getBranchName());
             ticket.setScreenName(event.getScreenName());
@@ -61,6 +65,8 @@ public class TicketService {
             ticket.setPrice(pricePerSeat);
             ticket.setStatus(TicketStatus.ACTIVE);
             ticket.setIssuedAt(LocalDateTime.now());
+
+            ticket.setTicketNumber("TIX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 
             // 1️⃣ Always set a default QR path to satisfy NOT NULL
             String qrObjectKey = "tickets/" + ticketId + ".png";
@@ -129,5 +135,34 @@ public class TicketService {
         }
 
         return signedUrls;
+    }
+
+    /**
+     * Converts a UUID to a Long by extracting the numeric part from the UUID.
+     * Format expected: 00000000-0000-0000-0000-000000000012 -> 12
+     */
+    private Long convertToLong(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+
+        String uuidStr = uuid.toString();
+        // Get the last part after the last hyphen
+        String lastPart = uuidStr.substring(uuidStr.lastIndexOf('-') + 1);
+
+        // Remove leading zeros
+        String numericPart = lastPart.replaceFirst("^0+(?!$)", "");
+
+        if (numericPart.isEmpty()) {
+            return 0L;
+        }
+
+        try {
+            return Long.parseLong(numericPart);
+        } catch (NumberFormatException e) {
+            System.err.println("[ERROR] Failed to convert UUID to Long: " + uuid);
+            // Fallback: use hash code as last resort
+            return (long) Math.abs(uuid.hashCode() % 10000);
+        }
     }
 }
