@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Keycloak Test</title>
+</head>
+<body>
+    <h1>Keycloak Test</h1>
+    <button onclick="testKeycloak()">Test Connection</button>
+    <pre id="result"></pre>
+
+    <script src="https://unpkg.com/keycloak-js@23.0.7/dist/keycloak.js"></script>
+    <script>
+        async function testKeycloak() {
+            const result = document.getElementById('result');
+            result.textContent = 'Testing...';
+            
+            const keycloak = new Keycloak({
+                url: 'http://localhost:8180',
+                realm: 'cinema-realm',
+                clientId: 'bookers-ui'
+            });
+
+            try {
+                await keycloak.init({
+                    onLoad: 'check-sso',
+                    checkLoginIframe: false
+                });
+                result.textContent = '✅ Keycloak connection successful!\n' + 
+                    JSON.stringify({ authenticated: keycloak.authenticated }, null, 2);
+            } catch (error) {
+                result.textContent = '❌ Keycloak connection failed:\n' + error;
+            }
+        }
+    </script>
+</body>
+</html>
