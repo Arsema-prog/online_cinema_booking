@@ -29,6 +29,30 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, screenings, onBookS
     });
   };
 
+  // Helper function to safely format price
+  const formatPrice = (price: number | undefined) => {
+    if (price === undefined || price === null) return '0.00';
+    return price.toFixed(2);
+  };
+
+  // Get selected screening price safely
+  const getSelectedPrice = () => {
+    if (selectedScreening) {
+      const screening = screenings.find(s => s.id === selectedScreening);
+      return formatPrice(screening?.price);
+    }
+    return formatPrice(screenings[0]?.price);
+  };
+
+  // Get selected screening available seats safely
+  const getSelectedSeats = () => {
+    if (selectedScreening) {
+      const screening = screenings.find(s => s.id === selectedScreening);
+      return screening?.availableSeats ?? 0;
+    }
+    return screenings[0]?.availableSeats ?? 0;
+  };
+
   const handleBookClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (selectedScreening) {
@@ -115,23 +139,19 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, screenings, onBookS
             ))}
           </div>
           <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-            {formatDate(screenings[0].startTime)}
+            {screenings.length > 0 ? formatDate(screenings[0].startTime) : ''}
           </p>
         </div>
       )}
 
-      {/* Price and availability */}
+      {/* Price and availability - FIXED */}
       <div style={{ marginTop: 'auto', marginBottom: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 18, fontWeight: 'bold', color: '#8b5cf6' }}>
-            ${selectedScreening 
-              ? screenings.find(s => s.id === selectedScreening)?.price.toFixed(2) 
-              : screenings[0]?.price.toFixed(2)}
+            ${getSelectedPrice()}
           </span>
           <span style={{ fontSize: 13, color: '#94a3b8' }}>
-            {selectedScreening 
-              ? screenings.find(s => s.id === selectedScreening)?.availableSeats 
-              : screenings[0]?.availableSeats} seats left
+            {getSelectedSeats()} seats left
           </span>
         </div>
       </div>
@@ -139,11 +159,11 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, screenings, onBookS
       {/* Book button */}
       <button
         onClick={handleBookClick}
-        disabled={!selectedScreening}
+        disabled={!selectedScreening || screenings.length === 0}
         style={{
           width: '100%',
           padding: '12px',
-          background: !selectedScreening 
+          background: !selectedScreening || screenings.length === 0
             ? '#334155' 
             : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
           color: 'white',
@@ -151,24 +171,28 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, screenings, onBookS
           borderRadius: 8,
           fontSize: 16,
           fontWeight: 'bold',
-          cursor: !selectedScreening ? 'not-allowed' : 'pointer',
+          cursor: !selectedScreening || screenings.length === 0 ? 'not-allowed' : 'pointer',
           transition: 'all 0.2s ease',
-          opacity: !selectedScreening ? 0.5 : 1,
+          opacity: !selectedScreening || screenings.length === 0 ? 0.5 : 1,
         }}
         onMouseEnter={(e) => {
-          if (selectedScreening) {
+          if (selectedScreening && screenings.length > 0) {
             e.currentTarget.style.transform = 'scale(1.02)';
             e.currentTarget.style.background = 'linear-gradient(135deg, #9b6ef6 0%, #f472b6 100%)';
           }
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
-          if (selectedScreening) {
+          if (selectedScreening && screenings.length > 0) {
             e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)';
           }
         }}
       >
-        {selectedScreening ? 'Book Seats' : 'Select Showtime'}
+        {screenings.length === 0 
+          ? 'No Showtimes' 
+          : selectedScreening 
+            ? 'Book Seats' 
+            : 'Select Showtime'}
       </button>
     </div>
   );

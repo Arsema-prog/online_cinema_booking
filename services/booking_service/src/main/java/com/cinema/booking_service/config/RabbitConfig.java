@@ -9,13 +9,19 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-
-
 @Configuration
 public class RabbitConfig {
 
     public static final String BOOKING_EXCHANGE = "booking.exchange";
     public static final String PAYMENT_SUCCESS_QUEUE = "payment.success.queue";
+
+    // SEAT STATUS
+    public static final String SEAT_STATUS_QUEUE = "seat.status.queue";
+    public static final String SEAT_STATUS_ROUTING_KEY = "seat.status";
+
+    // BOOKING CONFIRMED - Add these
+    public static final String BOOKING_CONFIRMED_QUEUE = "booking.confirmed.queue";
+    public static final String BOOKING_CONFIRMED_ROUTING_KEY = "booking.confirmed";
 
     @Bean
     public TopicExchange bookingExchange() {
@@ -33,6 +39,33 @@ public class RabbitConfig {
                 .bind(paymentSuccessQueue())
                 .to(bookingExchange())
                 .with("payment.success");
+    }
+
+    @Bean
+    public Queue seatStatusQueue() {
+        return new Queue(SEAT_STATUS_QUEUE);
+    }
+
+    @Bean
+    public Binding seatStatusBinding() {
+        return BindingBuilder
+                .bind(seatStatusQueue())
+                .to(bookingExchange())
+                .with(SEAT_STATUS_ROUTING_KEY);
+    }
+
+    // Add these new beans for booking confirmed
+    @Bean
+    public Queue bookingConfirmedQueue() {
+        return new Queue(BOOKING_CONFIRMED_QUEUE);
+    }
+
+    @Bean
+    public Binding bookingConfirmedBinding() {
+        return BindingBuilder
+                .bind(bookingConfirmedQueue())
+                .to(bookingExchange())
+                .with(BOOKING_CONFIRMED_ROUTING_KEY);
     }
 
     @Bean

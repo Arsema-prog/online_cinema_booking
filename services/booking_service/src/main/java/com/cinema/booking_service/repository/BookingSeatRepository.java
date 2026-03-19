@@ -23,4 +23,8 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, UUID> 
     List<BookingSeat> findByShowId(@Param("showId") UUID showId);
 
     void deleteByBookingId(UUID bookingId);
+
+    @Query("SELECT COUNT(bs) FROM BookingSeat bs WHERE bs.bookingId = :bookingId")
+    int countByBookingId(@Param("bookingId") UUID bookingId);
+
 }
