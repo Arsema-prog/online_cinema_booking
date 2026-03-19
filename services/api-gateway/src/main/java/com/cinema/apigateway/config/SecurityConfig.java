@@ -20,26 +20,24 @@ public class SecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .cors(Customizer.withDefaults())
             .authorizeExchange(exchanges -> exchanges
+                .pathMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/actuator/**").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         return http.build();
     }
-
     @Bean
-    public CorsWebFilter corsWebFilter() {
+    public org.springframework.web.cors.reactive.CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:5171"));
-        corsConfig.setMaxAge(3600L);
-        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        corsConfig.setAllowedHeaders(Arrays.asList("*"));
+        corsConfig.setAllowedOriginPatterns(java.util.List.of("*"));
+        corsConfig.setAllowedMethods(java.util.List.of("*"));
+        corsConfig.setAllowedHeaders(java.util.List.of("*"));
         corsConfig.setAllowCredentials(true);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfig);
-
-        return new CorsWebFilter(source);
+        return source;
     }
 }
