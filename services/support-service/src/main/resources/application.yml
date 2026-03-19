@@ -58,10 +58,7 @@ keycloak:
     server-url: http://localhost:8180
     realm: cinema-realm
     client-id: support-service
-    client-secret: YOpTwCgPWWEjUmlguFbCmW8tqzmNpbdh
-
-minio:
-  endpoint: http://localhost:9000
-  access-key: minioadmin
-  secret-key: minioadmin
-  bucket: tickets
+    client-secret: CJY9mCjohlteyHOiqZFikZhxkzBEKurF
+logging:
+  level:
+    org.springframework.security: DEBUG

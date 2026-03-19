@@ -25,6 +25,7 @@ spring:
       resource server:
         jwt:
           issuer-uri: http://localhost:8180/realms/cinema-realm
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
 
 eureka:
   client:
