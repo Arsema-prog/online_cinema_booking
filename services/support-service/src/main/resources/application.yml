@@ -35,25 +35,31 @@ spring:
     password: hyvo uzzc yvjw fsmq
     protocol: smtp
     properties:
-          mail:
-            smtp:
-              auth: true
-              starttls.enable: true
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
 rabbitmq:
   queue:
     bookingConfirmed: booking.confirmed.queue
 
-  eureka:
-    client:
-      service-url:
-        defaultZone: http://localhost:8761/eureka/
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
 keycloak:
   admin:
     server-url: http://localhost:8180
     realm: cinema-realm
     client-id: support-service
-    client-secret: CJY9mCjohlteyHOiqZFikZhxkzBEKurF
+    client-secret: ${KEYCLOAK_CLIENT_SECRET}
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: tickets
 logging:
   level:
     org.springframework.security: DEBUG
