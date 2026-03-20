@@ -5,7 +5,7 @@ spring:
   application:
     name: payment-service
   datasource:
-    url: jdbc:postgresql://localhost:15432/cinema_db?currentSchema=payment
+    url: jdbc:postgresql://localhost:5432/cinema_db?currentSchema-payment
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
