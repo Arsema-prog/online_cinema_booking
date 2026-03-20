@@ -32,6 +32,9 @@ public class Ticket {
     @Column(nullable = false, updatable = false)
     private UUID id;
 
+    @Column(name = "ticket_number", nullable = false, unique = true)
+    private String ticketNumber;
+
     @Column(name = "booking_id", nullable = false)
     private Long bookingId;
 
