@@ -1,6 +1,7 @@
 package com.cinema.coreservice.model;
 
 import com.cinema.coreservice.model.enums.SeatStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,5 +27,10 @@ public class ScreeningSeat {
     private Seat seat;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private SeatStatus status;
+
+    @Column(nullable = false)
+    private Double price;
+
 }

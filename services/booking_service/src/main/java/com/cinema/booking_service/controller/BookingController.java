@@ -1,9 +1,14 @@
 package com.cinema.booking_service.controller;
 
+import com.cinema.booking_service.domain.Booking;
+import com.cinema.booking_service.domain.enums.BookingStatus;
+import com.cinema.booking_service.dto.BookingDTO;
+import com.cinema.booking_service.dto.ConfirmBookingRequest;
 import com.cinema.booking_service.model.HoldRequest;
 import com.cinema.booking_service.model.HoldResponse;
 import com.cinema.booking_service.model.SeatAvailability;
 import com.cinema.booking_service.service.BookingService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,13 +17,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/bookings")
+@RequiredArgsConstructor
 public class BookingController {
 
     private final BookingService bookingService;
-
-    public BookingController(BookingService bookingService) {
-        this.bookingService = bookingService;
-    }
 
     @PostMapping("/hold")
     public ResponseEntity<HoldResponse> holdSeats(@RequestBody HoldRequest request) {
@@ -43,5 +45,47 @@ public class BookingController {
         return ResponseEntity.ok().build();
     }
 
+    // NEW: Get all bookings (raw entities)
+    @GetMapping
+    public ResponseEntity<List<Booking>> getAllBookings() {
+        List<Booking> bookings = bookingService.getAllBookings();
+        return ResponseEntity.ok(bookings);
+    }
+
+    // NEW: Get all bookings as DTOs
+    @GetMapping("/dto")
+    public ResponseEntity<List<BookingDTO>> getAllBookingDTOs() {
+        List<BookingDTO> bookings = bookingService.getAllBookingDTOs();
+        return ResponseEntity.ok(bookings);
+    }
+
+//    @PostMapping("/{id}/confirm")
+//    public ResponseEntity<Void> confirm(@PathVariable UUID id, @RequestBody ConfirmBookingRequest request) {
+//        bookingService.confirmBooking(id, request.getUserEmail());
+//        return ResponseEntity.ok().build();
+//    }
+//    // NEW: Get all bookings with seat count
+    @GetMapping("/with-seat-count")
+    public ResponseEntity<List<BookingDTO>> getAllBookingsWithSeatCount() {
+        List<BookingDTO> bookings = bookingService.getAllBookingsWithSeatCount();
+        return ResponseEntity.ok(bookings);
+    }
+
+    // NEW: Get booking by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Booking> getBookingById(@PathVariable UUID id) {
+        return bookingService.getBookingById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // NEW: Get bookings by user ID
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Booking>> getBookingsByUser(@PathVariable UUID userId) {
+        List<Booking> bookings = bookingService.getBookingsByUser(userId);
+        return ResponseEntity.ok(bookings);
+    }
+
+    // NEW: Get bookings by status
 
 }

@@ -1,21 +1,21 @@
 package com.cinema.booking_service.model;
 
-import com.cinema.booking_service.domain.enums.BookingStatus;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class HoldResponse {
-
     private UUID bookingId;
-    private BookingStatus status;
+    private String status;  // Change from BookingStatus to String
     private List<UUID> heldSeatIds;
-    private LocalDateTime expiresAt;  // when the hold will expire
+    private LocalDateTime expiresAt;
 }
