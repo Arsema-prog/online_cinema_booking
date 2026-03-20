@@ -1,7 +1,5 @@
 CREATE DATABASE keycloak_db;
 
-\c cinema_db;
-
 CREATE SCHEMA IF NOT EXISTS core;
 CREATE SCHEMA IF NOT EXISTS booking;
 CREATE SCHEMA IF NOT EXISTS payment;
