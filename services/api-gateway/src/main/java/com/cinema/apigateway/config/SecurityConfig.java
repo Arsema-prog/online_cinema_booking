@@ -24,6 +24,7 @@ public class SecurityConfig {
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/api/v1/support/users/register").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));

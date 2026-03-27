@@ -173,6 +173,7 @@ services:
     environment:
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     networks:
       - cinema_network
 
