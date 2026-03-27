@@ -9,7 +9,6 @@ import {
 import { useAuth, useRoles } from "./auth";
 import { env } from "./env";
 import { BookersRoutes } from "./bookers/routes";
-import { BackofficeRoutes } from "./backoffice/routes";
 
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -92,19 +91,6 @@ export const AppRouter: React.FC = () => {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/bookers/*" element={<BookersRoutes />} />
-        </Route>
-
-        <Route element={<ProtectedRoute />}>
-          <Route
-            element={
-              <RoleRoute
-                allowedRoles={["ADMIN", "MANAGER"]}
-                redirectTo={env.bookerHomePath}
-              />
-            }
-          >
-            <Route path="/backoffice/*" element={<BackofficeRoutes />} />
-          </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -17,7 +17,6 @@ export const BookersLayout: React.FC = () => {
           </nav>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          <Link to="/backoffice" style={{ color: "#a5b4fc", fontSize: 13, textDecoration: "none" }}>Backoffice</Link>
           <button onClick={logout} style={{ padding: "6px 10px", borderRadius: 4, border: "1px solid #4b5563", background: "transparent", color: "#e5e7eb", fontSize: 13, cursor: "pointer" }}>Logout</button>
         </div>
       </header>
