@@ -37,12 +37,6 @@ export const BookersLayout: React.FC<{ children: React.ReactNode }> = ({
           </nav>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          <Link
-            to="/backoffice"
-            style={{ color: "#a5b4fc", fontSize: 13, textDecoration: "none" }}
-          >
-            Backoffice
-          </Link>
           <button
             onClick={logout}
             style={{
