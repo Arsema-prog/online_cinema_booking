@@ -1,8 +1,10 @@
 package com.cinema.supportservice.controller;
 
 import com.cinema.supportservice.dto.PasswordResetRequest;
+import com.cinema.supportservice.dto.RegistrationRequest;
 import com.cinema.supportservice.dto.UpdateUserRequest;
 import com.cinema.supportservice.dto.UserDto;
+import com.cinema.supportservice.service.RegistrationService;
 import com.cinema.supportservice.service.UserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +20,18 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserManagementController {
 
     private final UserManagementService userService;
+    private final RegistrationService registrationService;
+
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@Valid @RequestBody RegistrationRequest request) {
+        registrationService.registerUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")

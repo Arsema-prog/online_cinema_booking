@@ -25,7 +25,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/api/auth/register").permitAll()   // registration is public
+                .requestMatchers("/users/register").permitAll()   // registration is public
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

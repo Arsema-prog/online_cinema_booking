@@ -33,6 +33,7 @@ public class Ticket {
     private UUID id;
 
     @Column(name = "ticket_number", nullable = false, unique = true)
+    @org.hibernate.annotations.ColumnDefault("gen_random_uuid()::varchar")
     private String ticketNumber;
 
     @Column(name = "booking_id", nullable = false)

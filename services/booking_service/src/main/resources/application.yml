@@ -11,7 +11,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate  # Use 'validate' to ensure schema matches entities
+      ddl-auto: update  # Use 'update' to ensure schema matches entities
     properties:
       hibernate:
         default_schema: booking
