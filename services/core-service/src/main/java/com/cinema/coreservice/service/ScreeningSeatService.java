@@ -31,15 +31,15 @@ public class ScreeningSeatService {
         List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdIn(screeningId, seatIds);
 
         for (ScreeningSeat seat : seats) {
-            if (seat.getStatus() != SeatStatus.AVAILABLE) {
-                throw new IllegalStateException("Seat " + seat.getSeat().getSeatNumber() + " is not available (current status: " + seat.getStatus() + ")");
+            if (Boolean.TRUE.equals(seat.getIsBooked())) {
+                throw new IllegalStateException("Seat " + seat.getSeat().getSeatNumber() + " is already booked or held");
             }
-            seat.setStatus(SeatStatus.HELD);
+            seat.setIsBooked(true);
             seat.getSeat().setIsAvailable(false);
         }
 
         List<ScreeningSeat> updatedSeats = screeningSeatRepository.saveAll(seats);
-        updateScreeningAvailableSeats(screeningId); // Make sure this is called
+        updateScreeningAvailableSeats(screeningId);
 
         return updatedSeats;
     }
@@ -49,15 +49,12 @@ public class ScreeningSeatService {
         List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdIn(screeningId, seatIds);
 
         for (ScreeningSeat seat : seats) {
-            if (seat.getStatus() != SeatStatus.HELD && seat.getStatus() != SeatStatus.AVAILABLE) {
-                throw new IllegalStateException("Seat " + seat.getSeat().getSeatNumber() + " cannot be reserved");
-            }
-            seat.setStatus(SeatStatus.RESERVED);
+            seat.setIsBooked(true);
             seat.getSeat().setIsAvailable(false);
         }
 
         List<ScreeningSeat> updatedSeats = screeningSeatRepository.saveAll(seats);
-        updateScreeningAvailableSeats(screeningId); // Make sure this is called
+        updateScreeningAvailableSeats(screeningId);
 
         return updatedSeats;
     }
@@ -72,11 +69,11 @@ public class ScreeningSeatService {
         ScreeningSeat seat = screeningSeatRepository.findById(seatId)
                 .orElseThrow(() -> new EntityNotFoundException("Seat not found: " + seatId));
 
-        if (seat.getStatus() == SeatStatus.HELD) {
-            seat.setStatus(SeatStatus.AVAILABLE);
+        if (Boolean.TRUE.equals(seat.getIsBooked())) {
+            seat.setIsBooked(false);
             seat.getSeat().setIsAvailable(true);
             screeningSeatRepository.save(seat);
-            updateScreeningAvailableSeats(seat.getScreening().getId()); // Make sure this is called
+            updateScreeningAvailableSeats(seat.getScreening().getId());
         }
     }
 
@@ -85,11 +82,11 @@ public class ScreeningSeatService {
         ScreeningSeat seat = screeningSeatRepository.findById(seatId)
                 .orElseThrow(() -> new EntityNotFoundException("Seat not found: " + seatId));
 
-        if (seat.getStatus() == SeatStatus.RESERVED) {
-            seat.setStatus(SeatStatus.AVAILABLE); // Changed from CANCELLED to AVAILABLE
+        if (Boolean.TRUE.equals(seat.getIsBooked())) {
+            seat.setIsBooked(false);
             seat.getSeat().setIsAvailable(true);
             screeningSeatRepository.save(seat);
-            updateScreeningAvailableSeats(seat.getScreening().getId()); // Make sure this is called
+            updateScreeningAvailableSeats(seat.getScreening().getId());
         }
     }
 
@@ -107,19 +104,16 @@ public class ScreeningSeatService {
         log.info("Found {} seats to update", seats.size());
 
         for (ScreeningSeat seat : seats) {
-            SeatStatus oldStatus = seat.getStatus();
-            seat.setStatus(status);
-            log.info("Updated seat {} from {} to {}", seat.getSeat().getSeatNumber(), oldStatus, status);
+            Boolean oldStatus = seat.getIsBooked();
+            Boolean newIsBooked = (status == SeatStatus.HELD || status == SeatStatus.RESERVED);
+            seat.setIsBooked(newIsBooked);
+            log.info("Updated seat {} from {} to {}", seat.getSeat().getSeatNumber(), oldStatus, newIsBooked);
 
-            if (status == SeatStatus.HELD || status == SeatStatus.RESERVED) {
-                seat.getSeat().setIsAvailable(false);
-            } else if (status == SeatStatus.AVAILABLE) {
-                seat.getSeat().setIsAvailable(true);
-            }
+            seat.getSeat().setIsAvailable(!newIsBooked);
         }
 
         screeningSeatRepository.saveAll(seats);
-        updateScreeningAvailableSeats(screeningId); // Make sure this is called
+        updateScreeningAvailableSeats(screeningId);
     }
 
     @Transactional
@@ -128,8 +122,8 @@ public class ScreeningSeatService {
         log.info("Recalculating available seats for {} screenings", allScreenings.size());
 
         for (Screening screening : allScreenings) {
-            long availableCount = screeningSeatRepository.countByScreeningIdAndStatus(
-                    screening.getId(), SeatStatus.AVAILABLE);
+            long availableCount = screeningSeatRepository.countByScreeningIdAndIsBooked(
+                    screening.getId(), false);
 
             int oldCount = screening.getAvailableSeats();
             screening.setAvailableSeats((int) availableCount);
@@ -143,8 +137,8 @@ public class ScreeningSeatService {
     private void updateScreeningAvailableSeats(Long screeningId) {
         log.info("Updating available seats for screening: {}", screeningId);
 
-        long availableCount = screeningSeatRepository.countByScreeningIdAndStatus(
-                screeningId, SeatStatus.AVAILABLE);
+        long availableCount = screeningSeatRepository.countByScreeningIdAndIsBooked(
+                screeningId, false);
 
         Screening screening = screeningRepository.findById(screeningId)
                 .orElseThrow(() -> new EntityNotFoundException("Screening not found: " + screeningId));
@@ -172,7 +166,7 @@ public class ScreeningSeatService {
         }
     }
 
-    public long countSeatsByStatus(Long screeningId, SeatStatus status) {
-        return screeningSeatRepository.countByScreeningIdAndStatus(screeningId, status);
+    public long countSeatsByIsBooked(Long screeningId, Boolean isBooked) {
+        return screeningSeatRepository.countByScreeningIdAndIsBooked(screeningId, isBooked);
     }
 }
