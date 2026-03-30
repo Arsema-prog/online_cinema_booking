@@ -34,9 +34,8 @@ public class Seat {
     @Column(name = "is_available")
     private Boolean isAvailable;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "seat_type")
-    private SeatType type = SeatType.NORMAL;
+    private String seatType;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

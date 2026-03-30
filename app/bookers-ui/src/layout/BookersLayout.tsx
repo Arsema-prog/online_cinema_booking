@@ -31,7 +31,6 @@ export const BookersLayout: React.FC = () => {
           </nav>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-        
           <button onClick={logout} style={{ padding: "6px 10px", borderRadius: 4, border: "1px solid #4b5563", background: "transparent", color: "#e5e7eb", fontSize: 13, cursor: "pointer" }}>Logout</button>
         </div>
       </header>
