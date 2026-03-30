@@ -56,7 +56,7 @@ public class UserManagementService {
         }
         long total = usersResource().count(); // approximate
         List<UserDto> content = users.stream()
-                .map(this::mapToDto)
+                .map(user -> mapToDto(usersResource().get(user.getId()), user))
                 .collect(Collectors.toList());
         return new PageImpl<>(content, pageable, total);
     }

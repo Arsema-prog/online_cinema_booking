@@ -1,7 +1,6 @@
 package com.cinema.coreservice.repository;
 
 import com.cinema.coreservice.model.ScreeningSeat;
-import com.cinema.coreservice.model.enums.SeatStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,13 +25,9 @@ public interface ScreeningSeatRepository extends JpaRepository<ScreeningSeat, Lo
             @Param("screeningId") Long screeningId,
             @Param("seatIds") List<Long> seatIds);
 
-    List<ScreeningSeat> findByScreeningIdAndStatus(Long screeningId, SeatStatus status);
+    List<ScreeningSeat> findByScreeningIdAndIsBooked(Long screeningId, Boolean isBooked);
 
 
-    @Query("SELECT COUNT(ss) FROM ScreeningSeat ss WHERE ss.screening.id = :screeningId AND ss.status = :status")
-    long countByScreeningIdAndStatus(@Param("screeningId") Long screeningId, @Param("status") SeatStatus status);
-    Optional<ScreeningSeat> findByScreeningIdAndSeatId(Long screeningId, Long seatId);
-
-    // Add this method
-    long countByScreeningId(Long screeningId);
+    @Query("SELECT COUNT(ss) FROM ScreeningSeat ss WHERE ss.screening.id = :screeningId AND ss.isBooked = :isBooked")
+    long countByScreeningIdAndIsBooked(@Param("screeningId") Long screeningId, @Param("isBooked") Boolean isBooked);
 }

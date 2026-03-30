@@ -5,6 +5,7 @@ import com.cinema.coreservice.service.ScreenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,18 +28,21 @@ public class ScreenController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Screen> createScreen(@RequestBody Screen screen,
                                                @RequestParam int numberOfSeats) {
         return new ResponseEntity<>(screenService.createScreen(screen, numberOfSeats), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Screen> updateScreen(@PathVariable Long id,
                                                @RequestBody Screen updated) {
         return ResponseEntity.ok(screenService.updateScreen(id, updated));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Void> deleteScreen(@PathVariable Long id) {
         screenService.deleteScreen(id);
         return ResponseEntity.noContent().build();

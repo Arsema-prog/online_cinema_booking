@@ -64,6 +64,20 @@ public class RulesController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{ruleId}/deactivate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Void> deactivateRuleset(@PathVariable Long ruleId) {
+        rulesService.deactivateRuleSet(ruleId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{ruleId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Void> deleteRuleset(@PathVariable Long ruleId) {
+        rulesService.deleteRuleSet(ruleId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/evaluate/price")
     public ResponseEntity<PriceEvaluationResponse> evaluatePrice(@RequestBody PriceEvaluationRequest request) {
         PriceEvaluationResponse response = rulesService.evaluatePrice(request);

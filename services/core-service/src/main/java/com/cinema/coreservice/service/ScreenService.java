@@ -32,12 +32,22 @@ public class ScreenService {
         Screen savedScreen = screenRepository.save(screen);
 
         List<Seat> seats = new ArrayList<>();
-        for (int i = 1; i <= numberOfSeats; i++) {
-            Seat seat = new Seat();
-            seat.setScreen(savedScreen);
-            seat.setSeatNumber(("S" + i));
-            seats.add(seat);
+        int rows = screen.getRowsCount();
+        int seatsPerRow = screen.getSeatsPerRow();
+        
+        for (int r = 0; r < rows; r++) {
+            String rowLabel = String.valueOf((char) ('A' + (r % 26)));
+            for (int s = 1; s <= seatsPerRow; s++) {
+                Seat seat = new Seat();
+                seat.setScreen(savedScreen);
+                seat.setRowLabel(rowLabel);
+                seat.setSeatNumber(rowLabel + s);
+                seat.setIsAvailable(true);
+                seat.setSeatType("NORMAL");
+                seats.add(seat);
+            }
         }
+        
         seatRepository.saveAll(seats);
         savedScreen.setSeats(seats);
 
@@ -47,9 +57,12 @@ public class ScreenService {
     public Screen updateScreen(Long id, Screen updated) {
         Screen screen = getScreenById(id);
         screen.setName(updated.getName());
-        screen.setRows(updated.getRows());
+        screen.setRowsCount(updated.getRowsCount());
         screen.setSeatsPerRow(updated.getSeatsPerRow());
         screen.setBranch(updated.getBranch());
+        screen.setScreenNumber(updated.getScreenNumber());
+        screen.setCapacity(updated.getCapacity());
+        screen.setIsActive(updated.getIsActive() != null ? updated.getIsActive() : true);
         return screenRepository.save(screen);
     }
 
