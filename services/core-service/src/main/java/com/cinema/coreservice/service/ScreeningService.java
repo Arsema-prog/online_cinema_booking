@@ -46,7 +46,7 @@ public class ScreeningService {
             ScreeningSeat ss = new ScreeningSeat();
             ss.setScreening(savedScreening);
             ss.setSeat(seat);
-            ss.setStatus(SeatStatus.valueOf("AVAILABLE"));
+            ss.setIsBooked(false);
             screeningSeats.add(ss);
         }
         screeningSeatRepository.saveAll(screeningSeats);

@@ -67,6 +67,28 @@ public class RulesService {
     }
 
     @Transactional
+    public void deactivateRuleSet(Long id) {
+        RuleSet ruleSet = ruleSetRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("RuleSet not found"));
+        if (ruleSet.isActive()) {
+            ruleSet.setActive(false);
+            ruleSet.setActivatedAt(null);
+            ruleSetRepository.save(ruleSet);
+            this.kieContainer = null;
+        }
+    }
+
+    @Transactional
+    public void deleteRuleSet(Long id) {
+        RuleSet ruleSet = ruleSetRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("RuleSet not found"));
+        if (ruleSet.isActive()) {
+            throw new RuntimeException("Cannot delete an active ruleset");
+        }
+        ruleSetRepository.delete(ruleSet);
+    }
+
+    @Transactional
     public RuleSet uploadAndOptionallyActivate(String drlContent, String fileName, String version, boolean activate) {
         // Check version uniqueness
         if (version != null && ruleSetRepository.findByVersion(version).isPresent()) {
