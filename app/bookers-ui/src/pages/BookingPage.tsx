@@ -56,8 +56,7 @@ export const BookingPage: React.FC = () => {
     totalAmount,
     hasSelectedSeats,
     holdingSeats,
-    holdResponse,
-    setSelectedSeats
+    holdResponse
   } = useBooking(Number(screeningId));
 
   const handleManualRefresh = async () => {

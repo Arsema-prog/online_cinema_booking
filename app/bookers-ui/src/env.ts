@@ -4,6 +4,7 @@ interface ImportMetaEnv {
   VITE_SUPPORT_SERVICE_URL?: string;
   VITE_CORE_SERVICE_URL?: string;
   VITE_BOOKING_SERVICE_URL?: string;
+  VITE_PAYMENT_SERVICE_URL?: string;
   VITE_KEYCLOAK_URL?: string;
   VITE_KEYCLOAK_REALM?: string;
   VITE_KEYCLOAK_CLIENT_ID?: string;
@@ -16,6 +17,7 @@ export const env = {
   supportServiceUrl: (import.meta as any).env.VITE_SUPPORT_SERVICE_URL as string | undefined,
   coreServiceUrl: (import.meta as any).env.VITE_CORE_SERVICE_URL as string | 'http://localhost:8081',
   bookingServiceUrl: (import.meta as any).env.VITE_BOOKING_SERVICE_URL as string | undefined,
+  paymentServiceUrl: (import.meta as any).env.VITE_PAYMENT_SERVICE_URL as string | undefined,
   keycloakUrl: (import.meta as any).env.VITE_KEYCLOAK_URL as string,
   keycloakRealm: (import.meta as any).env.VITE_KEYCLOAK_REALM as string,
   keycloakClientId: (import.meta as any).env.VITE_KEYCLOAK_CLIENT_ID as string,

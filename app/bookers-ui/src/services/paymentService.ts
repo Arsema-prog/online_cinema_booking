@@ -1,6 +1,7 @@
 import { getAccessTokenGetter } from '../httpClient';
+import { env } from '../env';
 
-const API_BASE_URL = 'http://localhost:8083/api/payments';
+const API_BASE_URL = `${env.paymentServiceUrl ?? 'http://localhost:8083'}/api/payments`;
 
 /**
  * Service to handle payment processing for cinema bookings.
