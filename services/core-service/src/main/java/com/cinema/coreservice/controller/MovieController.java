@@ -22,6 +22,11 @@ public class MovieController {
         return ResponseEntity.ok(movieService.getAllMovies());
     }
 
+    @GetMapping("/trending")
+    public ResponseEntity<List<Movie>> getTrendingMovies() {
+        return ResponseEntity.ok(movieService.getTrendingMovies());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Movie> getMovieById(@PathVariable Long id) {
         return ResponseEntity.ok(movieService.getMovieById(id));

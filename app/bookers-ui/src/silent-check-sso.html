@@ -1,13 +1,11 @@
-<!-- public/silent-check-sso.html -->
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Silent Check SSO</title>
-</head>
-<body>
-  <script>
-    // This script handles the silent check-sso response
-    parent.postMessage(location.href, location.origin);
-  </script>
-</body>
+  <head>
+    <title>Silent Check SSO</title>
+  </head>
+  <body>
+    <script>
+      parent.postMessage(location.href, location.origin);
+    </script>
+  </body>
 </html>

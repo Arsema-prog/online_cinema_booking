@@ -1,5 +1,8 @@
 # --- Java / Maven ---
 target/
+*.jar
+*.war
+*.ear
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -62,6 +65,10 @@ pg_init/.DS_Store
 postgres_data/
 rabbitmq_data/
 minio_data/
+
+# --- Backups / Archives ---
+*.tgz
+*.tar.gz
 
 # --- Logs ---
 *.log

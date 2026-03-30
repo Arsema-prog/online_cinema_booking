@@ -29,6 +29,8 @@ const keycloak = new Keycloak({
   clientId: env.keycloakClientId
 });
 
+let initPromise: Promise<boolean> | null = null;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children
 }) => {
@@ -40,14 +42,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true;
 
-    keycloak
-      .init({
+    if (!initPromise) {
+      initPromise = keycloak.init({
         onLoad: "check-sso",
         silentCheckSsoRedirectUri:
           window.location.origin + "/silent-check-sso.html",
         pkceMethod: "S256",
         checkLoginIframe: false
-      })
+      });
+    }
+
+    initPromise
       .then(auth => {
         if (!isMounted) return;
         setIsAuthenticated(auth);

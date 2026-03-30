@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 @RestController
-@RequestMapping("/rules")
+@RequestMapping("/api/rules")
 @RequiredArgsConstructor
 public class RulesController {
 

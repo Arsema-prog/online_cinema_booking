@@ -7,13 +7,22 @@ export const setAccessTokenGetter = (getter: () => string | undefined) => {
   accessTokenGetter = getter;
 };
 
-const createClient = (baseURL?: string): AxiosInstance => {
+export const getAccessTokenGetter = () => {
+  return accessTokenGetter || (() => undefined);
+};
+
+const createClient = (baseURL?: string, name?: string): AxiosInstance => {
+  console.log(`🔧 Creating ${name || 'client'} with baseURL: ${baseURL}`);
+  
   const instance = axios.create({
     baseURL,
     timeout: 10000
   });
 
   instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    const fullUrl = `${config.baseURL}${config.url}`;
+    console.log(`🌐 ${name || 'client'} - ${config.method?.toUpperCase()} ${fullUrl}`);
+    
     if (accessTokenGetter) {
       const token = accessTokenGetter();
       if (token) {
@@ -24,8 +33,12 @@ const createClient = (baseURL?: string): AxiosInstance => {
   });
 
   instance.interceptors.response.use(
-    response => response,
+    response => {
+      console.log(`✅ ${name || 'client'} - Response from ${response.config.url}:`, response.status);
+      return response;
+    },
     error => {
+      console.error(`❌ ${name || 'client'} - Error from ${error.config?.url}:`, error.response?.status);
       if (error.response) {
         const { status, data } = error.response;
         const message =
@@ -41,6 +54,13 @@ const createClient = (baseURL?: string): AxiosInstance => {
   return instance;
 };
 
-export const coreClient = createClient(env.coreServiceUrl || env.apiGatewayUrl);
-export const bookingClient = createClient(env.bookingServiceUrl);
-export const supportClient = createClient(env.supportServiceUrl);
+console.log('📡 Environment values:', {
+  supportServiceUrl: env.supportServiceUrl,
+  coreServiceUrl: env.coreServiceUrl,
+  apiGatewayUrl: env.apiGatewayUrl,
+  bookingServiceUrl: env.bookingServiceUrl
+});
+
+export const coreClient = createClient(env.coreServiceUrl, 'coreClient');
+export const bookingClient = createClient(env.bookingServiceUrl, 'bookingClient');
+export const supportClient = createClient(env.supportServiceUrl, 'supportClient');

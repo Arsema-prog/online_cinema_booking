@@ -1,5 +1,6 @@
 package com.cinema.coreservice.model;
 
+import com.cinema.coreservice.model.enums.SeatType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
