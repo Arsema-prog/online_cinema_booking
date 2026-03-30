@@ -6,26 +6,14 @@ import {
   Route,
   Routes
 } from "react-router-dom";
-import { useAuth, useRoles } from "./auth";
+import { useAuth } from "./auth";
 import { env } from "./env";
-import { BookersRoutes } from "./bookers/routes";
-import { BackofficeRoutes } from "./backoffice/routes";
+import { AppRoutes as BookersUiRoutes } from "./bookers-ui/src/AppRoutes";
 
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <div style={{ padding: 16 }}>Loading...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Outlet />;
-};
-
-const RoleRoute: React.FC<{ allowedRoles: string[]; redirectTo?: string }> = ({
-  allowedRoles,
-  redirectTo
-}) => {
-  const { hasAnyRole } = useRoles();
-  if (!hasAnyRole(allowedRoles)) {
-    return <Navigate to={redirectTo || env.bookerHomePath} replace />;
-  }
   return <Outlet />;
 };
 
@@ -91,20 +79,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/bookers/*" element={<BookersRoutes />} />
-        </Route>
-
-        <Route element={<ProtectedRoute />}>
-          <Route
-            element={
-              <RoleRoute
-                allowedRoles={["ADMIN", "MANAGER"]}
-                redirectTo={env.bookerHomePath}
-              />
-            }
-          >
-            <Route path="/backoffice/*" element={<BackofficeRoutes />} />
-          </Route>
+          <Route path="/bookers/*" element={<BookersUiRoutes />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
