@@ -95,7 +95,38 @@ public class WebhookController {
 
     @Transactional
     void handleCheckoutSessionFailed(Event event) {
-        // Similar but set status FAILED and publish payment.failed
-        // ... (omitted for brevity, but similar pattern)
+        Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (session == null) {
+            log.error("Failed to deserialize failed-session payload from event {}", event.getId());
+            return;
+        }
+
+        String stripeEventId = event.getId();
+        String sessionId = session.getId();
+
+        // Idempotency: check if already processed
+        Optional<Payment> existing = paymentRepository.findByStripeEventId(stripeEventId);
+        if (existing.isPresent()) {
+            log.info("Event {} already processed, skipping", stripeEventId);
+            return;
+        }
+
+        Payment payment = paymentRepository.findByStripeSessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Payment not found for failed session: " + sessionId));
+
+        if (payment.getStatus() == Payment.PaymentStatus.SUCCEEDED) {
+            log.warn("Ignoring failure webhook for already succeeded payment {}", payment.getId());
+            return;
+        }
+
+        payment.setStripeEventId(stripeEventId);
+        payment.setStatus(Payment.PaymentStatus.FAILED);
+        String failureReason = "Stripe event: " + event.getType();
+        payment.setFailureReason(failureReason);
+        paymentRepository.save(payment);
+
+        eventPublisher.publishPaymentFailed(payment, failureReason);
+
+        log.info("Processed payment failure for session {}", sessionId);
     }
 }
