@@ -1,90 +1,78 @@
-// api/bookingApi.ts
-import axios from "axios";
-import { env } from "../env";
+import axios from 'axios';
+import { getAccessTokenGetter } from '../httpClient';
 
-// Export the ScreeningSeat interface
 export interface ScreeningSeat {
   id: number;
-  status: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'CANCELLED';
-  price: number;
   seat: {
     id: number;
     seatNumber: string;
     rowLabel: string;
-    isAvailable: boolean;
   };
-}
-
-export interface HoldRequest {
-  userId: string;
-  showId: string;
-  seatIds: string[];
+  status: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'CANCELLED';
+  price: number;
 }
 
 export interface HoldResponse {
-  bookingId: string;  
+  bookingId: string;
   status: string;
   heldSeatIds: string[];
   expiresAt: string;
+  expiresAtEpochMs?: number;
 }
 
-// Export this function
-export const getScreeningSeats = async (screeningId: number): Promise<ScreeningSeat[]> => {
-  const response = await axios.get(`${env.coreServiceUrl}/screening-seats/screening/${screeningId}`);
-  return response.data;
-};
+export interface BookingSeatAvailability {
+  seatId: string;
+  status: string;
+}
 
-// api/bookingApi.ts - updated holdSeats function
-export const holdSeats = async (showId: string, seatIds: string[]): Promise<HoldResponse> => {
-  // Get user ID from auth context - replace with actual user ID from your auth system
-  const userId = "123e4567-e89b-12d3-a456-426614174000"; // Example UUID
-  
-  const request: HoldRequest = {
-    userId: userId,
-    showId: showId,
-    seatIds: seatIds
-  };
-  
-  console.log('Sending hold request:', JSON.stringify(request, null, 2));
-  
+const resolveUserIdFromToken = (): string => {
+  const token = getAccessTokenGetter()();
+  if (!token) return "123e4567-e89b-12d3-a456-426614174000";
+
   try {
-    const response = await axios.post(
-      `${env.bookingServiceUrl}/bookings/hold`,
-      request,
-      { 
-        headers: { 
-          'Content-Type': 'application/json'
-        } 
-      }
-    );
-    console.log('Hold response:', response.data);
-    return response.data; // This now matches the HoldResponse interface
-  } catch (error: any) {
-    console.error('Error response:', error.response?.data);
-    console.error('Error status:', error.response?.status);
-    throw error;
+    const payload = token.split('.')[1];
+    if (!payload) return "123e4567-e89b-12d3-a456-426614174000";
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return decoded?.sub || "123e4567-e89b-12d3-a456-426614174000";
+  } catch {
+    return "123e4567-e89b-12d3-a456-426614174000";
   }
 };
 
-
-export const confirmBooking = async (bookingId: string, userEmail: string): Promise<void> => {
-  if (!bookingId) {
-    throw new Error("Booking ID is required");
-  }
-  console.log('Confirming booking with ID:', bookingId, 'for user:', userEmail);
-  await axios.post(`${env.bookingServiceUrl}/bookings/${bookingId}/confirm`, { userEmail });
-};
-
-// api/bookingApi.ts
-export const cancelBooking = async (bookingId: string): Promise<void> => {
-  if (!bookingId) {
-    throw new Error("Booking ID is required");
-  }
-  console.log('Cancelling booking with ID:', bookingId);
-  await axios.post(`${env.bookingServiceUrl}/bookings/${bookingId}/cancel`);
-};
-
-export const getAvailableSeats = async (showId: string): Promise<any[]> => {
-  const response = await axios.get(`${env.bookingServiceUrl}/bookings/shows/${showId}/seats`);
+// Get screening seats
+export const getScreeningSeats = async (screeningId: number): Promise<ScreeningSeat[]> => {
+  const response = await axios.get(`http://localhost:8081/screening-seats/screening/${screeningId}`);
   return response.data;
+};
+
+// Get seat UUID mapping for a screening
+export const getSeatUuidMapping = async (screeningId: number): Promise<Record<number, string>> => {
+  const response = await axios.get(`http://localhost:8081/screening-seats/screening/${screeningId}/seat-uuids`);
+  return response.data;
+};
+
+// Hold seats
+export const holdSeats = async (showId: string, seatIds: string[]): Promise<HoldResponse> => {
+  const response = await axios.post('http://localhost:8082/bookings/hold', {
+    showId,
+    seatIds,
+    userId: resolveUserIdFromToken()
+  });
+  return response.data;
+};
+
+export const getBookingSeatAvailability = async (showId: string): Promise<BookingSeatAvailability[]> => {
+  const response = await axios.get(`http://localhost:8082/bookings/shows/${showId}/seats`);
+  return response.data;
+};
+
+// Confirm booking
+export const confirmBooking = async (bookingId: string, userEmail?: string): Promise<void> => {
+  const params = userEmail && userEmail.trim() ? { userEmail } : undefined;
+  await axios.post(`http://localhost:8082/bookings/${bookingId}/confirm`, null, { params });
+};
+
+// Cancel booking
+export const cancelBooking = async (bookingId: string): Promise<void> => {
+  await axios.post(`http://localhost:8082/bookings/${bookingId}/cancel`);
 };

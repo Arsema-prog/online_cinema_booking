@@ -8,35 +8,165 @@
   </head>
   <body>
     <script>
-      // Clean up URL fragment on page load
-      if (window.location.hash && (
-        window.location.hash.includes('error=') || 
-        window.location.hash.includes('code=') || 
-        window.location.hash.includes('state=')
-      )) {
-        window.history.replaceState(
-          null, 
-          document.title, 
-          window.location.pathname + window.location.search
-        );
-        console.log('URL fragment cleaned up by inline script');
-      }
+      // Enhanced debugging - capture all navigation attempts
+      (function() {
+        console.log('🔷 Debug script initialized at', new Date().toISOString());
+        
+        // Store original methods
+        const originalAssign = window.location.assign;
+        const originalReplace = window.location.replace;
+        const originalReload = window.location.reload;
+        
+        // Override location.assign
+        window.location.assign = function(url) {
+          console.log('🚨 LOCATION.ASSIGN called');
+          console.log('   URL:', url);
+          console.log('   Stack trace:', new Error().stack);
+          console.log('   Current URL:', window.location.href);
+          return originalAssign.call(this, url);
+        };
+        
+        // Override location.replace
+        window.location.replace = function(url) {
+          console.log('🚨 LOCATION.REPLACE called');
+          console.log('   URL:', url);
+          console.log('   Stack trace:', new Error().stack);
+          console.log('   Current URL:', window.location.href);
+          return originalReplace.call(this, url);
+        };
+        
+        // Override location.reload
+        window.location.reload = function() {
+          console.log('🚨 LOCATION.RELOAD called');
+          console.log('   Stack trace:', new Error().stack);
+          console.log('   Current URL:', window.location.href);
+          return originalReload.call(this);
+        };
+        
+        // Track history changes
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = function(state, title, url) {
+          console.log('📝 HISTORY.PUSHSTATE called');
+          console.log('   URL:', url);
+          console.log('   Stack trace:', new Error().stack);
+          return originalPushState.call(this, state, title, url);
+        };
+        
+        history.replaceState = function(state, title, url) {
+          console.log('📝 HISTORY.REPLACESTATE called');
+          console.log('   URL:', url);
+          console.log('   Stack trace:', new Error().stack);
+          return originalReplaceState.call(this, state, title, url);
+        };
+        
+        // Track form submissions
+        document.addEventListener('submit', function(e) {
+          console.log('📝 FORM SUBMITTED');
+          console.log('   Form action:', e.target.action);
+          console.log('   Form method:', e.target.method);
+          console.log('   Stack trace:', new Error().stack);
+        }, true);
+        
+        // Track all click events on links
+        document.addEventListener('click', function(e) {
+          const anchor = e.target.closest('a');
+          if (anchor && anchor.href && !anchor.href.startsWith('javascript:')) {
+            console.log('🔗 LINK CLICKED');
+            console.log('   Href:', anchor.href);
+            console.log('   Target:', anchor.target);
+            console.log('   Stack trace:', new Error().stack);
+          }
+        }, true);
+        
+        // Track when page visibility changes
+        document.addEventListener('visibilitychange', function() {
+          console.log('👁️ VISIBILITY CHANGE:', document.visibilityState);
+          console.log('   Current URL:', window.location.href);
+        });
+        
+        // Track beforeunload with more details
+        window.addEventListener('beforeunload', function(e) {
+          console.log('🔴 PAGE UNLOADING at', new Date().toISOString());
+          console.log('🔴 Current URL:', window.location.href);
+          console.log('🔴 Referrer:', document.referrer);
+          console.log('🔴 Stack trace:', new Error().stack);
+          
+          // Log all active fetch requests
+          if (window.performance && window.performance.getEntriesByType) {
+            const resources = window.performance.getEntriesByType('resource');
+            console.log('🔴 Recent network requests:');
+            resources.slice(-10).forEach(r => {
+              console.log('   -', r.name, r.initiatorType);
+            });
+          }
+        });
+        
+        // Track when page loads
+        window.addEventListener('load', function() {
+          console.log('🟢 PAGE LOADED at', new Date().toISOString());
+          console.log('🟢 Current URL:', window.location.href);
+          console.log('🟢 Previous URL:', document.referrer || 'Direct/Bookmark');
+          
+          // Log any URL parameters
+          const params = new URLSearchParams(window.location.search);
+          if (params.toString()) {
+            console.log('🟢 URL Parameters:', Object.fromEntries(params));
+          }
+          
+          // Log any hash fragments
+          if (window.location.hash) {
+            console.log('🟢 Hash fragment:', window.location.hash);
+          }
+        });
+        
+        // Track unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+          console.error('💥 UNHANDLED PROMISE REJECTION');
+          console.error('   Reason:', event.reason);
+          console.error('   Stack:', event.reason?.stack || new Error().stack);
+        });
+        
+        // Track errors
+        window.addEventListener('error', function(event) {
+          console.error('💥 GLOBAL ERROR');
+          console.error('   Message:', event.message);
+          console.error('   File:', event.filename);
+          console.error('   Line:', event.lineno);
+          console.error('   Stack:', event.error?.stack);
+        });
+        
+        // Log when the page is fully interactive
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('🟢 DOM CONTENT LOADED at', new Date().toISOString());
+          });
+        } else {
+          console.log('🟢 DOM already loaded');
+        }
+        
+        console.log('🔷 Debug script ready - watching for all navigation events');
+      })();
     </script>
-    <div id="root"></div>
-    <script>
-  // Log when page is about to unload/reload
-  window.addEventListener('beforeunload', function() {
-    console.log('🔴 Page is about to unload/reload at', new Date().toISOString());
-    console.log('🔴 Current URL:', window.location.href);
-    console.log('🔴 Stack trace:', new Error().stack);
-  });
 
-  // Log when page loads
-  window.addEventListener('load', function() {
-    console.log('🟢 Page loaded at', new Date().toISOString());
-    console.log('🟢 Current URL:', window.location.href);
-  });
-</script>
+    <!-- URL fragment cleanup removed: Keycloak JS needs to read the hash first. Keycloak automatically clears the hash after parsing it. -->
+
+    <div id="root"></div>
+
+    <!-- Log when page is about to unload/reload (redundant but keeping) -->
+    <script>
+      window.addEventListener('beforeunload', function() {
+        console.log('🔴 BEFOREUNLOAD (second listener) at', new Date().toISOString());
+        console.log('🔴 Current URL:', window.location.href);
+      });
+
+      window.addEventListener('load', function() {
+        console.log('🟢 LOAD (second listener) at', new Date().toISOString());
+        console.log('🟢 Current URL:', window.location.href);
+      });
+    </script>
+
     <script type="module" src="././src/main.tsx"></script>
   </body>
 </html>

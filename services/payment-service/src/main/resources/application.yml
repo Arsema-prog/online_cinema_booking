@@ -1,18 +1,52 @@
+#server:
+#  port: 8083
+#
+#spring:
+#  application:
+#    name: payment-service
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+#      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+#  datasource:
+#    url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=payment
+#    username: postgres
+#    password: ${POSTGRES_PASSWORD:postgres}
+#    driver-class-name: org.postgresql.Driver
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+#stripe:
+#  api-key: ${STRIPE_SECRET_KEY}
+#  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+#
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://discovery-service:8761/eureka/
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info
+#  endpoint:
+#    health:
+#      show-details: always
 server:
   port: 8083
 
 spring:
   application:
     name: payment-service
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs
   datasource:
     url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=payment
     username: postgres
-    password: ${POSTGRES_PASSWORD:postgres}
+    password: postgres
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -21,14 +55,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
 stripe:
-  api-key: ${STRIPE_SECRET_KEY}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  api-key: sk_test_mock
+  webhook-secret: whsec_mock
 
 eureka:
   client:
-    service-url:
-      defaultZone: http://discovery-service:8761/eureka/
+    enabled: false
 
 management:
   endpoints:

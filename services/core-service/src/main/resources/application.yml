@@ -9,6 +9,10 @@ spring:
     username: postgres
     password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: core
+    locations: classpath:db.migration
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,6 +21,12 @@ spring:
       hibernate:
         format_sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: 5672
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 eureka:
   client:
@@ -31,3 +41,9 @@ management:
   endpoint:
     health:
       show-details: always
+
+minio:
+  endpoint: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ROOT_USER:minioadmin}
+  secret-key: ${MINIO_ROOT_PASSWORD:minioadmin}
+  bucket: ${MINIO_BUCKET:posters}
