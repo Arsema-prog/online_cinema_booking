@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:16
-    container_name: cinema_postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -22,7 +21,6 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: cinema_rabbitmq
     hostname: rabbitmq
     ports:
       - "5672:5672"
@@ -35,13 +33,12 @@ services:
       - cinema_network
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      interval: 20s
+      timeout: 15s
+      retries: 20
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    container_name: cinema_keycloak
     command: start-dev
     ports:
       - "8180:8080"
@@ -62,13 +59,12 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "bash -c \"exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'\""]
       interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 120s
+      timeout: 10s
+      retries: 30
+      start_period: 240s
 
   minio:
     image: minio/minio
-    container_name: cinema_minio
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -86,7 +82,6 @@ services:
 
   discovery-service:
     build: ./services/discovery-service
-    container_name: discovery-service
     ports:
       - "8761:8761"
     networks:
@@ -94,12 +89,12 @@ services:
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
       interval: 10s
-      timeout: 5s
-      retries: 10
+      timeout: 10s
+      retries: 30
+      start_period: 180s
 
   api-gateway:
     build: ./services/api-gateway
-    container_name: api-gateway
     ports:
       - "8090:8090"
     depends_on:
@@ -112,7 +107,6 @@ services:
 
   core-service:
     build: ./services/core-service
-    container_name: core-service
     ports:
       - "8081:8081"
     depends_on:
@@ -124,8 +118,7 @@ services:
       - cinema_network
 
   booking-service:
-    build: ./services/booking_service
-    container_name: booking-service
+    build: ./services/booking-service
     ports:
       - "8082:8082"
     depends_on:
@@ -133,14 +126,21 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      minio:
+        condition: service_healthy
       discovery-service:
         condition: service_healthy
+    environment:
+      - CORE_SERVICE_URL=http://core-service:8081
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_USER_HISTORY_BUCKET=user-history
     networks:
       - cinema_network
 
   payment-service:
     build: ./services/payment-service
-    container_name: payment-service
     ports:
       - "8083:8083"
     depends_on:
@@ -156,7 +156,6 @@ services:
 
   support-service:
     build: ./services/support-service
-    container_name: support-service
     ports:
       - "8084:8084"
     depends_on:
@@ -173,7 +172,6 @@ services:
     environment:
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     networks:
       - cinema_network
 

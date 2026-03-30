@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ScreeningSeatRepository extends JpaRepository<ScreeningSeat, Long> {
@@ -30,4 +31,8 @@ public interface ScreeningSeatRepository extends JpaRepository<ScreeningSeat, Lo
 
     @Query("SELECT COUNT(ss) FROM ScreeningSeat ss WHERE ss.screening.id = :screeningId AND ss.status = :status")
     long countByScreeningIdAndStatus(@Param("screeningId") Long screeningId, @Param("status") SeatStatus status);
+    Optional<ScreeningSeat> findByScreeningIdAndSeatId(Long screeningId, Long seatId);
+
+    // Add this method
+    long countByScreeningId(Long screeningId);
 }
