@@ -1,5 +1,6 @@
 package com.cinema.coreservice.model;
 
+import com.cinema.coreservice.model.enums.SeatType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -32,6 +33,10 @@ public class Seat {
 
     @Column(name = "is_available")
     private Boolean isAvailable;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seat_type")
+    private SeatType type = SeatType.NORMAL;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

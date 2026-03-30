@@ -13,9 +13,14 @@ import java.util.List;
 public class MovieService {
 
     private final MovieRepository movieRepository;
+    private final MinioService minioService;
 
     public List<Movie> getAllMovies() {
         return movieRepository.findAll();
+    }
+
+    public List<Movie> getTrendingMovies() {
+        return movieRepository.findTop5ByOrderByIdDesc();
     }
 
     public Movie getMovieById(Long id) {
@@ -24,6 +29,10 @@ public class MovieService {
     }
 
     public Movie createMovie(Movie movie) {
+        if (movie.getPosterUrl() != null && !movie.getPosterUrl().isEmpty() && movie.getPosterUrl().startsWith("http")) {
+            String url = minioService.fetchAndUploadImage(movie.getPosterUrl());
+            movie.setPosterUrl(url);
+        }
         return movieRepository.save(movie);
     }
 
@@ -32,6 +41,12 @@ public class MovieService {
         movie.setTitle(updated.getTitle());
         movie.setGenre(updated.getGenre());
         movie.setDuration(updated.getDuration());
+        
+        if (updated.getPosterUrl() != null && !updated.getPosterUrl().equals(movie.getPosterUrl())) {
+            String url = minioService.fetchAndUploadImage(updated.getPosterUrl());
+            movie.setPosterUrl(url);
+        }
+        
         return movieRepository.save(movie);
     }
 
