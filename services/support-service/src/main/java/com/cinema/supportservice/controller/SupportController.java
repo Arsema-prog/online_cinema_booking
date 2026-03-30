@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/support")
+@RequestMapping("/api/support")
 @RequiredArgsConstructor
 public class SupportController {
 

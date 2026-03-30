@@ -1,0 +1,56 @@
+table_name,column_name,data_type,is_nullable
+branch,id,bigint,NO
+branch,name,character varying,NO
+branch,address,text,NO
+branch,city,character varying,NO
+branch,country,character varying,NO
+branch,total_screens,integer,YES
+branch,is_active,boolean,YES
+branch,created_at,timestamp without time zone,NO
+branch,updated_at,timestamp without time zone,NO
+movie,id,bigint,NO
+movie,title,character varying,NO
+movie,genre,character varying,NO
+movie,duration,integer,NO
+movie,description,text,YES
+movie,director,character varying,YES
+movie,release_date,date,YES
+movie,rating,numeric,YES
+movie,poster_url,character varying,YES
+movie,base_price,numeric,YES
+movie,is_active,boolean,YES
+movie,created_at,timestamp without time zone,NO
+movie,updated_at,timestamp without time zone,NO
+screen,id,bigint,NO
+screen,branch_id,bigint,NO
+screen,name,character varying,NO
+screen,screen_number,integer,NO
+screen,capacity,integer,NO
+screen,rows_count,integer,NO
+screen,seats_per_row,integer,NO
+screen,is_active,boolean,YES
+screen,created_at,timestamp without time zone,NO
+screen,updated_at,timestamp without time zone,NO
+screening,id,bigint,NO
+screening,movie_id,bigint,NO
+screening,screen_id,bigint,NO
+screening,start_time,timestamp without time zone,NO
+screening,end_time,timestamp without time zone,NO
+screening,price,numeric,NO
+screening,available_seats,integer,YES
+screening,total_seats,integer,YES
+screening,created_at,timestamp without time zone,NO
+screening,updated_at,timestamp without time zone,NO
+screening_seat,id,bigint,NO
+screening_seat,screening_id,bigint,NO
+screening_seat,seat_id,bigint,NO
+screening_seat,is_booked,boolean,YES
+screening_seat,created_at,timestamp without time zone,YES
+screening_seat,updated_at,timestamp without time zone,YES
+seat,id,bigint,NO
+seat,screen_id,bigint,NO
+seat,seat_number,character varying,NO
+seat,row_label,character varying,NO
+seat,is_available,boolean,YES
+seat,created_at,timestamp without time zone,NO
+seat,updated_at,timestamp without time zone,NO

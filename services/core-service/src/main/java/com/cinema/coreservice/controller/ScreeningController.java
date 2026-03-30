@@ -22,6 +22,10 @@ public class ScreeningController {
         return screeningRepository.findAll();
     }
 
+    @GetMapping("/movie/{movieId}")
+    public List<Screening> getScreeningsByMovie(@PathVariable Long movieId) {
+        return screeningRepository.findByMovieId(movieId);
+    }
     @GetMapping("/{id}")
     public ResponseEntity<Screening> getById(@PathVariable Long id) {
         return screeningRepository.findById(id)

@@ -11,7 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityNotFoundException;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -24,6 +27,30 @@ public class ScreeningSeatService {
 
     public List<ScreeningSeat> getSeatsByScreeningId(Long screeningId) {
         return screeningSeatRepository.findByScreeningIdOrderBySeatRowLabelSeatNumber(screeningId);
+    }
+
+    public List<Object[]> getSeatMappingByScreeningId(Long screeningId) {
+        List<Object[]> result = new ArrayList<>();
+
+        List<ScreeningSeat> screeningSeats = screeningSeatRepository.findByScreeningId(screeningId);
+
+        for (ScreeningSeat screeningSeat : screeningSeats) {
+            Long coreSeatId = screeningSeat.getSeat().getId();
+            // Generate an explicit UUID so booking-service XOR extraction results directly in the coreSeatId
+            String bookingSeatUuid = new UUID(0L, coreSeatId).toString();
+            result.add(new Object[]{coreSeatId, bookingSeatUuid});
+        }
+
+        return result;
+    }
+
+    public List<Object[]> getSeatMapping(UUID showId) {
+        Long screeningId = findScreeningIdByUuid(showId);
+        return getSeatMappingByScreeningId(screeningId);
+    }
+
+    private String generateBookingSeatUuid(UUID showId, Long coreSeatId) {
+        return new UUID(0L, coreSeatId).toString();
     }
 
     @Transactional
@@ -143,28 +170,54 @@ public class ScreeningSeatService {
         Screening screening = screeningRepository.findById(screeningId)
                 .orElseThrow(() -> new EntityNotFoundException("Screening not found: " + screeningId));
 
-        int oldCount = screening.getAvailableSeats();
+        // Handle null values safely
+        int oldCount = screening.getAvailableSeats() != null ? screening.getAvailableSeats() : 0;
         screening.setAvailableSeats((int) availableCount);
+
+        // Also set total_seats if null
+        if (screening.getTotalSeats() == null) {
+            long totalCount = screeningSeatRepository.countByScreeningId(screeningId);
+            screening.setTotalSeats((int) totalCount);
+        }
+
         screeningRepository.save(screening);
 
         log.info("Updated screening {} available seats from {} to {}",
                 screeningId, oldCount, availableCount);
     }
-
     private Long findScreeningIdByUuid(UUID showUuid) {
         String uuidStr = showUuid.toString();
-        String lastPart = uuidStr.substring(uuidStr.lastIndexOf('-') + 1);
-        String numericPart = lastPart.replaceFirst("^0+(?!$)", "");
-        if (numericPart.isEmpty()) {
-            numericPart = "0";
+        log.debug("Extracting screening ID from UUID: {}", uuidStr);
+
+        // Try to extract numeric part from the UUID
+        // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        // The last group is what we want for screening ID
+
+        String[] parts = uuidStr.split("-");
+        if (parts.length >= 5) {
+            String lastPart = parts[4];
+            // Remove leading zeros
+            String numericPart = lastPart.replaceFirst("^0+(?!$)", "");
+            if (numericPart.isEmpty()) {
+                numericPart = "0";
+            }
+            try {
+                return Long.parseLong(numericPart);
+            } catch (NumberFormatException e) {
+                log.warn("Failed to parse numeric part: {}", numericPart);
+            }
         }
-        try {
-            return Long.parseLong(numericPart);
-        } catch (NumberFormatException e) {
-            log.error("Failed to extract screening ID from UUID: {}", showUuid);
-            throw new RuntimeException("Invalid screening UUID format: " + showUuid);
+
+        // If that fails, try to extract digits from the entire UUID
+        String digitsOnly = uuidStr.replaceAll("[^0-9]", "");
+        if (!digitsOnly.isEmpty()) {
+            try {
+                // Take the first few digits that might represent the screening ID
+                return Long.parseLong(digitsOnly.substring(0, Math.min(5, digitsOnly.length())));
+            } catch (NumberFormatException e) {
+                log.warn("Failed to parse digits: {}", digitsOnly);
+            }
         }
-    }
 
     public long countSeatsByIsBooked(Long screeningId, Boolean isBooked) {
         return screeningSeatRepository.countByScreeningIdAndIsBooked(screeningId, isBooked);
