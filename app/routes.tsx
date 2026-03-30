@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth1";
 import { env } from "./env";
-import { BookersRoutes } from "./bookers/routes";
+import { AppRoutes as BookersUiRoutes } from "./bookers-ui/src/AppRoutes";
 
 // Loading component with better UX
 const LoadingScreen = () => (
@@ -269,7 +269,7 @@ export const AppRoutes: React.FC = () => {
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/bookers/*" element={<BookersRoutes />} />
+        <Route path="/bookers/*" element={<BookersUiRoutes />} />
       </Route>
 
       {/* Redirects */}
