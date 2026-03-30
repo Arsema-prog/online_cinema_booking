@@ -1,7 +1,10 @@
 // hooks/useBooking.ts
 import { useState, useEffect, useCallback } from "react";
+import { getAccessTokenGetter } from "../httpClient";
 import { 
   getScreeningSeats, 
+  getSeatUuidMapping,
+  getBookingSeatAvailability,
   holdSeats, 
   confirmBooking, 
   cancelBooking,
@@ -9,61 +12,109 @@ import {
   HoldResponse 
 } from "../api/bookingApi";
 
-export const useBooking = (screeningId: number, showId: string) => {
+export const useBooking = (screeningId: number) => {
   const [seats, setSeats] = useState<ScreeningSeat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<ScreeningSeat[]>([]);
   const [holdResponse, setHoldResponse] = useState<HoldResponse | null>(null);
   const [holdingSeats, setHoldingSeats] = useState(false);
+  const [seatUuidMap, setSeatUuidMap] = useState<Record<number, string>>({});
+  const [showId, setShowId] = useState<string>('');
 
-  // Load seats from core-service
-  // In useBooking.ts, update the loadSeats function
-useEffect(() => {
-  const loadSeats = async () => {
-    try {
-      setLoading(true);
-      const data = await getScreeningSeats(screeningId);
-      console.log('Raw seat data from API:', data);
-      
-      // Log unique statuses found
-      const statuses = [...new Set(data.map(seat => seat.status))];
-      console.log('Unique statuses in data:', statuses);
-      
-      // Log sample of non-available seats
-      const nonAvailable = data.filter(seat => seat.status !== 'AVAILABLE');
-      console.log('Non-available seats:', nonAvailable);
-      
-      setSeats(data);
-    } catch (err) {
-      setError("Failed to load seats");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const normalizeStatus = (status: string): ScreeningSeat['status'] => {
+    const normalized = status?.toUpperCase();
+    if (normalized === 'BOOKED') return 'RESERVED';
+    if (normalized === 'HELD') return 'HELD';
+    if (normalized === 'RESERVED') return 'RESERVED';
+    if (normalized === 'CANCELLED') return 'CANCELLED';
+    return 'AVAILABLE';
   };
 
-  if (screeningId) {
-    loadSeats();
-  }
-}, [screeningId]);
+  const mergeSeatStatuses = useCallback(
+    async (
+      screeningSeats: ScreeningSeat[],
+      uuidMapping: Record<number, string>,
+      currentShowId: string
+    ): Promise<ScreeningSeat[]> => {
+      try {
+        const availability = await getBookingSeatAvailability(currentShowId);
+        const statusByUuid = new Map(
+          availability.map(item => [item.seatId, normalizeStatus(item.status)])
+        );
 
-  // Refresh seats function - expose this
+        return screeningSeats.map(seat => {
+          const seatUuid = uuidMapping[seat.seat.id];
+          if (!seatUuid) return seat;
+
+          const bookingStatus = statusByUuid.get(seatUuid);
+          if (!bookingStatus) return seat;
+
+          return { ...seat, status: bookingStatus };
+        });
+      } catch (err) {
+        console.warn('Failed to merge booking-service seat statuses, using core-service statuses only.', err);
+        return screeningSeats;
+      }
+    },
+    []
+  );
+
+  // Load seats and UUID mapping
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [seatsData, uuidMapping] = await Promise.all([
+          getScreeningSeats(screeningId),
+          getSeatUuidMapping(screeningId)
+        ]);
+        
+        console.log('Seats loaded:', seatsData.length);
+        console.log('UUID mapping loaded:', Object.keys(uuidMapping).length);
+        
+        const paddedId = screeningId.toString().padStart(12, '0');
+        const generatedShowId = `00000000-0000-0000-0000-${paddedId}`;
+        const mergedSeats = await mergeSeatStatuses(seatsData, uuidMapping, generatedShowId);
+
+        setSeats(mergedSeats);
+        setSeatUuidMap(uuidMapping);
+        setShowId(generatedShowId);
+        
+      } catch (err) {
+        console.error('Failed to load seat data:', err);
+        setError("Failed to load seat data. Please refresh the page.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (screeningId) {
+      loadData();
+    }
+  }, [screeningId]);
+
   const refreshSeats = useCallback(async () => {
     try {
       const data = await getScreeningSeats(screeningId);
-      setSeats(data);
-      return data;
+      if (!showId || Object.keys(seatUuidMap).length === 0) {
+        setSeats(data);
+        return data;
+      }
+
+      const merged = await mergeSeatStatuses(data, seatUuidMap, showId);
+      setSeats(merged);
+      return merged;
     } catch (err) {
       console.error('Failed to refresh seats', err);
       throw err;
     }
-  }, [screeningId]);
+  }, [screeningId, seatUuidMap, showId, mergeSeatStatuses]);
 
-  // Toggle seat selection
   const toggleSeat = useCallback((seat: ScreeningSeat) => {
     if (seat.status !== 'AVAILABLE') return;
-
     setSelectedSeats(prev => {
       const isSelected = prev.some(s => s.id === seat.id);
       if (isSelected) {
@@ -74,98 +125,125 @@ useEffect(() => {
     });
   }, []);
 
-  // Hold seats using booking-service
- 
-const holdSelectedSeats = useCallback(async () => {
-  if (selectedSeats.length === 0) return;
-  
-  setHoldingSeats(true);
-  try {
-    const seatUuids = selectedSeats.map(s => generateUuidFromId(s.seat.id));
-    
-    console.log('Holding seats with UUIDs:', seatUuids);
-    console.log('For show:', showId);
-    
-    const response = await holdSeats(showId, seatUuids);
-    console.log('Hold response received:', response);
-    
-    setHoldResponse(response);
-    
-    // Update local seat status to HELD
-    setSeats(prev => 
-      prev.map(seat => {
-        if (selectedSeats.some(s => s.id === seat.id)) {
-          return { ...seat, status: 'HELD' as const };
-        }
-        return seat;
-      })
-    );
-    
-    return response;
-  } catch (err: any) {
-    console.error('Hold error:', err.response?.data || err.message);
-    
-    if (err.response?.status === 409 || err.response?.data?.includes('duplicate') || err.response?.data?.includes('already exists')) {
-      alert('Some seats are no longer available. Refreshing seat map...');
-      await refreshSeats();
-      setSelectedSeats([]);
-    } else {
-      setError(err.response?.data?.message || "Failed to hold seats");
+  const holdSelectedSeats = useCallback(async () => {
+    if (selectedSeats.length === 0) {
+      setError("Please select at least one seat");
+      return;
     }
-    throw err;
-  } finally {
-    setHoldingSeats(false);
-  }
-}, [showId, selectedSeats, refreshSeats]);
-  // Confirm booking
-
-const confirmSelectedBooking = useCallback(async () => {
-  if (!holdResponse) {
-    throw new Error("No hold found");
-  }
-
-  console.log('Confirming booking with ID:', holdResponse.bookingId);
-
-  try {
-    // Get user email from your auth context
-    const userEmail = "arsematesfaye019@gmail.com"; // Replace with actual user email
     
-    console.log('Calling confirmBooking API...');
-    await confirmBooking(holdResponse.bookingId, userEmail);
-    console.log('ConfirmBooking API call successful');
+    setHoldingSeats(true);
+    setError(null);
     
-    // Update local seat status to RESERVED
-    setSeats(prev => 
-      prev.map(seat => {
-        if (selectedSeats.some(s => s.id === seat.id)) {
-          return { ...seat, status: 'RESERVED' as const };
+    try {
+      const coreSeatIds = selectedSeats.map(s => s.seat.id);
+      const seatUuids = coreSeatIds.map(id => seatUuidMap[id]);
+      
+      const missingUuids = coreSeatIds.filter((id, index) => !seatUuids[index]);
+      if (missingUuids.length > 0) {
+        console.error('Missing UUID for seats:', missingUuids);
+        setError('Seat mapping error. Please refresh the page.');
+        setHoldingSeats(false);
+        return;
+      }
+      
+      console.log('Holding seats:', coreSeatIds);
+      console.log('With UUIDs:', seatUuids);
+      console.log('For show:', showId);
+      
+      const response = await holdSeats(showId, seatUuids);
+      console.log('Hold successful:', response);
+      
+      setHoldResponse(response);
+      
+      setSeats(prev => 
+        prev.map(seat => {
+          if (selectedSeats.some(s => s.id === seat.id)) {
+            return { ...seat, status: 'HELD' as const };
+          }
+          return seat;
+        })
+      );
+      
+      return response;
+    } catch (err: any) {
+      console.error('Hold error:', err.response?.data || err.message);
+      
+      if (err.response?.status === 409) {
+        setError('Some seats are no longer available. Refreshing seat map...');
+        await refreshSeats();
+        setSelectedSeats([]);
+      } else {
+        setError(err.response?.data?.message || "Failed to hold seats. Please try again.");
+      }
+      throw err;
+    } finally {
+      setHoldingSeats(false);
+    }
+  }, [showId, selectedSeats, seatUuidMap, refreshSeats]);
+
+  const confirmSelectedBooking = useCallback(async () => {
+    if (!holdResponse) {
+      setError("No active hold found");
+      return;
+    }
+
+    setHoldingSeats(true);
+    
+    try {
+      let userEmail = "";
+      try {
+        const token = getAccessTokenGetter()();
+        if (token) {
+          const payload = token.split(".")[1];
+          if (payload) {
+            const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+            const tokenEmail = decoded?.email;
+            if (typeof tokenEmail === "string" && tokenEmail.includes("@")) {
+              userEmail = tokenEmail;
+            }
+          }
         }
-        return seat;
-      })
-    );
-    
-    // Clear selections and hold response
-    setSelectedSeats([]);
-    setHoldResponse(null);
-    
-    // Refresh seats after confirmation
-    await refreshSeats();
-    console.log('Seats refreshed after confirmation');
-    
-  } catch (err: any) {
-    console.error('Confirm error:', err.response?.data || err.message);
-    setError(err.response?.data?.message || "Failed to confirm booking");
-    throw err;
-  }
-}, [holdResponse, selectedSeats, refreshSeats]);
-// Cancel hold
+      } catch {}
+
+      try {
+        const cached = localStorage.getItem("bookers_user_email");
+        if (!userEmail && cached && cached.includes("@")) {
+          userEmail = cached;
+        }
+      } catch {}
+
+      await confirmBooking(holdResponse.bookingId, userEmail || undefined);
+      
+      setSeats(prev => 
+        prev.map(seat => {
+          if (selectedSeats.some(s => s.id === seat.id)) {
+            return { ...seat, status: 'RESERVED' as const };
+          }
+          return seat;
+        })
+      );
+      
+      setSelectedSeats([]);
+      setHoldResponse(null);
+      await refreshSeats();
+      
+    } catch (err: any) {
+      console.error('Confirm error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || "Failed to confirm booking");
+      throw err;
+    } finally {
+      setHoldingSeats(false);
+    }
+  }, [holdResponse, selectedSeats, refreshSeats]);
+
   const cancelHold = useCallback(async () => {
     if (!holdResponse) return;
 
+    setHoldingSeats(true);
+    
     try {
       await cancelBooking(holdResponse.bookingId);
       
-      // Update local seat status back to AVAILABLE
       setSeats(prev => 
         prev.map(seat => {
           if (selectedSeats.some(s => s.id === seat.id)) {
@@ -177,18 +255,17 @@ const confirmSelectedBooking = useCallback(async () => {
       
       setSelectedSeats([]);
       setHoldResponse(null);
-      
-      // Refresh seats after cancel
       await refreshSeats();
       
     } catch (err: any) {
       console.error('Cancel error:', err.response?.data || err.message);
       setError(err.response?.data?.message || "Failed to cancel hold");
       throw err;
+    } finally {
+      setHoldingSeats(false);
     }
   }, [holdResponse, selectedSeats, refreshSeats]);
 
-  // Clear all selections
   const clearSelections = useCallback(() => {
     setSelectedSeats([]);
   }, []);
@@ -205,16 +282,10 @@ const confirmSelectedBooking = useCallback(async () => {
     confirmSelectedBooking,
     cancelHold,
     clearSelections,
-    refreshSeats,  // Now exposed!
+    refreshSeats,
     totalAmount,
     holdingSeats,
     hasSelectedSeats: selectedSeats.length > 0,
     holdResponse
   };
 };
-
-// Helper function to generate a consistent UUID from a numeric ID
-function generateUuidFromId(id: number): string {
-  const paddedId = id.toString().padStart(12, '0');
-  return `00000000-0000-0000-0000-${paddedId}`;
-}
