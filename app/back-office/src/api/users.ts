@@ -2,7 +2,7 @@ import type { User } from '@/types';
 import { apiClient } from './httpClient';
 
 export const getUsers = (search?: string, page = 0, size = 20) => 
-  apiClient.get<{ content: User[]; total: number }>('/api/v1/support/users', {
+  apiClient.get<{ content: User[]; totalElements: number }>('/api/v1/support/users', {
     params: { search, page, size },
   });
 
@@ -23,3 +23,6 @@ export const assignRoles = (userId: string, roles: string[]) =>
 
 export const removeRoles = (userId: string, roles: string[]) => 
   apiClient.delete(`/api/v1/support/users/${userId}/roles`, { data: roles });
+
+export const registerUser = (data: { username: string; email: string; firstName: string; lastName: string; password: string; roles: string[] }) => 
+  apiClient.post(`/api/v1/support/users/register`, data);

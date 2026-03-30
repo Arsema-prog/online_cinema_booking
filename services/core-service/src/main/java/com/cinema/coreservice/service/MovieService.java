@@ -32,6 +32,13 @@ public class MovieService {
         movie.setTitle(updated.getTitle());
         movie.setGenre(updated.getGenre());
         movie.setDuration(updated.getDuration());
+        movie.setDescription(updated.getDescription());
+        movie.setDirector(updated.getDirector());
+        movie.setReleaseDate(updated.getReleaseDate());
+        movie.setRating(updated.getRating());
+        movie.setBasePrice(updated.getBasePrice());
+        movie.setPosterUrl(updated.getPosterUrl());
+        movie.setIsActive(updated.getIsActive() != null ? updated.getIsActive() : true);
         return movieRepository.save(movie);
     }
 

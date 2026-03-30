@@ -33,6 +33,9 @@ public class Seat {
     @Column(name = "is_available")
     private Boolean isAvailable;
 
+    @Column(name = "seat_type")
+    private String seatType;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

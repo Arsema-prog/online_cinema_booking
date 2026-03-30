@@ -11,13 +11,30 @@ import Keycloak from "keycloak-js"
 import { env } from "../../env"
 import { setAccessTokenGetter } from "../api/httpClient"
 
-interface AuthContextValue {
+interface AuthUser {
+ username?: string
+ email?: string
+ firstName?: string
+ lastName?: string
+}
 
+interface TokenClaims {
+ realm_access?: {
+  roles?: string[]
+ }
+ preferred_username?: string
+ email?: string
+ given_name?: string
+ family_name?: string
+}
+
+interface AuthContextValue {
  keycloak: Keycloak | null
  isAuthenticated: boolean
  isLoading: boolean
  token?: string
  roles: string[]
+ user?: AuthUser
 
  login: () => void
  logout: () => void
@@ -38,7 +55,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
  const [isLoading, setIsLoading] = useState(true)
  const [token, setToken] = useState<string>()
  const [roles, setRoles] = useState<string[]>([])
+ const [user, setUser] = useState<AuthUser>()
  const isInitRef = useRef(false)
+
+ const syncAuthState = useCallback(() => {
+  const claims = keycloak.tokenParsed as TokenClaims | undefined
+
+  setToken(keycloak.token)
+  setRoles(claims?.realm_access?.roles ?? [])
+  setUser({
+   username: claims?.preferred_username,
+   email: claims?.email,
+   firstName: claims?.given_name,
+   lastName: claims?.family_name,
+  })
+  setAccessTokenGetter(() => keycloak.token)
+ }, [])
 
  useEffect(() => {
   if (isInitRef.current) return
@@ -47,18 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   keycloak.init({
    onLoad: "check-sso",
    pkceMethod: "S256",
-   checkLoginIframe: false
+  checkLoginIframe: false
   }).then(auth => {
 
    setIsAuthenticated(auth)
-   setToken(keycloak.token)
-
-   const realmRoles =
-    (keycloak.tokenParsed as any)?.realm_access?.roles ?? []
-
-   setRoles(realmRoles)
-
-   setAccessTokenGetter(() => keycloak.token)
+   syncAuthState()
 
   }).finally(() => {
    setIsLoading(false)
@@ -67,14 +92,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const interval = setInterval(() => {
    if (!keycloak.authenticated) return
    keycloak
-    .updateToken(60)
+   .updateToken(60)
     .then(refreshed => {
      if (!refreshed) return
-     setToken(keycloak.token)
-     const realmRoles =
-      (keycloak.tokenParsed as any)?.realm_access?.roles ?? []
-     setRoles(realmRoles)
-     setAccessTokenGetter(() => keycloak.token)
+     syncAuthState()
     })
     .catch(() => {
      keycloak.logout({ redirectUri: window.location.origin })
@@ -85,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    clearInterval(interval)
   }
 
- }, [])
+ }, [syncAuthState])
 
  const login = useCallback(() => {
   keycloak.login()
@@ -110,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    isLoading,
    token,
    roles,
+   user,
    login,
    logout,
    hasRole

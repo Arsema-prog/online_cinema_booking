@@ -7,10 +7,16 @@ import MoviesPage from './pages/MoviesPage';
 import ScreensPage from './pages/ScreensPage';
 import ScreeningsPage from './pages/ScreeningsPage';
 import UsersPage from './pages/UsersPage';
+import RulesPage from './pages/RulesPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleGuard } from './components/RoleGuard';
+import LandingPage from './pages/LandingPage';
 
 export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <LandingPage />,
+  },
   {
     path: '/login',
     element: <LoginPage />,
@@ -21,11 +27,18 @@ export const router = createBrowserRouter([
       {
         element: <RootLayout />,
         children: [
-          { index: true, element: <DashboardPage /> },
+          { 
+            path: 'dashboard', 
+            element: (
+              <RoleGuard allowedRoles={['ADMIN', 'MANAGER', 'STAFF']}>
+                <DashboardPage />
+              </RoleGuard>
+            )
+          },
           {
             path: 'branches',
             element: (
-              <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
+              <RoleGuard allowedRoles={['ADMIN']}>
                 <BranchesPage />
               </RoleGuard>
             ),
@@ -33,7 +46,7 @@ export const router = createBrowserRouter([
           {
             path: 'movies',
             element: (
-              <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
+              <RoleGuard allowedRoles={['ADMIN', 'MANAGER', 'STAFF']}>
                 <MoviesPage />
               </RoleGuard>
             ),
@@ -49,7 +62,7 @@ export const router = createBrowserRouter([
           {
             path: 'screenings',
             element: (
-              <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
+              <RoleGuard allowedRoles={['ADMIN', 'MANAGER', 'STAFF']}>
                 <ScreeningsPage />
               </RoleGuard>
             ),
@@ -59,6 +72,14 @@ export const router = createBrowserRouter([
             element: (
               <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
                 <UsersPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'rules',
+            element: (
+              <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
+                <RulesPage />
               </RoleGuard>
             ),
           },
