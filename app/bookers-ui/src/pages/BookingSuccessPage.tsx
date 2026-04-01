@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, Ticket, Download, Calendar, MapPin, Clock, Users, CreditCard } from 'lucide-react';
 import { ticketGeneratorService } from '../services/ticketGeneratorService';
+import { env } from '../env';
 
 interface BookingDetails {
   id: string;
@@ -24,7 +25,14 @@ export const BookingSuccessPage: React.FC = () => {
   const sessionId = searchParams.get('session_id');
  const stateBookingId = (location.state as any)?.bookingId;
   const [bookingId, setBookingId] = useState<string | null>(stateBookingId || null);
-
+  const [emailFromSession] = useState<string | undefined>(() => {
+    try {
+      const cached = sessionStorage.getItem('bookers_last_checkout_email');
+      return cached || undefined;
+    } catch {
+      return undefined;
+    }
+  });
   const [booking, setBooking] = useState<BookingDetails | null>(
     (location.state as any)?.booking || null
   );
@@ -32,9 +40,10 @@ export const BookingSuccessPage: React.FC = () => {
   const [downloading, setDownloading] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [showEmailNotice, setShowEmailNotice] = useState<boolean>(
-    Boolean((location.state as any)?.emailConfirmationRequested)
+    Boolean((location.state as any)?.emailConfirmationRequested || emailFromSession)
   );
   const emailTarget = (location.state as any)?.emailTarget as string | undefined;
+  const displayEmailTarget = emailTarget ?? emailFromSession;
 
 useEffect(() => {
 
@@ -42,6 +51,19 @@ useEffect(() => {
     fetchBookingDetails();
   }
 }, [booking, bookingId]);
+
+useEffect(() => {
+  const paramBookingId = searchParams.get('bookingId');
+  if (!bookingId && paramBookingId) {
+    setBookingId(paramBookingId);
+  }
+}, [searchParams, bookingId]);
+
+useEffect(() => {
+  if (!showEmailNotice && displayEmailTarget) {
+    setShowEmailNotice(true);
+  }
+}, [displayEmailTarget, showEmailNotice]);
 
 useEffect(() => {
   const fetchQrCode = async () => {
@@ -57,16 +79,17 @@ useEffect(() => {
   fetchQrCode();
 }, [booking]);
 
- const fetchBookingDetails = async () => {
+ const fetchBookingDetails = async (attempt: number = 0) => {
+  if (!bookingId) return;
   try {
     // Fetch booking details
-    const bookingResponse = await fetch(`http://localhost:8082/bookings/${bookingId}`);
+    const bookingResponse = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}`);
     if (!bookingResponse.ok) throw new Error('Booking fetch failed');
     const bookingData = await bookingResponse.json();
     console.log("movies", bookingData );
     
     // Fetch seats for this booking
-    const seatsResponse = await fetch(`http://localhost:8082/bookings/${bookingId}/seats`);
+    const seatsResponse = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/seats`);
     let seatsList: string[] = [];
     
     if (seatsResponse.ok) {
@@ -92,6 +115,10 @@ useEffect(() => {
       status: bookingData.status,
       bookingDate: bookingData.createdAt
     });
+
+    if (bookingData.status !== 'CONFIRMED' && attempt < 5) {
+      setTimeout(() => fetchBookingDetails(attempt + 1), 1500);
+    }
   } catch (error) {
     console.error('Failed to fetch booking details:', error);
   } finally {
@@ -145,7 +172,31 @@ useEffect(() => {
   <div className="max-w-2xl mx-auto px-4">
 
     {/* Success Header */}
-    <div className="text-center mb-8">
+    <div className="text-center mb-8 relative">
+      <button
+        onClick={() => navigate('/bookers/movies')}
+        style={{
+                  flex: 1,
+                  padding: '14px',
+                  background: processing ? '#334155' : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 40,
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  cursor: processing || holdExpired ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: processing ? 'none' : '0 4px 12px rgba(139, 92, 246, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  opacity: processing || holdExpired ? 0.5 : 1
+                }}
+        className="absolute right-0 top-0 px-4 py-2 bg-slate-800 hover:bg-indigo-600 rounded-xl text-sm font-semibold transition-colors"
+      >
+        Home
+      </button>
       <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-500/20 mb-4">
         <CheckCircle className="w-12 h-12 text-green-500" />
       </div>
@@ -172,7 +223,7 @@ useEffect(() => {
         <div>
           <div style={{ fontWeight: 700 }}>Confirmation email sent</div>
           <div style={{ fontSize: 13, opacity: 0.9 }}>
-            {emailTarget ? `Sent to ${emailTarget}` : 'Your booking confirmation was emailed.'}
+            {displayEmailTarget ? `Sent to ${displayEmailTarget}` : 'Your booking confirmation was emailed.'}
           </div>
         </div>
         <button

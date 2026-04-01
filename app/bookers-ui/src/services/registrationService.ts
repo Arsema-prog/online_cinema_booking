@@ -1,4 +1,5 @@
 import axios from "axios";
+import { env } from "../env";
 
 export interface RegistrationData {
   username: string;
@@ -11,7 +12,7 @@ export interface RegistrationData {
 
 // Create a dedicated client for registration
 const registrationClient = axios.create({
-  baseURL: 'http://localhost:8084',
+  baseURL: env.supportServiceUrl ?? 'http://localhost:8084',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -24,7 +25,8 @@ registrationClient.interceptors.request.use(
     console.log('═══════════════════════════════════════');
     console.log('📤 OUTGOING REQUEST');
     console.log('═══════════════════════════════════════');
-    console.log('URL:', config.baseURL + config.url);
+    const requestUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
+    console.log('URL:', requestUrl);
     console.log('Method:', config.method?.toUpperCase());
     console.log('Headers:', JSON.stringify(config.headers, null, 2));
     console.log('Body:', JSON.stringify(config.data, null, 2));

@@ -27,6 +27,7 @@ public interface ScreeningSeatRepository extends JpaRepository<ScreeningSeat, Lo
 
     List<ScreeningSeat> findByScreeningIdAndIsBooked(Long screeningId, Boolean isBooked);
 
+    long countByScreeningId(Long screeningId);
 
     @Query("SELECT COUNT(ss) FROM ScreeningSeat ss WHERE ss.screening.id = :screeningId AND ss.isBooked = :isBooked")
     long countByScreeningIdAndIsBooked(@Param("screeningId") Long screeningId, @Param("isBooked") Boolean isBooked);

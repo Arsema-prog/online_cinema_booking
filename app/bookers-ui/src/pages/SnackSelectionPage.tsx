@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Plus, Minus, ShoppingCart, SkipForward, Popcorn, Coffee, Beer, Wine, Milk, Cookie, Sparkles, ArrowRight, Trash2, CreditCard, Loader2 } from 'lucide-react';
-import { getAccessTokenGetter } from '../httpClient';
 import { env } from '../env';
+import { paymentService } from '../services/paymentService';
+import { getAccessTokenGetter } from '../httpClient';
 
 interface Snack {
   id: string;
@@ -51,6 +52,7 @@ export const SnackSelectionPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [holdExpired, setHoldExpired] = useState(false);
   const clampExpiryToTwoMinutesFromNow = (candidate: number | null): number | null => {
@@ -83,7 +85,7 @@ export const SnackSelectionPage: React.FC = () => {
 
     const recoverExpiryFromBooking = async () => {
       try {
-        const response = await fetch(`http://localhost:8082/bookings/${bookingId}`);
+        const response = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}`);
         if (!response.ok) return;
         const booking = await response.json();
         if (!booking?.createdAt) return;
@@ -132,7 +134,7 @@ export const SnackSelectionPage: React.FC = () => {
     const releaseExpiredHold = async () => {
       releaseTriggeredRef.current = true;
       try {
-        await fetch(`http://localhost:8082/bookings/${bookingId}/cancel`, { method: 'POST' });
+        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/cancel`, { method: 'POST' });
       } catch (error) {
         console.error('Failed to release expired hold immediately', error);
       }
@@ -193,6 +195,49 @@ export const SnackSelectionPage: React.FC = () => {
     setShowPaymentModal(true);
   };
 
+  const resolveUserEmail = async (token: string | null): Promise<string | null> => {
+    let email: string | null = null;
+
+    if (token) {
+      try {
+        const payload = token.split('.')[1];
+        if (payload) {
+          const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+          email = decoded?.email
+            || (typeof decoded?.preferred_username === 'string' && decoded.preferred_username.includes('@')
+              ? decoded.preferred_username
+              : null);
+        }
+      } catch {}
+    }
+
+    if (!email) {
+      try {
+        const cached = localStorage.getItem('bookers_user_email');
+        if (cached && cached.includes('@')) {
+          email = cached;
+        }
+      } catch {}
+    }
+
+    if (!email && token) {
+      try {
+        const userInfoRes = await fetch(
+          `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/userinfo`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (userInfoRes.ok) {
+          const info = await userInfoRes.json();
+          if (info?.email && typeof info.email === 'string') {
+            email = info.email;
+          }
+        }
+      } catch {}
+    }
+
+    return email;
+  };
+
   const handleConfirmPayment = async () => {
     if (holdExpired) {
       alert('Your seat hold has expired. Please start booking again.');
@@ -201,14 +246,26 @@ export const SnackSelectionPage: React.FC = () => {
     }
 
     setProcessing(true);
+    setStripeError(null);
     try {
+      if (!bookingId) {
+        throw new Error('Missing booking reference. Please restart booking.');
+      }
+
+      const snacksTotalValue = getCartTotal();
+      const totalAmount = (seatTotal || 0) + snacksTotalValue;
+      if (totalAmount <= 0) {
+        throw new Error('Total amount must be greater than zero');
+      }
+
+      // Persist snacks to booking
       if (cart.length > 0) {
-        const snacksResponse = await fetch(`http://localhost:8082/bookings/${bookingId}/snacks`, {
+        const snacksResponse = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/snacks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             snackDetails: cart.map(item => `${item.quantity}x ${item.snack.name}`).join(', '),
-            snacksTotal: getCartTotal()
+            snacksTotal: snacksTotalValue
           })
         });
         if (!snacksResponse.ok) {
@@ -217,79 +274,34 @@ export const SnackSelectionPage: React.FC = () => {
       }
 
       const token = getAccessTokenGetter()();
-      const resolveUserEmail = async (): Promise<string | null> => {
-        let email: string | null = null;
-
-        if (token) {
-          try {
-            const payload = token.split('.')[1];
-            if (payload) {
-              const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-              email = decoded?.email
-                || (typeof decoded?.preferred_username === 'string' && decoded.preferred_username.includes('@')
-                  ? decoded.preferred_username
-                  : null);
-            }
-          } catch {}
-        }
-
-        if (!email) {
-          try {
-            const cached = localStorage.getItem('bookers_user_email');
-            if (cached && cached.includes('@')) {
-              email = cached;
-            }
-          } catch {}
-        }
-
-        if (!email && token) {
-          try {
-            const userInfoRes = await fetch(
-              `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/userinfo`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (userInfoRes.ok) {
-              const info = await userInfoRes.json();
-              if (info?.email && typeof info.email === 'string') {
-                email = info.email;
-              }
-            }
-          } catch {}
-        }
-
-        return email;
-      };
-
-      const userEmail = await resolveUserEmail();
-
-      const confirmUrl = userEmail
-        ? `http://localhost:8082/bookings/${bookingId}/confirm?userEmail=${encodeURIComponent(userEmail)}`
-        : `http://localhost:8082/bookings/${bookingId}/confirm`;
-
-      const confirmResponse = await fetch(confirmUrl, {
-        method: 'POST'
-      });
-      if (!confirmResponse.ok) {
-        throw new Error('Payment confirmation failed');
+      const userEmail = await resolveUserEmail(token);
+      if (userEmail) {
+        try {
+          sessionStorage.setItem('bookers_last_checkout_email', userEmail);
+        } catch {}
       }
-      
-      setTimeout(() => {
-        navigate('/bookers/booking/success', {
-          state: {
-            bookingId,
-            seats,
-            seatTotal,
-            snacks: cart,
-            totalAmount: seatTotal + getCartTotal(),
-            emailConfirmationRequested: true,
-            emailTarget: userEmail || undefined
-          }
-        });
-      }, 1500);
-      
-    } catch (error) {
+
+      // best-effort notify booking service
+      try {
+        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
+      } catch (e) {
+        console.warn('Failed to notify booking service about payment initiation', e);
+      }
+
+      const session = await paymentService.createCheckoutSession(
+        bookingId,
+        totalAmount,
+        {
+          successUrl: `${window.location.origin}/bookers/booking/success?bookingId=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/bookers/booking/cancel?bookingId=${bookingId}`
+        }
+      );
+
+      window.location.href = session.url;
+      return;
+    } catch (error: any) {
       console.error('Payment error:', error);
-      alert('Failed to process payment. Please try again.');
+      setStripeError(error?.message ?? 'Failed to process payment. Please try again.');
       setProcessing(false);
     }
   };
@@ -884,6 +896,20 @@ export const SnackSelectionPage: React.FC = () => {
               </button>
             </div>
             
+            {stripeError && (
+              <div style={{
+                marginTop: 12,
+                padding: '10px 12px',
+                background: 'rgba(239,68,68,0.15)',
+                border: '1px solid rgba(248,113,113,0.35)',
+                borderRadius: 12,
+                color: '#fecdd3',
+                fontWeight: 600
+              }}>
+                {stripeError}
+              </div>
+            )}
+
             <p className="text-center text-slate-500 text-xs mt-4">
               You will be redirected to secure payment gateway
             </p>

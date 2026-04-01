@@ -20,18 +20,9 @@ export const PaymentModal: React.FC<Props> = ({ bookingId, amount, onSuccess, on
     setError(null);
 
     try {
-      // 1. Initialize intent
-      const intent = await paymentService.createPaymentIntent(bookingId, amount);
-      
-      // 2. Verify payment (simulating the webhook/redirect wait)
-      const verification = await paymentService.verifyPayment(intent.transactionId);
-      
-      if (verification.success) {
-        onSuccess();
-      } else {
-        setError(verification.message || 'Payment failed. Please try again.');
-        setIsProcessing(false);
-      }
+      const checkoutUrl = await paymentService.createCheckoutSession(bookingId, amount);
+      window.location.href = checkoutUrl;
+      onSuccess();
     } catch (err: any) {
       setError(err.message || 'An error occurred during payment processing.');
       setIsProcessing(false);

@@ -1,33 +1,17 @@
-// import { useEffect } from 'react';
-// import { useAuth } from './auth';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "./auth";
 
-// export const LoginRedirect = () => {
-//   const { isAuthenticated, loading } = useAuth();
+export const LoginRedirect: React.FC = () => {
+  const { loading, isAuthenticated } = useAuth();
 
-//   useEffect(() => {
-//     console.log("LoginRedirect - isAuthenticated:", isAuthenticated, "loading:", loading);
-    
-//     if (loading) return;
-    
-//     if (isAuthenticated) {
-//       console.log("Authenticated, redirecting to dashboard");
-//       window.location.href = '/bookers';
-//     } else {
-//       console.log("Not authenticated, redirecting to home");
-//       window.location.href = '/';
-//     }
-//   }, [isAuthenticated, loading]);
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        Processing login...
+      </div>
+    );
+  }
 
-//   return (
-//     <div style={{ 
-//       display: 'flex', 
-//       justifyContent: 'center', 
-//       alignItems: 'center', 
-//       height: '100vh', 
-//       background: '#020617', 
-//       color: 'white' 
-//     }}>
-//       Processing login...
-//     </div>
-//   );
-// };
+  return <Navigate to={isAuthenticated ? "/bookers/movies" : "/"} replace />;
+};

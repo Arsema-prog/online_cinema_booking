@@ -1,6 +1,12 @@
 import { getAccessTokenGetter } from '../httpClient';
+import { env } from '../env';
 
-const API_BASE_URL = 'http://localhost:8083/api/payments';
+const API_BASE_URL = `${env.paymentServiceUrl ?? 'http://localhost:8083'}/api/payments`;
+
+export interface CheckoutSession {
+  sessionId: string;
+  url: string;
+}
 
 /**
  * Service to handle payment processing for cinema bookings.
@@ -13,8 +19,18 @@ export const paymentService = {
    * @param amount The total transaction amount in dollars
    * @returns A promise that resolves to the Checkout URL
    */
-  async createCheckoutSession(bookingId: string, amountDollars: number): Promise<string> {
+  async createCheckoutSession(
+    bookingId: string,
+    amountDollars: number,
+    options?: {
+      successUrl?: string;
+      cancelUrl?: string;
+      currency?: string;
+    }
+  ): Promise<CheckoutSession> {
     const token = getAccessTokenGetter()();
+    const currency = options?.currency ?? 'USD';
+
     try {
       const response = await fetch(`${API_BASE_URL}/checkout-session`, {
         method: 'POST',
@@ -25,9 +41,9 @@ export const paymentService = {
         body: JSON.stringify({
           bookingId: bookingId,
           amount: Math.round(amountDollars * 100), // convert dollars to cents for Stripe
-          currency: 'USD',
-          successUrl: `${window.location.origin}/bookers/booking/success?bookingId=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/bookers/booking/cancel`
+          currency,
+          successUrl: options?.successUrl ?? `${window.location.origin}/bookers/booking/success?bookingId=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: options?.cancelUrl ?? `${window.location.origin}/bookers/booking/cancel?bookingId=${bookingId}`
 
         })
       });
@@ -37,7 +53,10 @@ export const paymentService = {
       }
       
       const data = await response.json();
-      return data.url; // Returns the Stripe hosted checkout URL
+      return {
+        sessionId: data.sessionId,
+        url: data.url
+      };
     } catch (error) {
       console.error('Error creating checkout session:', error);
       throw error;
