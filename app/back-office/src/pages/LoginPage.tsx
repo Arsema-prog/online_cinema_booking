@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Clapperboard, ShieldCheck, Loader2 } from 'lucide-react';
+import { Clapperboard, ShieldCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
   const { login, isLoading, isAuthenticated } = useAuth();
@@ -11,8 +12,6 @@ export default function LoginPage() {
     if (!isLoading) {
       if (isAuthenticated) {
         navigate('/dashboard', { replace: true });
-      } else {
-        login();
       }
     }
   }, [isLoading, isAuthenticated, login, navigate]);
@@ -37,14 +36,14 @@ export default function LoginPage() {
               <Clapperboard className="h-8 w-8" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold">Redirecting to login...</h2>
+              <h2 className="text-2xl font-semibold">Back Office Login</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Please wait while we connect you to the login page.
+                Sign in with your Keycloak account to access admin tools.
               </p>
             </div>
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
+            <Button onClick={login} className="w-full">
+              Sign in with Keycloak
+            </Button>
           </div>
         </div>
       </div>

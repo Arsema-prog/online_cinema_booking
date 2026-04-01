@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
@@ -22,8 +23,8 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @PostMapping("/checkout-session")
-    public ResponseEntity<CheckoutSessionResponse> createCheckoutSession(@RequestBody CreateCheckoutSessionRequest request) {
+    @PostMapping({"/checkout-session", "/create-session"})
+    public ResponseEntity<CheckoutSessionResponse> createCheckoutSession(@Valid @RequestBody CreateCheckoutSessionRequest request) {
         try {
             CheckoutSessionResponse response = paymentService.createCheckoutSession(request);
             return ResponseEntity.ok(response);

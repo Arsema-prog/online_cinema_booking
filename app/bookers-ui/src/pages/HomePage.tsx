@@ -19,15 +19,23 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [moviesRes, cinemasRes] = await Promise.all([
-          coreClient.get('/movies/trending'),
-          coreClient.get('/branches')
-        ]);
-        setTrendingMovies(moviesRes.data);
-        setCinemas(cinemasRes.data);
-      } catch (err) {
-        console.error("Failed to fetch home page data", err);
+      const [moviesRes, cinemasRes] = await Promise.allSettled([
+        coreClient.get('/movies/trending'),
+        coreClient.get('/branches')
+      ]);
+
+      if (moviesRes.status === "fulfilled") {
+        setTrendingMovies(Array.isArray(moviesRes.value.data) ? moviesRes.value.data : []);
+      } else {
+        console.error("Failed to fetch trending movies", moviesRes.reason);
+        setTrendingMovies([]);
+      }
+
+      if (cinemasRes.status === "fulfilled") {
+        setCinemas(Array.isArray(cinemasRes.value.data) ? cinemasRes.value.data : []);
+      } else {
+        console.error("Failed to fetch branches", cinemasRes.reason);
+        setCinemas([]);
       }
     };
     fetchData();

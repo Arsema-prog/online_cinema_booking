@@ -57,8 +57,12 @@ spring:
         format_sql: true
 
 stripe:
-  api-key: sk_test_mock
-  webhook-secret: whsec_mock
+  api-key: ${STRIPE_SECRET_KEY:sk_test_mock}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_mock}
+
+booking:
+  service:
+    url: ${BOOKING_SERVICE_URL:http://localhost:8082}
 
 eureka:
   client:

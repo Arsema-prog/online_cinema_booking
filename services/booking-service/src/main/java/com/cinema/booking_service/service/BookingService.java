@@ -237,19 +237,23 @@ public class BookingService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // 3️⃣ Construct response
-        List<UUID> allSeats = getAllSeatsForShow(showId);
+        // 3️⃣ Construct response from active holds and confirmed bookings directly
         List<SeatAvailability> response = new ArrayList<>();
 
-        for (UUID seatId : allSeats) {
-            String status = "AVAILABLE";
-            if (heldSeatIds.contains(seatId)) status = "HELD";
-            else if (bookedSeatIds.contains(seatId)) status = "BOOKED";
-
+        for (UUID seatId : heldSeatIds) {
             response.add(SeatAvailability.builder()
                     .seatId(seatId)
-                    .status(status)
+                    .status("HELD")
                     .build());
+        }
+
+        for (UUID seatId : bookedSeatIds) {
+            if (!heldSeatIds.contains(seatId)) {
+                response.add(SeatAvailability.builder()
+                        .seatId(seatId)
+                        .status("BOOKED")
+                        .build());
+            }
         }
 
         return response;
