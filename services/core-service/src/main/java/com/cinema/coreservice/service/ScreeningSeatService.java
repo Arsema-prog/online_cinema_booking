@@ -219,6 +219,10 @@ public class ScreeningSeatService {
             }
         }
 
+        // If all strategies fail, throw a clearer exception
+        throw new IllegalArgumentException("Cannot extract numeric screening id from show UUID: " + uuidStr);
+    }
+
     public long countSeatsByIsBooked(Long screeningId, Boolean isBooked) {
         return screeningSeatRepository.countByScreeningIdAndIsBooked(screeningId, isBooked);
     }

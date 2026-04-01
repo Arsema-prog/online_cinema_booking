@@ -1,8 +1,22 @@
 // pages/MoviesPage.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { coreClient } from "../httpClient";
 import { Film, Building, MapPin, ChevronRight, Star, Search, X } from 'lucide-react';
+
+const toArray = <T,>(payload: unknown): T[] => {
+  if (Array.isArray(payload)) return payload as T[];
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    if (Array.isArray(record.content)) return record.content as T[];
+    if (Array.isArray(record.data)) return record.data as T[];
+    if (record.data && typeof record.data === "object") {
+      const nested = record.data as Record<string, unknown>;
+      if (Array.isArray(nested.content)) return nested.content as T[];
+    }
+  }
+  return [];
+};
 
 export const MoviesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,21 +30,35 @@ export const MoviesPage: React.FC = () => {
 
   useEffect(() => {
     const fetchPageData = async () => {
-      try {
-        setLoading(true);
-        const [moviesRes, cinemasRes, allMoviesRes] = await Promise.all([
-          coreClient.get('/movies/trending'),
-          coreClient.get('/branches'),
-          coreClient.get('/movies')
-        ]);
-        setTrendingMovies(moviesRes.data);
-        setCinemas(cinemasRes.data);
-        setAllMovies(allMoviesRes.data || []);
-      } catch (err) {
-        console.error("Failed to fetch movies or cinemas", err);
-      } finally {
-        setLoading(false);
+      setLoading(true);
+      const [moviesRes, cinemasRes, allMoviesRes] = await Promise.allSettled([
+        coreClient.get('/movies/trending'),
+        coreClient.get('/branches'),
+        coreClient.get('/movies')
+      ]);
+
+      if (moviesRes.status === "fulfilled") {
+        setTrendingMovies(toArray<any>(moviesRes.value.data));
+      } else {
+        console.error("Failed to fetch trending movies", moviesRes.reason);
+        setTrendingMovies([]);
       }
+
+      if (cinemasRes.status === "fulfilled") {
+        setCinemas(toArray<any>(cinemasRes.value.data));
+      } else {
+        console.error("Failed to fetch branches", cinemasRes.reason);
+        setCinemas([]);
+      }
+
+      if (allMoviesRes.status === "fulfilled") {
+        setAllMovies(toArray<any>(allMoviesRes.value.data));
+      } else {
+        console.error("Failed to fetch all movies", allMoviesRes.reason);
+        setAllMovies([]);
+      }
+
+      setLoading(false);
     };
     fetchPageData();
   }, []);
@@ -55,7 +83,7 @@ export const MoviesPage: React.FC = () => {
   }, [searchQuery, allMovies]);
 
   const isSearching = searchQuery.trim().length > 0;
-  const displayMovies = isSearching ? searchResults : trendingMovies;
+  const displayMovies = toArray<any>(isSearching ? searchResults : trendingMovies);
 
   if (loading) {
     return (
@@ -173,7 +201,7 @@ export const MoviesPage: React.FC = () => {
               {displayMovies.map((movie) => (
                 <div
                   key={movie.id}
-                  onClick={() => navigate(`/bookers/movies/${movie.id}`)}
+                  onClick={() => navigate(`/bookers/movies/${movie.id}`, { state: { title: movie.title } })}
                   style={{
                     minWidth: '220px',
                     width: isSearching ? '220px' : undefined,

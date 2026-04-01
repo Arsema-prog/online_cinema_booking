@@ -1,9 +1,28 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { XCircle, ArrowLeft } from 'lucide-react';
+import { env } from '../env';
 
 export const BookingCancelPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [released, setReleased] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const bookingId = params.get('bookingId');
+    if (!bookingId) return;
+
+    const release = async () => {
+      try {
+        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/cancel`, { method: 'POST' });
+        setReleased(true);
+      } catch (error) {
+        console.warn('Failed to cancel booking after Stripe cancellation', error);
+      }
+    };
+    release();
+  }, [location.search]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
@@ -13,7 +32,7 @@ export const BookingCancelPage: React.FC = () => {
         </div>
         <h1 className="text-3xl font-bold mb-4">Payment Cancelled</h1>
         <p className="text-slate-400 mb-8">
-          Your payment was not completed. Your seats have been released and are available for others to book.
+          Your payment was not completed. {released ? 'Your seats have been released.' : 'We are releasing your seats...'}
         </p>
         <button
           onClick={() => navigate(-2)}

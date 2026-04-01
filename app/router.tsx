@@ -79,11 +79,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
 
         <Route element={<ProtectedRoute />}>
-<<<<<<< HEAD
           <Route path="/bookers/*" element={<BookersUiRoutes />} />
-=======
-          <Route path="/bookers/*" element={<BookersRoutes />} />
->>>>>>> origin/main
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { coreClient } from "../httpClient";
 import { ChevronLeft, Calendar, MapPin, Clock, Film } from "lucide-react";
 
@@ -18,6 +18,8 @@ type Screening = {
 export const MovieScreeningsPage: React.FC = () => {
   const { movieId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const passedTitle = (location.state as any)?.title as string | undefined;
   const [screenings, setScreenings] = useState<Screening[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export const MovieScreeningsPage: React.FC = () => {
     setError(null);
 
     coreClient
-      .get(`/screenings/${movieId}`)
+      .get(`/screenings/movie/${movieId}`)
       .then((res) => {
         if (!active) return;
         const payload = res.data;
@@ -39,7 +41,13 @@ export const MovieScreeningsPage: React.FC = () => {
             : payload
               ? [payload]
               : [];
-        setScreenings(normalized.filter(Boolean));
+        let filtered = normalized.filter(Boolean);
+        // If caller passed a movie title, ensure we only show screenings matching that title
+        if (passedTitle) {
+          const titleLower = passedTitle.toLowerCase();
+          filtered = filtered.filter(s => (s?.movie?.title || '').toLowerCase() === titleLower);
+        }
+        setScreenings(filtered);
       })
       .catch((err) => {
         if (!active) return;
@@ -57,9 +65,10 @@ export const MovieScreeningsPage: React.FC = () => {
   }, [movieId]);
 
   const movieTitle = useMemo(() => {
+    if (passedTitle) return passedTitle;
     const first = screenings.find(Boolean);
     return first?.movie?.title || "Available Screenings";
-  }, [screenings]);
+  }, [screenings, passedTitle]);
 
   if (loading) {
     return (
