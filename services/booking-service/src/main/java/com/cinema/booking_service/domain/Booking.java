@@ -46,6 +46,7 @@ public class Booking {
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Builder.Default
     @Column(name = "snacks_total", precision = 10, scale = 2)
     private BigDecimal snacksTotal = BigDecimal.ZERO;
 
@@ -73,4 +74,3 @@ public class Booking {
         updatedAt = LocalDateTime.now();
     }
 }
-
