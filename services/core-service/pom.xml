@@ -124,7 +124,7 @@
                     <dependency>
                         <groupId>org.postgresql</groupId>
                         <artifactId>postgresql</artifactId>
-                        <!-- Version will be inherited from parent -->
+                        <version>42.7.3</version>
                     </dependency>
                 </dependencies>
             </plugin>
