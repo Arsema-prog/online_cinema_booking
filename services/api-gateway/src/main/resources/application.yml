@@ -6,9 +6,10 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-
       server:
         webflux:
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Headers Access-Control-Allow-Methods Access-Control-Expose-Headers
           discovery:
             locator:
               enabled: true
