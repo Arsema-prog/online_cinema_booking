@@ -66,7 +66,9 @@ booking:
 
 eureka:
   client:
-    enabled: false
+    enabled: true
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
 
 management:
   endpoints:
