@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/support/files")
+@RequestMapping({"/files", "/support/files"})
 @RequiredArgsConstructor
 public class FileController {
 
