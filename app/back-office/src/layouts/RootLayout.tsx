@@ -5,7 +5,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, LogOut, LayoutDashboard, Building2, Film, Monitor, Calendar, Users, FileSignature, Sparkles, ShieldCheck, Clapperboard, CircleDot } from 'lucide-react';
+import { Menu, LogOut, LayoutDashboard, Building2, Film, Monitor, Calendar, Users, FileSignature, ShieldCheck, Clapperboard, CircleDot, ShoppingBasket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/auth/AuthContext';
 import { ModeToggle } from '@/components/mode-toggle';
@@ -16,8 +16,9 @@ const navItems = [
   { to: '/movies', label: 'Movies', icon: Film, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
   { to: '/screens', label: 'Screens', icon: Monitor, roles: ['ADMIN', 'MANAGER'] },
   { to: '/screenings', label: 'Screenings', icon: Calendar, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { to: '/users', label: 'User Management', icon: Users, roles: ['ADMIN', 'MANAGER'] },
-  { to: '/rules', label: 'Pricing Rules', icon: FileSignature, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/snacks', label: 'Snacks', icon: ShoppingBasket, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
+  { to: '/users', label: 'Users', icon: Users, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/rules', label: 'Pricing', icon: FileSignature, roles: ['ADMIN', 'MANAGER'] },
 ];
 
 export default function RootLayout() {
@@ -120,29 +121,20 @@ export default function RootLayout() {
           </div>
           <div>
             <div className="text-xl font-bold tracking-tight">Atlas Cinema</div>
-            <div className="text-xs uppercase tracking-[0.28em] text-sidebar-foreground/55">Operations Suite</div>
           </div>
         </Link>
 
-        <div className="relative mx-6 mb-6 rounded-[1.8rem] border border-white/10 bg-white/6 p-5 backdrop-blur-xl">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-xs uppercase tracking-[0.26em] text-sidebar-foreground/55">Signed In</div>
-              <div className="mt-2 text-lg font-semibold">{displayName}</div>
-              <div className="text-sm text-sidebar-foreground/60">{user?.email || 'admin@atlascinema.local'}</div>
+        <div className="relative mx-6 mb-8 rounded-[1.8rem] border border-white/10 bg-white/6 p-6 backdrop-blur-xl">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary text-lg font-bold">
+              {displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="rounded-2xl bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              {currentRole}
-            </div>
-          </div>
-          <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
-            <div className="rounded-2xl bg-white/7 p-3">
-              <div className="text-sidebar-foreground/55">Access</div>
-              <div className="mt-1 font-semibold text-sidebar-foreground">Role Enforced</div>
-            </div>
-            <div className="rounded-2xl bg-white/7 p-3">
-              <div className="text-sidebar-foreground/55">Status</div>
-              <div className="mt-1 font-semibold text-emerald-300">Synced</div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-bold tracking-tight">{displayName}</div>
+              <div className="flex items-center gap-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-primary">
+                <ShieldCheck className="h-3 w-3" />
+                {currentRole}
+              </div>
             </div>
           </div>
         </div>
@@ -175,22 +167,11 @@ export default function RootLayout() {
           })}
         </nav>
 
-        <div className="mx-6 mb-6 mt-auto rounded-[1.7rem] border border-white/10 bg-white/6 p-4 backdrop-blur-xl">
-          <div className="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-sidebar-foreground/50">
-            <Sparkles className="h-4 w-4 text-primary" />
-            Operations Console
-          </div>
-          <div className="mb-4 rounded-2xl bg-white/7 p-3 text-sm text-sidebar-foreground/70">
-            Manage branches, movies, screenings, pricing rules, and user access from one workspace.
-          </div>
-          <div className="flex items-center justify-between">
+        <div className="mx-6 mb-8 mt-auto flex items-center justify-between gap-2 border-t border-white/10 pt-6">
           <Button variant="ghost" className="justify-start flex-1 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-white/8 rounded-xl transition-colors" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" /> Sign out
           </Button>
-          <div className="ml-2">
-            <ModeToggle />
-          </div>
-          </div>
+          <ModeToggle />
         </div>
       </aside>
 
@@ -198,17 +179,14 @@ export default function RootLayout() {
       <main className="relative z-10 w-full flex-1 overflow-y-auto">
         <div className="cinema-grid min-h-full px-6 py-20 md:px-8 lg:px-10">
           <div className="mx-auto max-w-7xl">
-            <div className="glass-panel mb-6 flex flex-col gap-4 rounded-[2rem] px-6 py-5 md:flex-row md:items-center md:justify-between">
+            <div className="glass-panel mb-8 flex items-center justify-between rounded-[2rem] px-8 py-6">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">Atlas Cinema Control Room</div>
-                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Backoffice operations, pricing, identity and scheduling.</h1>
+                <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-primary/80">Command Center</div>
+                <h1 className="mt-1.5 text-2xl font-bold tracking-tight">Atlas Cinema Control Room</h1>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="rounded-full bg-primary/12 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                  {currentRole}
-                </div>
-                <div className="rounded-full bg-emerald-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-600">
-                  Build Ready
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-emerald-500/10 px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-emerald-600">
+                  Systems Online
                 </div>
               </div>
             </div>

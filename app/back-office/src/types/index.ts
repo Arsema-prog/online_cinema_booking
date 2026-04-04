@@ -7,6 +7,7 @@ export interface Branch {
   country?: string;
   totalScreens?: number;
   isActive?: boolean;
+  phoneNumber?: string;
   screens?: Screen[];
 }
 
@@ -83,4 +84,15 @@ export interface RuleSet {
   active: boolean;
   drlContent: string;
   createdAt: string;
+}
+
+export interface Snack {
+  id: number;
+  name: string;
+  description?: string;
+  category: 'SNACK' | 'DRINK' | 'COMBO' | 'POPCORN' | 'CANDY';
+  price: number;
+  stockQuantity: number;
+  available: boolean;
+  imageUrl?: string;
 }
