@@ -1,4 +1,20 @@
 import { useEffect, useState } from 'react';
+import { 
+  Pencil, 
+  Trash2, 
+  Plus, 
+  MonitorPlay, 
+  Loader2, 
+  Users, 
+  Layers, 
+  LayoutGrid, 
+  Hash,
+  MapPin
+} from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
 import type { Screen, Branch } from '@/types';
 import { getScreens, createScreen, updateScreen, deleteScreen } from '@/api/screens';
 import { getBranches } from '@/api/branches';
@@ -19,27 +35,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { ModernForm } from '@/components/ui/modern-form';
+import type { ModernFormSection } from '@/components/ui/modern-form';
 
 // Schema definition
 const screenSchema = z.object({
@@ -61,7 +59,7 @@ export default function ScreensPage() {
   const [page, setPage] = useState(0);
   const itemsPerPage = 8;
   const [open, setOpen] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [editingScreen, setEditingScreen] = useState<Screen | null>(null);
 
   const form = useForm<ScreenFormValues>({
@@ -93,6 +91,7 @@ export default function ScreensPage() {
 
   const onSubmit = async (values: ScreenFormValues) => {
     try {
+      setSaving(true);
       const branch = branches.find((b) => b.id === values.branchId);
       if (!branch) throw new Error('Selected branch not found');
 
@@ -115,13 +114,40 @@ export default function ScreensPage() {
       setOpen(false);
       form.reset();
       setEditingScreen(null);
-      setSubmitError(null);
       fetchData();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Save failed', err);
-      setSubmitError(err.response?.data?.message || err.message || 'Failed to save screen');
+    } finally {
+      setSaving(false);
     }
   };
+
+  const screenFormSections: ModernFormSection[] = [
+    {
+      title: "Screen Identity",
+      fields: [
+        { name: "name", label: "Screen Name", type: "text", required: true, placeholder: "e.g. IMAX, Screen 1", colSpan: 2 },
+        { 
+          name: "branchId", label: "Assigned Branch", type: "select", required: true,
+          options: branches.map(b => ({ label: b.name, value: String(b.id) }))
+        },
+        { name: "screenNumber", label: "Sequence Number", type: "number", required: true, icon: <Hash className="w-4 h-4" /> },
+      ]
+    },
+    {
+      title: "Capacity & Layout",
+      fields: [
+        { name: "rowsCount", label: "Rows", type: "number", required: true, icon: <Layers className="w-4 h-4" /> },
+        { name: "seatsPerRow", label: "Seats per Row", type: "number", required: true, icon: <LayoutGrid className="w-4 h-4" /> },
+        { 
+          name: "isActive", label: "Operational Status", type: "switch", 
+          description: "Allow showtimes to be scheduled in this room.", 
+          colSpan: 2,
+          visible: () => !!editingScreen
+        },
+      ]
+    }
+  ];
 
   const handleEdit = (screen: Screen) => {
     setEditingScreen(screen);
@@ -158,19 +184,16 @@ export default function ScreensPage() {
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    setOpen(open);
-    if (!open) {
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
       setEditingScreen(null);
       form.reset();
-      setSubmitError(null);
     }
   };
 
-  const inputClass = "bg-muted/40 border-transparent shadow-sm hover:bg-muted/60 focus-visible:bg-transparent focus-visible:ring-1 focus-visible:ring-primary rounded-xl transition-colors";
-
   return (
-    <div>
+    <div className="animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight">Screens</h1>
@@ -179,259 +202,132 @@ export default function ScreensPage() {
         <Sheet open={open} onOpenChange={handleOpenChange}>
           <SheetTrigger asChild>
             <Button size="lg" className="rounded-md shadow-sm">
-              <Plus className="mr-2 h-4 w-4" /> Add Screen
+              <Plus className="mr-2 h-5 w-5" /> Add Screen Room
             </Button>
           </SheetTrigger>
           <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
             <div className="px-8 py-8 border-b border-border shrink-0">
               <SheetHeader>
-                <SheetTitle className="text-3xl font-extrabold tracking-tight">{editingScreen ? 'Edit Screen' : 'Create Screen'}</SheetTitle>
+                <SheetTitle className="text-3xl font-extrabold tracking-tight">
+                  {editingScreen ? 'Edit Screen' : 'Create Screen'}
+                </SheetTitle>
                 <SheetDescription className="text-base mt-2 text-muted-foreground/80">
                   {editingScreen
-                    ? 'Update the screen details below.'
-                    : 'Fill in the details to add a new screen. Seats will be generated automatically.'}
+                    ? 'Update the room configuration below.'
+                    : 'Configure a new screening room with automated seat generation.'}
                 </SheetDescription>
               </SheetHeader>
             </div>
-            {submitError && (
-              <div className="bg-destructive/15 text-destructive text-sm p-4 mx-8 mt-6 mb-2 rounded-md border border-destructive/20">
-                {submitError}
-              </div>
-            )}
-            <Form {...form}>
-              <form id="screen-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto hide-scrollbar">
-                <div className="p-8 space-y-10">
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80 pb-3 border-b border-border/30">
-                      Screen Details
-                    </h3>
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80 font-medium">*: Screen Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. IMAX, Screen 1" className={inputClass} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="branchId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80 font-medium">*: Branch</FormLabel>
-                            <Select
-                              onValueChange={(value) => field.onChange(parseInt(value))}
-                              value={field.value ? String(field.value) : ''}
-                            >
-                              <FormControl>
-                                <SelectTrigger className={inputClass}>
-                                  <SelectValue placeholder="Select a branch" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="rounded-xl">
-                                {branches.map((branch) => (
-                                  <SelectItem key={branch.id} value={String(branch.id)}>
-                                    {branch.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="screenNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80 font-medium">*: Screen Number</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="e.g. 1"
-                                className={inputClass}
-                                {...field}
-                                value={field.value || ''}
-                                onChange={(e) => {
-                                  const val = e.target.valueAsNumber;
-                                  field.onChange(isNaN(val) ? '' : val);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="h-[1px] w-full bg-border/30 shrink-0" />
-
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80 pb-3 border-b border-border/30">
-                      Capacity Configuration
-                    </h3>
-                    <div className="grid grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="rowsCount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80 font-medium">*: Rows</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="e.g. 10"
-                                className={inputClass}
-                                {...field}
-                                value={field.value || ''}
-                                onChange={(e) => {
-                                  const val = e.target.valueAsNumber;
-                                  field.onChange(isNaN(val) ? '' : val);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="seatsPerRow"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80 font-medium">*: Seats per Row</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="e.g. 15"
-                                className={inputClass}
-                                {...field}
-                                value={field.value || ''}
-                                onChange={(e) => {
-                                  const val = e.target.valueAsNumber;
-                                  field.onChange(isNaN(val) ? '' : val);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {editingScreen && (
-                    <>
-                      <div className="h-[1px] w-full bg-border/30 shrink-0" />
-                      <div className="space-y-6">
-                        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80 pb-3 border-b border-border/30">
-                          Visibility
-                        </h3>
-                        <FormField
-                          control={form.control}
-                          name="isActive"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between">
-                              <div className="space-y-1 text-sm">
-                                <FormLabel className="font-semibold text-foreground">*: Operational Status</FormLabel>
-                                <p className="text-muted-foreground w-[250px]">Allow screenings in this room.</p>
-                              </div>
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-emerald-500" />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </form>
-            </Form>
             
-            <div className="p-6 border-t border-border bg-background flex items-center justify-end gap-3 shrink-0 z-10">
-              <Button type="button" variant="ghost" className="rounded-md px-6" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" form="screen-form" size="lg" className="rounded-md shadow-sm px-8">
-                {editingScreen ? 'Update Screen' : 'Create Screen'}
-              </Button>
-            </div>
+            <ModernForm
+              schema={screenSchema}
+              defaultValues={form.getValues()}
+              onSubmit={onSubmit as any}
+              sections={screenFormSections}
+              isSubmitting={saving}
+              submitLabel={editingScreen ? 'Update Configuration' : 'Generate Room'}
+              onCancel={() => setOpen(false)}
+              className="flex-1 overflow-hidden"
+            />
           </SheetContent>
         </Sheet>
       </div>
 
-      {error && <div className="text-destructive mb-4">{error}</div>}
+      {error && (
+        <div className="bg-destructive/10 text-destructive border-l-4 border-destructive p-4 mb-6 rounded-md italic">
+          {error}
+        </div>
+      )}
 
       {loading ? (
-        <div>Loading...</div>
+        <div className="flex justify-center items-center py-20 text-muted-foreground font-medium">
+          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" /> Calibrating screens...
+        </div>
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
           <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Branch</TableHead>
-              <TableHead>Number</TableHead>
-              <TableHead>Capacity</TableHead>
-              <TableHead>Rows</TableHead>
-              <TableHead>Seats/Row</TableHead>
-              <TableHead>Is Active</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {screens.length === 0 ? (
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  No screens found.
-                </TableCell>
+                <TableHead className="w-16">ID</TableHead>
+                <TableHead>Room Identity</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Specs</TableHead>
+                <TableHead>Capacity</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-24 text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              screens.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((screen) => (
-                <TableRow key={screen.id} className="group hover:bg-muted/30 transition-colors">
-                  <TableCell className="font-medium text-muted-foreground">{screen.id}</TableCell>
-                  <TableCell className="font-semibold text-foreground">{screen.name}</TableCell>
-                  <TableCell>{screen.branch.name}</TableCell>
-                  <TableCell>{screen.screenNumber || '-'}</TableCell>
-                  <TableCell>{screen.capacity || '-'}</TableCell>
-                  <TableCell>{screen.rowsCount || '-'}</TableCell>
-                  <TableCell>{screen.seatsPerRow || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                       <Switch 
-                         checked={screen.isActive && (screen.branch.isActive !== false)} 
-                         disabled={screen.branch.isActive === false}
-                         onCheckedChange={(checked) => handleToggleActive(screen, checked)} 
-                       />
-                       {screen.branch.isActive === false && (
-                         <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full border">Branch Inactive</span>
-                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(screen)} className="h-8 w-8 text-primary hover:bg-primary/10">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(screen.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+            </TableHeader>
+            <TableBody>
+              {screens.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
+                    <div className="flex flex-col items-center">
+                      <MonitorPlay className="h-12 w-12 mb-3 opacity-20" />
+                      No screen rooms have been configured yet.
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+              ) : (
+                screens.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((screen) => (
+                  <TableRow key={screen.id} className="group hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-medium text-muted-foreground">{screen.id}</TableCell>
+                    <TableCell>
+                      <div className="font-semibold text-foreground flex items-center gap-1.5">
+                        {screen.name}
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold">#{screen.screenNumber}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="inline-flex items-center text-muted-foreground text-sm">
+                        <MapPin className="h-3 w-3 mr-1 opacity-70" />
+                        {screen.branch.name}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="text-xs font-semibold text-foreground flex items-center">
+                           <Layers className="h-3 w-3 mr-1 opacity-60" /> {screen.rowsCount} Rows
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center">
+                           <LayoutGrid className="h-3 w-3 mr-1 opacity-40" /> {screen.seatsPerRow} Seats/Row
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-600 shadow-sm">
+                        <Users className="w-3 h-3 mr-1" />
+                        {screen.capacity} Seats
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch 
+                          checked={screen.isActive && (screen.branch.isActive !== false)} 
+                          disabled={screen.branch.isActive === false}
+                          onCheckedChange={(checked) => handleToggleActive(screen, checked)}
+                          className="data-[state=checked]:bg-emerald-500"
+                        />
+                        {screen.branch.isActive === false && (
+                          <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border/50 font-bold uppercase tracking-tighter">Branch Closed</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(screen)} className="h-8 w-8 text-primary hover:bg-primary/10">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(screen.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
-
+          
           <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
             <div>
               Showing {Math.min(screens.length, (page * itemsPerPage) + 1)} - {Math.min(screens.length, (page + 1) * itemsPerPage)} of {screens.length} screens

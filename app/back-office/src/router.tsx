@@ -8,6 +8,7 @@ import ScreensPage from './pages/ScreensPage';
 import ScreeningsPage from './pages/ScreeningsPage';
 import UsersPage from './pages/UsersPage';
 import RulesPage from './pages/RulesPage';
+import SnacksPage from './pages/SnacksPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleGuard } from './components/RoleGuard';
 import LandingPage from './pages/LandingPage';
@@ -80,6 +81,14 @@ export const router = createBrowserRouter([
             element: (
               <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
                 <RulesPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'snacks',
+            element: (
+              <RoleGuard allowedRoles={['ADMIN', 'MANAGER', 'STAFF']}>
+                <SnacksPage />
               </RoleGuard>
             ),
           },

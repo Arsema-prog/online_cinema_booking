@@ -1,8 +1,23 @@
-import { useState, useEffect } from 'react';
-import type { Screening, Movie, Branch, Screen } from '../types';
-import { getScreenings, createScreening } from '@/api/screenings';
+import { useEffect, useState } from 'react';
+import { 
+  Projector, 
+  Trash2, 
+  Plus, 
+  Search, 
+  Loader2, 
+  Clock, 
+  Star, 
+  Calendar, 
+  BadgeInfo, 
+  ArrowRight, 
+  MonitorPlay, 
+  Pencil,
+  Tag
+} from 'lucide-react';
+import type { Screening, Movie, Screen } from '@/types';
+import { getScreenings, createScreening, updateScreening, deleteScreening } from '@/api/screenings';
 import { getMovies } from '@/api/movies';
-import { getBranches } from '@/api/branches';
+import { getScreens } from '@/api/screens';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -20,28 +35,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Plus, Loader2, CalendarDays, MapPin, Video, Ticket, Clock, CheckCircle2, XCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
+import { ModernForm } from '@/components/ui/modern-form';
+import type { ModernFormSection } from '@/components/ui/modern-form';
 
 const screeningSchema = z.object({
   movieId: z.coerce.number().min(1, 'Movie is required'),
-  branchId: z.coerce.number().min(1, 'Branch is required'),
   screenId: z.coerce.number().min(1, 'Screen is required'),
-  startTime: z.string().min(1, 'Start Time is required'),
-  endTime: z.string().min(1, 'End Time is required'),
+  startTime: z.string().min(1, 'Start time is required'),
+  endTime: z.string().min(1, 'End time is required'),
   price: z.coerce.number().min(0, 'Price must be positive'),
 });
 
@@ -50,63 +55,33 @@ type ScreeningFormValues = z.infer<typeof screeningSchema>;
 export default function ScreeningsPage() {
   const [screenings, setScreenings] = useState<Screening[]>([]);
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  
+  const [screens, setScreens] = useState<Screen[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const itemsPerPage = 8;
+
   const [open, setOpen] = useState(false);
+  const [editingScreening, setEditingScreening] = useState<Screening | null>(null);
   const [saving, setSaving] = useState(false);
 
   const form = useForm<ScreeningFormValues>({
     resolver: zodResolver(screeningSchema) as any,
-    defaultValues: {
-      movieId: 0,
-      branchId: 0,
-      screenId: 0,
-      startTime: '',
-      endTime: '',
-    },
+    defaultValues: { movieId: 0, screenId: 0, startTime: '', endTime: '', price: 0 },
   });
-
-  const selectedMovieId = form.watch('movieId');
-  const selectedBranchId = form.watch('branchId');
-  const startTimeVal = form.watch('startTime');
-
-  useEffect(() => {
-    if (selectedMovieId && startTimeVal) {
-      const selectedMovie = movies.find(m => m.id === Number(selectedMovieId));
-      if (selectedMovie) {
-        const start = new Date(startTimeVal);
-        if (!isNaN(start.getTime())) {
-          const end = new Date(start.getTime() + selectedMovie.duration * 60000);
-          const endStr = new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-          form.setValue('endTime', endStr);
-        }
-      }
-    }
-  }, [selectedMovieId, startTimeVal, movies, form]);
-
-  const uniqueBranches = Array.from(new Map(branches.map(b => [b.id, b])).values());
-  const selectedBranch = branches.find(b => b.id === selectedBranchId);
-  const filteredScreens: Screen[] = selectedBranch?.screens || [];
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [screeningsRes, moviesRes, branchesRes] = await Promise.all([
+      const [screeningsRes, moviesRes, screensRes] = await Promise.all([
         getScreenings(),
         getMovies(),
-        getBranches(),
+        getScreens(),
       ]);
       setScreenings(screeningsRes.data);
-      
-      const activeMovies = moviesRes.data.filter((m: Movie) => m.isActive);
-      setMovies(activeMovies);
-      
-      const activeBranches = branchesRes.data.filter((b: Branch) => b.isActive);
-      setBranches(activeBranches);
+      setMovies(moviesRes.data);
+      setScreens(screensRes.data);
       setError(null);
     } catch (err) {
       setError('Failed to fetch data');
@@ -120,19 +95,44 @@ export default function ScreeningsPage() {
     fetchData();
   }, []);
 
+  const movieWatch = form.watch('movieId');
+  const startWatch = form.watch('startTime');
+
+  useEffect(() => {
+    if (movieWatch && startWatch) {
+      const movie = movies.find(m => m.id === Number(movieWatch));
+      if (movie && startWatch) {
+        const start = new Date(startWatch);
+        const end = new Date(start.getTime() + (movie.duration + 20) * 60000); 
+        form.setValue('endTime', end.toISOString().slice(0, 16));
+      }
+    }
+  }, [movieWatch, startWatch, movies, form]);
+
   const onSubmit = async (values: ScreeningFormValues) => {
     try {
       setSaving(true);
+      const movie = movies.find(m => m.id === Number(values.movieId));
+      const screen = screens.find(s => s.id === Number(values.screenId));
+
+      if (!movie || !screen) throw new Error('Missing selection');
+
       const payload = {
-        movie: { id: values.movieId },
-        screen: { id: values.screenId },
-        startTime: new Date(values.startTime).toISOString(),
-        endTime: new Date(values.endTime).toISOString(),
+        movie,
+        screen,
+        startTime: values.startTime,
+        endTime: values.endTime,
         price: values.price,
       };
-      await createScreening(payload as any);
+
+      if (editingScreening) {
+        await updateScreening(editingScreening.id, payload);
+      } else {
+        await createScreening(payload);
+      }
       setOpen(false);
       form.reset();
+      setEditingScreening(null);
       fetchData();
     } catch (err) {
       console.error('Save failed', err);
@@ -141,318 +141,220 @@ export default function ScreeningsPage() {
     }
   };
 
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) form.reset();
+  const screeningFormSections: ModernFormSection[] = [
+    {
+      title: "Content & Venue",
+      fields: [
+        { 
+          name: "movieId", label: "Select Feature Film", type: "select", required: true,
+          options: movies.map(m => ({ label: m.title, value: String(m.id) })),
+          colSpan: 2
+        },
+        { 
+          name: "screenId", label: "Physical Screen Room", type: "select", required: true,
+          options: screens.map(s => ({ label: `${s.branch.name} - ${s.name}`, value: String(s.id) })),
+          colSpan: 2
+        },
+      ]
+    },
+    {
+      title: "Scheduling & Pricing",
+      fields: [
+        { name: "startTime", label: "Opening Credits", type: "date", required: true, icon: <Clock className="w-4 h-4" /> },
+        { name: "endTime", label: "Expected Credits", type: "date", required: true, description: "Auto-calculated with 20min buffer." },
+        { name: "price", label: "Standard Admission ($)", type: "number", required: true, icon: <Tag className="w-4 h-4" /> },
+      ]
+    }
+  ];
+
+  const handleEdit = (screening: Screening) => {
+    setEditingScreening(screening);
+    form.reset({
+      movieId: screening.movie.id,
+      screenId: screening.screen.id,
+      startTime: screening.startTime,
+      endTime: screening.endTime,
+      price: screening.price || 0,
+    });
+    setOpen(true);
   };
 
-  const inputClass = "bg-muted/40 border-transparent shadow-sm hover:bg-muted/60 focus-visible:bg-transparent focus-visible:ring-1 focus-visible:ring-primary rounded-xl transition-colors";
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to cancel this screening?')) {
+      try {
+        await deleteScreening(id);
+        fetchData();
+      } catch (err) {
+        console.error('Delete failed', err);
+      }
+    }
+  };
+
+  const filteredScreenings = screenings.filter(s => 
+    s.movie.title.toLowerCase().includes(search.toLowerCase()) || 
+    s.screen.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setEditingScreening(null);
+      form.reset();
+    }
+  };
 
   return (
     <div className="animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight">Screenings</h1>
-          <p className="text-muted-foreground mt-1">Schedule and manage movie showtimes across all branches.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight">Showtimes</h1>
+          <p className="text-muted-foreground mt-1">Orchestrate screening schedules and ticket pricing.</p>
         </div>
-        <Sheet open={open} onOpenChange={handleOpenChange}>
-          <SheetTrigger asChild>
-            <Button size="lg" className="rounded-md shadow-sm">
-              <Plus className="mr-2 h-5 w-5" /> Schedule Screening
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
-            <div className="px-8 py-8 border-b border-border shrink-0">
-              <SheetHeader>
-                <SheetTitle className="text-3xl font-extrabold tracking-tight">Schedule a Screening</SheetTitle>
-                <SheetDescription className="text-base mt-2 text-muted-foreground/80">
-                  Assign a movie to a physical screen, then set its timing and pricing.
-                </SheetDescription>
-              </SheetHeader>
-            </div>
-            
-            <Form {...form}>
-              <form id="screening-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto hide-scrollbar">
-                <div className="p-8 space-y-10">
-                  
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80 pb-3 border-b border-border/30">
-                      Location & Media
-                    </h3>
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="movieId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80 font-medium">*: Movie</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value ? String(field.value) : ''}
-                            >
-                              <FormControl>
-                                <SelectTrigger className={inputClass}>
-                                  <SelectValue placeholder="Select a movie to screen" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="rounded-xl">
-                                {movies.map(movie => (
-                                  <SelectItem key={movie.id} value={String(movie.id)}>
-                                    {movie.title}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="grid grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="branchId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground/80 font-medium">*: Branch Location</FormLabel>
-                              <Select
-                                onValueChange={(val) => {
-                                  field.onChange(parseInt(val));
-                                  form.setValue('screenId', 0 as any); // Reset screen selection
-                                }}
-                                value={field.value ? String(field.value) : ''}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className={inputClass}>
-                                    <SelectValue placeholder="Branch" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="rounded-xl">
-                                  {uniqueBranches.map(branch => (
-                                    <SelectItem key={branch.id} value={String(branch.id)}>
-                                      {branch.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="screenId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground/80 font-medium">*: Screen Room</FormLabel>
-                              <Select
-                                onValueChange={(val) => field.onChange(parseInt(val))}
-                                value={field.value ? String(field.value) : ''}
-                                disabled={!selectedBranchId}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className={`${inputClass} disabled:opacity-50`}>
-                                    <SelectValue placeholder="Screen" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="rounded-xl">
-                                  {filteredScreens.map(screen => (
-                                    <SelectItem key={screen.id} value={String(screen.id)}>
-                                      {screen.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="h-[1px] w-full bg-border/30 shrink-0" />
-
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80 pb-3 border-b border-border/30">
-                      Schedule & Commerce
-                    </h3>
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="startTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground/80 font-medium">*: Start Time</FormLabel>
-                              <FormControl>
-                                <Input type="datetime-local" className={inputClass} {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="endTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-foreground/80 font-medium">*: End Time <span className="text-xs text-muted-foreground/50 font-normal">(Auto)</span></FormLabel>
-                              <FormControl>
-                                <Input type="datetime-local" className={inputClass} {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/80 font-medium">*: Ticketing Price ($)</FormLabel>
-                            <FormControl>
-                              <div className="relative group">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">$</span>
-                                <Input 
-                                  type="number" step="0.01" 
-                                  className={`${inputClass} pl-8 text-primary font-semibold text-lg h-12`}
-                                  {...field} 
-                                  value={field.value || ''} 
-                                  onChange={(e) => field.onChange(e.target.valueAsNumber || 0)} 
-                                />
-                              </div>
-                            </FormControl>
-                            <p className="text-xs text-muted-foreground/70">Set a specific price overriding the movie's default pricing.</p>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                </div>
-              </form>
-            </Form>
-
-            <div className="p-6 border-t border-border bg-background flex items-center justify-end gap-3 shrink-0 z-10">
-              <Button type="button" variant="ghost" className="rounded-md px-6" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" form="screening-form" size="lg" className="rounded-md shadow-sm px-8" disabled={saving}>
-                {saving ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Scheduling...</>
-                ) : 'Publish Screening'}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search schedules..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-card border-border h-10 w-64 shadow-sm"
+            />
+          </div>
+          <Sheet open={open} onOpenChange={handleOpenChange}>
+            <SheetTrigger asChild>
+              <Button size="lg" className="rounded-md shadow-sm">
+                <Plus className="mr-2 h-5 w-5" /> Schedule Showtime
               </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </SheetTrigger>
+            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
+              <div className="px-8 py-8 border-b border-border shrink-0">
+                <SheetHeader>
+                  <SheetTitle className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+                    <Projector className="h-8 w-8 text-primary" /> Session Config
+                  </SheetTitle>
+                  <SheetDescription className="text-base mt-2 text-muted-foreground/80">
+                    Define a new screening session with dynamic time logic.
+                  </SheetDescription>
+                </SheetHeader>
+              </div>
+              
+              <ModernForm
+                form={form as any}
+                schema={screeningSchema}
+                defaultValues={form.getValues()}
+                onSubmit={onSubmit as any}
+                sections={screeningFormSections}
+                isSubmitting={saving}
+                submitLabel={editingScreening ? 'Update Session' : 'Commit Schedule'}
+                onCancel={() => setOpen(false)}
+                className="flex-1 overflow-hidden"
+              />
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-destructive/10 text-destructive border-l-4 border-destructive p-4 mb-6 rounded-md">
+        <div className="bg-destructive/10 text-destructive border-l-4 border-destructive p-4 mb-6 rounded-md italic">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center py-20 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" /> Loading schedules...
+        <div className="flex justify-center items-center py-20 text-muted-foreground font-medium">
+          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" /> Calibrating showtimes...
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden text-sm">
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="w-16">ID</TableHead>
-                <TableHead>Screening Details</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Start Time</TableHead>
-                <TableHead>End Time</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Availability</TableHead>
+                <TableHead>Feature Film</TableHead>
+                <TableHead>Timing</TableHead>
+                <TableHead>Venue</TableHead>
+                <TableHead>Fare</TableHead>
+                <TableHead className="w-24 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {screenings.length === 0 ? (
+              {filteredScreenings.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                     <div className="flex flex-col items-center">
-                       <Ticket className="h-12 w-12 mb-3 opacity-20" />
-                       No screenings currently scheduled.
-                     </div>
+                  <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
+                    <div className="flex flex-col items-center">
+                      <Projector className="h-12 w-12 mb-3 opacity-20" />
+                      No showtimes have been scheduled for this criteria.
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                screenings.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((screening) => (
-                  <TableRow key={screening.id} className="group hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-medium text-muted-foreground">{screening.id}</TableCell>
+                filteredScreenings.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((scr) => (
+                  <TableRow key={scr.id} className="group hover:bg-muted/30 transition-colors">
                     <TableCell>
-                      <div className="font-semibold text-foreground text-base mb-1 flex items-center gap-1.5">
-                        <Video className="h-4 w-4 text-primary" />
-                        {screening.movie.title}
+                      <div className="flex items-center gap-3">
+                        {scr.movie.posterUrl && (
+                          <img src={scr.movie.posterUrl} className="h-10 w-7 rounded-sm border border-border object-cover" alt="" />
+                        )}
+                        <div>
+                          <div className="font-bold text-foreground leading-tight">{scr.movie.title}</div>
+                          <div className="text-[10px] text-muted-foreground uppercase flex items-center font-bold tracking-widest gap-1 mt-0.5">
+                            <BadgeInfo className="w-3 h-3" /> {scr.movie.genre.split(',')[0]}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium text-foreground flex items-center gap-1.5">
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
-                        {screening.screen?.branch?.name || 'Unknown Branch'}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 ml-4.5">
-                        {screening.screen?.name || 'Unknown Screen'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-foreground">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                        {format(new Date(screening.startTime), 'MMM d, yyyy')}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(screening.startTime), 'h:mm a')}
+                      <div className="flex flex-col gap-0.5">
+                        <div className="font-bold flex items-center">
+                          {new Date(scr.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <ArrowRight className="mx-2 h-3 w-3 text-muted-foreground opacity-40" />
+                          {new Date(scr.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center">
+                          <Calendar className="w-3 h-3 mr-1 opacity-60" /> {new Date(scr.startTime).toLocaleDateString()}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5 text-foreground">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                        {format(new Date(screening.endTime), 'MMM d, yyyy')}
+                      <div className="flex flex-col gap-0.5">
+                        <div className="font-semibold text-foreground flex items-center">
+                          <MonitorPlay className="w-3 h-3 mr-1.5 opacity-60" /> {scr.screen.name}
+                        </div>
+                        <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">
+                          {scr.screen.branch.name}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(screening.endTime), 'h:mm a')}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {screening.price ? `$${screening.price.toFixed(2)}` : (
-                        <span className="text-muted-foreground text-xs italic">Inherited</span>
-                      )}
                     </TableCell>
                     <TableCell>
-                      {new Date(screening.startTime) > new Date() ? (
-                        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-500">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          Upcoming
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
-                          <XCircle className="w-3 h-3 mr-1" />
-                          Concluded
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-foreground">${(scr.price || 0).toFixed(2)}</span>
+                        <Star className="w-3 h-3 text-yellow-500 fill-current opacity-60" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(scr)} className="h-8 w-8 text-primary hover:bg-primary/10">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(scr.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
-
+          
           <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
             <div>
-              Showing {Math.min(screenings.length, (page * itemsPerPage) + 1)} - {Math.min(screenings.length, (page + 1) * itemsPerPage)} of {screenings.length} screenings
+              Showing {Math.min(filteredScreenings.length, (page * itemsPerPage) + 1)} - {Math.min(filteredScreenings.length, (page + 1) * itemsPerPage)} of {filteredScreenings.length} sessions
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border h-8 shadow-sm">
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= screenings.length} onClick={() => setPage(p => p + 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= filteredScreenings.length} onClick={() => setPage(p => p + 1)} className="border-border h-8 shadow-sm">
                 Next
               </Button>
             </div>
