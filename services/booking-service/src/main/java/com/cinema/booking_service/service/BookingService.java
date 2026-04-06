@@ -58,6 +58,9 @@ public class BookingService {
     @Value("${core.service.url:http://localhost:8081}")
     private String coreServiceUrl;
 
+    @Value("${support.service.url:http://support-service:8084}")
+    private String supportServiceUrl;
+
     private static final int HOLD_TTL_SECONDS = 120;
 
     // Map to hold thread locks per show to prevent concurrent double-booking
@@ -132,7 +135,7 @@ public class BookingService {
                     .status(BookingStatus.SEATS_HELD)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
-                    .totalAmount(calculateTotalPrice(request.getSeatIds().size()))
+                    .totalAmount(evaluateSeatPricing(request.getSeatIds().size(), showDetails.getShowTime()))
                     .build();
 
             // Let the database generate the ID
@@ -500,7 +503,7 @@ public class BookingService {
         
         // Update total amount: base seats + snacks
         int seatCount = bookingSeatRepository.countByBookingId(bookingId);
-        BigDecimal seatsTotal = calculateTotalPrice(seatCount);
+        BigDecimal seatsTotal = evaluateSeatPricing(seatCount, booking.getShowTime());
         booking.setTotalAmount(seatsTotal.add(booking.getSnacksTotal()));
 
         booking.setStatus(BookingStatus.SNACKS_SELECTED);
@@ -797,6 +800,37 @@ public class BookingService {
         }
         // Default price per seat is $15.00
         return BigDecimal.valueOf(seatCount * 15.00).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal evaluateSeatPricing(int seatCount, LocalDateTime showTime) {
+        if (seatCount <= 0 || showTime == null) {
+            return calculateTotalPrice(seatCount);
+        }
+
+        try {
+            Map<String, Object> request = new HashMap<>();
+            request.put("seatCount", seatCount);
+            request.put("basePrice", 1500L); // cents per seat
+            request.put("showTime", showTime);
+            request.put("bookingTime", LocalDateTime.now());
+            request.put("currency", "USD");
+
+            String url = supportServiceUrl + "/api/rules/evaluate/price";
+            PricingResponse pricingResponse = restTemplate.postForObject(url, request, PricingResponse.class);
+            if (pricingResponse != null && pricingResponse.getFinalPrice() != null) {
+                return BigDecimal.valueOf(pricingResponse.getFinalPrice())
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to evaluate price via support service, falling back to default price: {}", e.getMessage());
+        }
+
+        return calculateTotalPrice(seatCount);
+    }
+
+    @lombok.Data
+    private static class PricingResponse {
+        private Long finalPrice;
     }
 
     private UserHistoryBookingDto enrichHistoryFromDatabaseIfNeeded(UserHistoryBookingDto dto) {
