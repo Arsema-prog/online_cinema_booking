@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,14 +22,7 @@ const TicketsPage: React.FC = () => {
   const { toast } = useToast();
 
   // Handle ticketId from URL parameters (for external QR scans)
-  useEffect(() => {
-    const ticketId = searchParams.get('ticketId');
-    if (ticketId && !scannedTicket && !isLoadingTicket) {
-      loadTicketFromUrl(ticketId);
-    }
-  }, [searchParams, scannedTicket, isLoadingTicket]);
-
-  const loadTicketFromUrl = async (ticketId: string) => {
+  const loadTicketFromUrl = useCallback(async (ticketId: string) => {
     setIsLoadingTicket(true);
     try {
       const ticket = await getTicketDetails(ticketId);
@@ -47,7 +40,14 @@ const TicketsPage: React.FC = () => {
     } finally {
       setIsLoadingTicket(false);
     }
-  };
+  }, [setSearchParams, toast]);
+
+  useEffect(() => {
+    const ticketId = searchParams.get('ticketId');
+    if (ticketId && !scannedTicket && !isLoadingTicket) {
+      loadTicketFromUrl(ticketId);
+    }
+  }, [searchParams, scannedTicket, isLoadingTicket, loadTicketFromUrl]);
 
   useEffect(() => {
     return () => {
@@ -74,7 +74,7 @@ const TicketsPage: React.FC = () => {
       (decodedText) => {
         onScanSuccess(decodedText);
       },
-      (errorMessage) => {
+      () => {
         // Ignore scan errors, they're normal
       }
     );

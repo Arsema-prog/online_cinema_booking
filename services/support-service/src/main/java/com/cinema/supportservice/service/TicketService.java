@@ -35,6 +35,9 @@ public class TicketService {
     @Value("${minio.bucket}")
     private String bucketName;
 
+    @Value("${backoffice.url:http://localhost:5173}")
+    private String backofficeUrl;
+
     @Transactional
     public List<String> generateTickets(BookingConfirmedEvent event) {
 
@@ -73,8 +76,8 @@ public class TicketService {
             ticket.setQrObjectKey(qrObjectKey);
 
             try {
-                // Generate QR code with validation URL
-                String validationUrl = "/validate-ticket?ticketId=" + ticketId.toString();
+                // Generate QR code with full backoffice validation URL
+                String validationUrl = backofficeUrl + "/validate-ticket?ticketId=" + ticketId.toString();
                 BufferedImage qrImage = QrCodeGenerator.generateQrCodeImage(validationUrl, 250, 250);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ImageIO.write(qrImage, "PNG", baos);

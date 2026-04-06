@@ -9,27 +9,25 @@ export default function TicketValidationRedirect() {
 
   useEffect(() => {
     const ticketId = searchParams.get('ticketId');
+    const currentUrl = window.location.pathname + window.location.search;
 
     if (!isAuthenticated) {
-      // Redirect to login with return URL
-      const currentUrl = window.location.pathname + window.location.search;
-      navigate(`/login?returnUrl=${encodeURIComponent(currentUrl)}`);
+      navigate(`/login?returnUrl=${encodeURIComponent(currentUrl)}`, { replace: true });
       return;
     }
 
-    // User is authenticated, redirect to tickets page with ticketId
     if (ticketId) {
-      navigate(`/tickets?ticketId=${ticketId}`);
+      navigate(`/tickets?ticketId=${encodeURIComponent(ticketId)}`, { replace: true });
     } else {
-      navigate('/tickets');
+      navigate('/tickets', { replace: true });
     }
   }, [isAuthenticated, navigate, searchParams]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Redirecting to ticket validation...</p>
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="rounded-3xl border border-border bg-card p-8 shadow-xl">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+        <p className="text-center text-sm text-muted-foreground">Redirecting to ticket validation...</p>
       </div>
     </div>
   );
