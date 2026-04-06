@@ -24,7 +24,6 @@ export const useBooking = (screeningId: number) => {
 
   const normalizeStatus = (status: string): ScreeningSeat['status'] => {
     const normalized = status?.toUpperCase();
-    if (normalized === 'BOOKED') return 'RESERVED';
     if (normalized === 'HELD') return 'HELD';
     if (normalized === 'RESERVED') return 'RESERVED';
     if (normalized === 'CANCELLED') return 'CANCELLED';

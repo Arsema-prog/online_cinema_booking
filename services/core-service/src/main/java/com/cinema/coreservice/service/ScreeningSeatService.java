@@ -5,6 +5,7 @@ import com.cinema.coreservice.model.ScreeningSeat;
 import com.cinema.coreservice.model.enums.SeatStatus;
 import com.cinema.coreservice.repository.ScreeningRepository;
 import com.cinema.coreservice.repository.ScreeningSeatRepository;
+import com.cinema.coreservice.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,9 +25,20 @@ public class ScreeningSeatService {
 
     private final ScreeningSeatRepository screeningSeatRepository;
     private final ScreeningRepository screeningRepository;
+    private final SeatRepository seatRepository;
 
     public List<ScreeningSeat> getSeatsByScreeningId(Long screeningId) {
-        return screeningSeatRepository.findByScreeningIdOrderBySeatRowLabelSeatNumber(screeningId);
+        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdOrderBySeatRowLabelSeatNumber(screeningId);
+
+        // Normalize seat labels and ensure status field is populated for frontend
+        for (ScreeningSeat ss : seats) {
+            normalizeSeatNumber(ss);
+            if (ss.getStatus() == null) {
+                ss.setStatus(Boolean.TRUE.equals(ss.getIsBooked()) ? SeatStatus.RESERVED.name() : SeatStatus.AVAILABLE.name());
+            }
+        }
+
+        return seats;
     }
 
     public List<Object[]> getSeatMappingByScreeningId(Long screeningId) {
@@ -55,7 +67,7 @@ public class ScreeningSeatService {
 
     @Transactional
     public List<ScreeningSeat> holdSeats(Long screeningId, List<Long> seatIds) {
-        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdIn(screeningId, seatIds);
+        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdInForUpdate(screeningId, seatIds);
 
         for (ScreeningSeat seat : seats) {
             if (Boolean.TRUE.equals(seat.getIsBooked())) {
@@ -63,6 +75,8 @@ public class ScreeningSeatService {
             }
             seat.setIsBooked(true);
             seat.getSeat().setIsAvailable(false);
+            seat.setStatus(SeatStatus.HELD.name());
+            normalizeSeatNumber(seat);
         }
 
         List<ScreeningSeat> updatedSeats = screeningSeatRepository.saveAll(seats);
@@ -73,11 +87,16 @@ public class ScreeningSeatService {
 
     @Transactional
     public List<ScreeningSeat> reserveSeats(Long screeningId, List<Long> seatIds) {
-        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdIn(screeningId, seatIds);
+        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdInForUpdate(screeningId, seatIds);
 
         for (ScreeningSeat seat : seats) {
+            if (Boolean.TRUE.equals(seat.getIsBooked())) {
+                throw new IllegalStateException("Seat " + seat.getSeat().getSeatNumber() + " is already booked or held");
+            }
             seat.setIsBooked(true);
             seat.getSeat().setIsAvailable(false);
+            seat.setStatus(SeatStatus.RESERVED.name());
+            normalizeSeatNumber(seat);
         }
 
         List<ScreeningSeat> updatedSeats = screeningSeatRepository.saveAll(seats);
@@ -88,7 +107,23 @@ public class ScreeningSeatService {
 
     @Transactional
     public List<ScreeningSeat> bookSeats(Long screeningId, List<Long> seatIds) {
-        return reserveSeats(screeningId, seatIds);
+        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdInForUpdate(screeningId, seatIds);
+
+        for (ScreeningSeat seat : seats) {
+            if (Boolean.TRUE.equals(seat.getIsBooked())) {
+                throw new IllegalStateException("Seat " + seat.getSeat().getSeatNumber() + " is already booked or held");
+            }
+            seat.setIsBooked(true);
+            seat.getSeat().setIsAvailable(false);
+            // Use RESERVED as the canonical confirmed state
+            seat.setStatus(SeatStatus.RESERVED.name());
+            normalizeSeatNumber(seat);
+        }
+
+        List<ScreeningSeat> updatedSeats = screeningSeatRepository.saveAll(seats);
+        updateScreeningAvailableSeats(screeningId);
+
+        return updatedSeats;
     }
 
     @Transactional
@@ -125,8 +160,7 @@ public class ScreeningSeatService {
         Long screeningId = findScreeningIdByUuid(showUuid);
         log.info("Mapped to screening ID: {}", screeningId);
 
-        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdIn(
-                screeningId, seatIds);
+        List<ScreeningSeat> seats = screeningSeatRepository.findByScreeningIdAndSeatIdInForUpdate(screeningId, seatIds);
 
         log.info("Found {} seats to update", seats.size());
 
@@ -134,13 +168,30 @@ public class ScreeningSeatService {
             Boolean oldStatus = seat.getIsBooked();
             Boolean newIsBooked = (status == SeatStatus.HELD || status == SeatStatus.RESERVED);
             seat.setIsBooked(newIsBooked);
-            log.info("Updated seat {} from {} to {}", seat.getSeat().getSeatNumber(), oldStatus, newIsBooked);
+            seat.setStatus(status != null ? status.name() : (newIsBooked ? SeatStatus.RESERVED.name() : SeatStatus.AVAILABLE.name()));
+            log.info("Updated seat {} from {} to {}, status={}", seat.getSeat().getSeatNumber(), oldStatus, newIsBooked, seat.getStatus());
 
             seat.getSeat().setIsAvailable(!newIsBooked);
+            normalizeSeatNumber(seat);
         }
 
         screeningSeatRepository.saveAll(seats);
         updateScreeningAvailableSeats(screeningId);
+    }
+
+    private void normalizeSeatNumber(ScreeningSeat screeningSeat) {
+        if (screeningSeat == null || screeningSeat.getSeat() == null) return;
+        String row = screeningSeat.getSeat().getRowLabel();
+        String num = screeningSeat.getSeat().getSeatNumber();
+        if (row != null && num != null && !num.startsWith(row)) {
+            screeningSeat.getSeat().setSeatNumber(row + num);
+            try {
+                // Persist normalized seatNumber back to core.seat to keep a single source of truth
+                seatRepository.save(screeningSeat.getSeat());
+            } catch (Exception e) {
+                log.warn("Failed to persist normalized seatNumber for seat {}: {}", screeningSeat.getSeat().getId(), e.getMessage());
+            }
+        }
     }
 
     @Transactional

@@ -56,6 +56,24 @@ export const BookingHistoryPage: React.FC = () => {
               <button
                 key={f}
                 onClick={() => setFilter(f as any)}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  background:'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 40,
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow:  '0 4px 12px rgba(139, 92, 246, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  opacity:  1
+                }}
                 className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
                   filter === f 
                     ? 'bg-slate-700 text-white shadow-sm' 

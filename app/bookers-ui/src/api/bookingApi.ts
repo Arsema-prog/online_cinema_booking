@@ -40,6 +40,25 @@ const resolveUserIdFromToken = (): string => {
   }
 };
 
+// Use a stable per-browser guest id when no authenticated token is available.
+const getOrCreateGuestUserId = (): string => {
+  try {
+    const existing = localStorage.getItem('bookers_guest_id');
+    if (existing) return existing;
+    // Lightweight UUIDv4 generator
+    const uuidv4 = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+    const id = uuidv4();
+    localStorage.setItem('bookers_guest_id', id);
+    return id;
+  } catch (e) {
+    return '123e4567-e89b-12d3-a456-426614174000';
+  }
+};
+
 // Get screening seats
 export const getScreeningSeats = async (screeningId: number): Promise<ScreeningSeat[]> => {
   const response = await axios.get(`${CORE_BASE_URL}/screening-seats/screening/${screeningId}`);
@@ -54,10 +73,14 @@ export const getSeatUuidMapping = async (screeningId: number): Promise<Record<nu
 
 // Hold seats
 export const holdSeats = async (showId: string, seatIds: string[]): Promise<HoldResponse> => {
+  // Prefer authenticated user id; otherwise use the per-browser guest id.
+  const token = getAccessTokenGetter()();
+  const userId = token ? resolveUserIdFromToken() : getOrCreateGuestUserId();
+
   const response = await axios.post(`${BOOKING_BASE_URL}/bookings/hold`, {
     showId,
     seatIds,
-    userId: resolveUserIdFromToken()
+    userId
   });
   return response.data;
 };

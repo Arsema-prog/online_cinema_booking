@@ -34,6 +34,9 @@ public class BookingSeat {
     @Column(name = "seat_id", nullable = false)
     private UUID seatId;
 
+        @Column(name = "seat_label")
+        private String seatLabel;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private BookingStatus status; // CONFIRMED, CANCELLED

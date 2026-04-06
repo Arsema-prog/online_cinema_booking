@@ -178,20 +178,20 @@ useEffect(() => {
         style={{
                   flex: 1,
                   padding: '14px',
-                  background: processing ? '#334155' : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
                   color: 'white',
                   border: 'none',
                   borderRadius: 40,
                   fontSize: 16,
                   fontWeight: 'bold',
-                  cursor: processing || holdExpired ? 'not-allowed' : 'pointer',
+                  cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: processing ? 'none' : '0 4px 12px rgba(139, 92, 246, 0.3)',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  opacity: processing || holdExpired ? 0.5 : 1
+                  opacity: 1
                 }}
         className="absolute right-0 top-0 px-4 py-2 bg-slate-800 hover:bg-indigo-600 rounded-xl text-sm font-semibold transition-colors"
       >

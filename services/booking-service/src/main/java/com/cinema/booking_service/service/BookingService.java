@@ -164,7 +164,8 @@ public class BookingService {
                             .bookingId(bookingId)
                             .showId(request.getShowId())
                             .seatId(seatId)
-                            .status(BookingStatus.SEATS_HELD)
+                        .seatLabel(getSeatNumber(seatId))
+                        .status(BookingStatus.SEATS_HELD)
                             .build())
                     .collect(Collectors.toList());
 
@@ -249,9 +250,10 @@ public class BookingService {
 
         for (UUID seatId : bookedSeatIds) {
             if (!heldSeatIds.contains(seatId)) {
+                // Use RESERVED as the canonical confirmed state
                 response.add(SeatAvailability.builder()
                         .seatId(seatId)
-                        .status("BOOKED")
+                        .status("RESERVED")
                         .build());
             }
         }
@@ -286,20 +288,24 @@ public class BookingService {
         log.info("Updated booking status to CONFIRMED: {}", bookingId);
 
         try {
+            String publisherUserId = booking.getUserId() != null ? booking.getUserId().toString() : "unknown";
             eventPublisher.publishSeatReservedEvent(
                     booking.getShowId(),
                     getSeatIdsFromBooking(bookingId),
                     bookingId,
-                    booking.getUserId().toString()
+                    publisherUserId
             );
             log.info("Published seat reserved event for booking: {}", bookingId);
         } catch (Exception e) {
             log.error("Failed to publish seat reserved event", e);
         }
-        // Update BookingSeat status
+        // Update BookingSeat status and ensure seat label is persisted
         List<BookingSeat> seats = bookingSeatRepository.findByBookingId(bookingId);
         for (BookingSeat seat : seats) {
             if (seat != null) {
+                if (seat.getSeatLabel() == null) {
+                    seat.setSeatLabel(getSeatNumber(seat.getSeatId()));
+                }
                 seat.setStatus(BookingStatus.CONFIRMED);
             }
         }
@@ -319,7 +325,8 @@ public class BookingService {
             if (seat != null && seat.getSeatId() != null) {
                 webSocketService.broadcastSeatUpdate(
                     booking.getShowId(),
-                    SeatAvailability.builder().seatId(seat.getSeatId()).status("BOOKED").build()
+                    // broadcast RESERVED to indicate confirmed seats
+                    SeatAvailability.builder().seatId(seat.getSeatId()).status("RESERVED").build()
                 );
             }
         }
@@ -327,12 +334,11 @@ public class BookingService {
         // Publish booking confirmed event
         publishBookingConfirmedEvent(booking, seats, normalizedUserEmail);
 
-        // Persist user booking history to MinIO for "My Profile / View Bookings"
+        // Persist user booking history to MinIO for "My Profile / View Bookings" using stored labels when available
         List<String> seatNumbers = seats.stream()
-                .filter(Objects::nonNull)
-                .map(BookingSeat::getSeatId)
-                .map(this::getSeatNumber)
-                .collect(Collectors.toList());
+            .filter(Objects::nonNull)
+            .map(bs -> bs.getSeatLabel() != null ? bs.getSeatLabel() : getSeatNumber(bs.getSeatId()))
+            .collect(Collectors.toList());
         userHistoryStorageService.saveConfirmedBooking(booking, seatNumbers);
 
         // Get details for core service event

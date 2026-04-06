@@ -11,5 +11,5 @@ import java.util.UUID;
 @Builder
 public class SeatAvailability {
     private UUID seatId;
-    private String status; // AVAILABLE / HELD / BOOKED
+    private String status; // AVAILABLE / HELD / RESERVED
 }

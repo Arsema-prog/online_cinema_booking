@@ -44,9 +44,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 const keycloak = new Keycloak({
- url: env.keycloakUrl,
- realm: env.keycloakRealm,
- clientId: env.keycloakClientId
+            url: 'http://localhost:8180',
+            realm: 'cinema-realm',
+            clientId: 'back-office'
 })
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
