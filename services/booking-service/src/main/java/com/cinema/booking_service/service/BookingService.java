@@ -164,8 +164,7 @@ public class BookingService {
                             .bookingId(bookingId)
                             .showId(request.getShowId())
                             .seatId(seatId)
-                        .seatLabel(getSeatNumber(seatId))
-                        .status(BookingStatus.SEATS_HELD)
+                            .status(BookingStatus.SEATS_HELD)
                             .build())
                     .collect(Collectors.toList());
 
@@ -299,13 +298,10 @@ public class BookingService {
         } catch (Exception e) {
             log.error("Failed to publish seat reserved event", e);
         }
-        // Update BookingSeat status and ensure seat label is persisted
+        // Update BookingSeat status
         List<BookingSeat> seats = bookingSeatRepository.findByBookingId(bookingId);
         for (BookingSeat seat : seats) {
             if (seat != null) {
-                if (seat.getSeatLabel() == null) {
-                    seat.setSeatLabel(getSeatNumber(seat.getSeatId()));
-                }
                 seat.setStatus(BookingStatus.CONFIRMED);
             }
         }
@@ -334,11 +330,12 @@ public class BookingService {
         // Publish booking confirmed event
         publishBookingConfirmedEvent(booking, seats, normalizedUserEmail);
 
-        // Persist user booking history to MinIO for "My Profile / View Bookings" using stored labels when available
+        // Persist user booking history to MinIO for "My Profile / View Bookings"
         List<String> seatNumbers = seats.stream()
-            .filter(Objects::nonNull)
-            .map(bs -> bs.getSeatLabel() != null ? bs.getSeatLabel() : getSeatNumber(bs.getSeatId()))
-            .collect(Collectors.toList());
+                .filter(Objects::nonNull)
+                .map(BookingSeat::getSeatId)
+                .map(this::getSeatNumber)
+                .collect(Collectors.toList());
         userHistoryStorageService.saveConfirmedBooking(booking, seatNumbers);
 
         // Get details for core service event
