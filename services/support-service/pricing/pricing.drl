@@ -8,25 +8,30 @@ global List breakdown;
 
 // 1. Base price (always first)
 rule "Base price"
-    salience 10
+    salience 40
     no-loop true
     when
-        $req: PriceEvaluationRequest( finalPrice == null )
+        $req: PriceEvaluationRequest( finalPrice == null, basePrice != null )
     then
+        long finalPrice = $req.getBasePrice();
+        if ($req.getSeatCount() != null && $req.getSeatCount() > 0) {
+            finalPrice = finalPrice * $req.getSeatCount();
+        }
+
         modify($req) {
-            setFinalPrice($req.getBasePrice())
+            setFinalPrice(finalPrice)
         };
 
         BreakdownItem item = new BreakdownItem();
         item.setRuleName("Base price");
         item.setDescription("Initial base price applied");
-        item.setAppliedValue(1.0);
+        item.setAppliedValue($req.getSeatCount() != null ? $req.getSeatCount() : 1);
         breakdown.add(item);
 end
 
 // 2. VIP multiplier
 rule "VIP multiplier"
-    salience 20
+    salience 30
     no-loop true
     when
         $req: PriceEvaluationRequest( seatCategory == "VIP" )
@@ -44,9 +49,30 @@ rule "VIP multiplier"
         breakdown.add(item);
 end
 
-// 3. HOLIDAY promo (10% discount)
+// 3. Last-day surcharge
+rule "Last day surcharge"
+    salience 20
+    no-loop true
+    when
+        $req: PriceEvaluationRequest( showTime != null, bookingTime != null,
+                                      showTime.toLocalDate().equals(bookingTime.toLocalDate()) )
+    then
+        Long current = $req.getFinalPrice();
+
+        modify($req) {
+            setFinalPrice(Math.round(current * 1.2))
+        };
+
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("Last day surcharge");
+        item.setDescription("20% surcharge for booking on the show day");
+        item.setAppliedValue(1.2);
+        breakdown.add(item);
+end
+
+// 4. HOLIDAY promo (10% discount)
 rule "HOLIDAY promo 10% off"
-    salience 30
+    salience 10
     no-loop true
     when
         $req: PriceEvaluationRequest( promoCode == "HOLIDAY" )
