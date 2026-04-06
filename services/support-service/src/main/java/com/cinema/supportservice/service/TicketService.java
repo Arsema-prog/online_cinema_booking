@@ -73,8 +73,9 @@ public class TicketService {
             ticket.setQrObjectKey(qrObjectKey);
 
             try {
-                // Generate QR code image
-                BufferedImage qrImage = QrCodeGenerator.generateQrCodeImage(ticketId.toString(), 250, 250);
+                // Generate QR code with validation URL
+                String validationUrl = "/validate-ticket?ticketId=" + ticketId.toString();
+                BufferedImage qrImage = QrCodeGenerator.generateQrCodeImage(validationUrl, 250, 250);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ImageIO.write(qrImage, "PNG", baos);
                 byte[] qrBytes = baos.toByteArray();

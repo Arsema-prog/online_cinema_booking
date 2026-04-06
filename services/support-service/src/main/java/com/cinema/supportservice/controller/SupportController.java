@@ -87,4 +87,13 @@ public class SupportController {
 
         return ResponseEntity.ok(ticket);
     }
+
+    // Get ticket details for validation (used by QR scanner)
+    @GetMapping("/tickets/{ticketId}/details")
+    public ResponseEntity<Ticket> getTicketDetails(@PathVariable UUID ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        return ResponseEntity.ok(ticket);
+    }
 }
