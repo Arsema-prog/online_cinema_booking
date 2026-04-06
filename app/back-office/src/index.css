@@ -54,7 +54,7 @@
     --ring: oklch(0.65 0.24 35);
 }
 
-@theme inline {
+@theme {
     --font-sans: 'Geist Variable', 'Inter', sans-serif;
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -89,7 +89,8 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    @apply outline-ring/50;
     }
   body {
     @apply bg-background text-foreground antialiased;

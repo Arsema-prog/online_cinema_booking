@@ -35,6 +35,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/auth/AuthContext';
 
 const snackSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -49,6 +50,9 @@ const snackSchema = z.object({
 type SnackFormValues = z.infer<typeof snackSchema>;
 
 export default function SnacksPage() {
+  const { hasRole } = useAuth();
+  const isManager = hasRole('ADMIN') || hasRole('MANAGER') || hasRole('STAFF');
+
   const [snacks, setSnacks] = useState<Snack[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,36 +192,38 @@ export default function SnacksPage() {
               className="pl-9 bg-card border-border h-10 w-64 shadow-sm focus:ring-1 focus:ring-primary"
             />
           </div>
-          <Sheet open={open} onOpenChange={handleOpenChange}>
-            <SheetTrigger asChild>
-              <Button size="lg" className="rounded-md shadow-sm">
-                <Plus className="mr-2 h-5 w-5" /> Add New Item
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
-              <div className="px-8 py-8 border-b border-border shrink-0">
-                <SheetHeader>
-                  <SheetTitle className="text-3xl font-extrabold tracking-tight">
-                    {editingSnack ? 'Edit Item' : 'New Concession'}
-                  </SheetTitle>
-                  <SheetDescription className="text-base mt-2 text-muted-foreground/80">
-                    {editingSnack ? 'Change details for this snack or drink.' : 'Add a new product to your cinema menu.'}
-                  </SheetDescription>
-                </SheetHeader>
-              </div>
-              
-              <ModernForm
-                schema={snackSchema}
-                defaultValues={form.getValues()}
-                onSubmit={onSubmit as any}
-                sections={snackFormSections}
-                isSubmitting={saving}
-                submitLabel={editingSnack ? 'Update Item' : 'Add to Menu'}
-                onCancel={() => setOpen(false)}
-                className="flex-1 overflow-hidden"
-              />
-            </SheetContent>
-          </Sheet>
+          {isManager && (
+            <Sheet open={open} onOpenChange={handleOpenChange}>
+              <SheetTrigger asChild>
+                <Button size="lg" className="rounded-md shadow-sm">
+                  <Plus className="mr-2 h-5 w-5" /> Add New Item
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
+                <div className="px-8 py-8 border-b border-border shrink-0">
+                  <SheetHeader>
+                    <SheetTitle className="text-3xl font-extrabold tracking-tight">
+                      {editingSnack ? 'Edit Item' : 'New Concession'}
+                    </SheetTitle>
+                    <SheetDescription className="text-base mt-2 text-muted-foreground/80">
+                      {editingSnack ? 'Change details for this snack or drink.' : 'Add a new product to your cinema menu.'}
+                    </SheetDescription>
+                  </SheetHeader>
+                </div>
+                
+                <ModernForm
+                  schema={snackSchema}
+                  defaultValues={form.getValues()}
+                  onSubmit={onSubmit as any}
+                  sections={snackFormSections}
+                  isSubmitting={saving}
+                  submitLabel={editingSnack ? 'Update Item' : 'Add to Menu'}
+                  onCancel={() => setOpen(false)}
+                  className="flex-1 overflow-hidden"
+                />
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </div>
 
@@ -295,14 +301,16 @@ export default function SnacksPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(snack)} className="h-8 w-8 text-primary hover:bg-primary/10">
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(snack.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {isManager && (
+                        <div className="flex justify-end gap-1 transition-opacity">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(snack)} className="h-8 w-8 text-primary hover:bg-primary/10">
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(snack.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
