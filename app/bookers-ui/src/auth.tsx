@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<any | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const keycloakRef = useRef<Keycloak | null>(null);
-  const tokenRefreshInterval = useRef<NodeJS.Timeout | null>(null);
+  const tokenRefreshInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const extractRoles = (keycloak: Keycloak): Role[] => {
     try {

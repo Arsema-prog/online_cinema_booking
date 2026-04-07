@@ -37,7 +37,7 @@ export const PaymentPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPay, bookingId]);
 
-  const resolveUserEmail = async (token: string | null): Promise<string | null> => {
+  const resolveUserEmail = async (token: string | null | undefined): Promise<string | null> => {
     let email: string | null = null;
 
     if (token) {
@@ -109,9 +109,10 @@ export const PaymentPage: React.FC = () => {
 
       const token = getAccessTokenGetter()();
       const userEmail = await resolveUserEmail(token);
-      if (userEmail) {
+      const checkoutEmail = userEmail ?? "";
+      if (checkoutEmail) {
         try {
-          sessionStorage.setItem('bookers_last_checkout_email', userEmail);
+          sessionStorage.setItem('bookers_last_checkout_email', checkoutEmail);
         } catch {}
       }
       

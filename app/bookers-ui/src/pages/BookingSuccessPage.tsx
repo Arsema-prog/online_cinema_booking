@@ -44,6 +44,8 @@ export const BookingSuccessPage: React.FC = () => {
   );
   const emailTarget = (location.state as any)?.emailTarget as string | undefined;
   const displayEmailTarget = emailTarget ?? emailFromSession;
+  const processing = false;
+  const holdExpired = false;
 
 useEffect(() => {
 

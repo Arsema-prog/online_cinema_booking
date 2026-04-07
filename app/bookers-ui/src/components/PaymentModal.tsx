@@ -20,8 +20,8 @@ export const PaymentModal: React.FC<Props> = ({ bookingId, amount, onSuccess, on
     setError(null);
 
     try {
-      const checkoutUrl = await paymentService.createCheckoutSession(bookingId, amount);
-      window.location.href = checkoutUrl;
+      const session = await paymentService.createCheckoutSession(bookingId, amount);
+      window.location.href = session.url;
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'An error occurred during payment processing.');
