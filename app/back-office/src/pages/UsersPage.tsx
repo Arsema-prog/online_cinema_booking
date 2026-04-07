@@ -1,18 +1,4 @@
 import { useEffect, useState } from 'react';
-import { 
-  Loader2, 
-  Search, 
-  UserPlus, 
-  Shield, 
-  Key, 
-  Trash2, 
-  Users, 
-  Pencil, 
-  Unlock,
-  User as UserIcon,
-  Mail,
-  Fingerprint
-} from 'lucide-react';
 import { format } from 'date-fns';
 import * as z from 'zod';
 
@@ -156,14 +142,14 @@ export default function UsersPage() {
       fields: [
         { name: "firstName", label: "First Name", type: "text", required: true, placeholder: "John" },
         { name: "lastName", label: "Last Name", type: "text", required: true, placeholder: "Doe" },
-        { name: "email", label: "Email Address", type: "text", required: true, placeholder: "john.doe@example.com", icon: <Mail className="w-4 h-4" />, colSpan: 2 },
+        { name: "email", label: "Email Address", type: "text", required: true, placeholder: "john.doe@example.com", icon: <span className="material-symbols-outlined text-[1rem]">mail</span>, colSpan: 2 },
       ]
     },
     {
       title: "Security & Permissions",
       fields: [
-        { name: "username", label: "Username", type: "text", required: true, placeholder: "johndoe88", icon: <Fingerprint className="w-4 h-4" /> },
-        { name: "password", label: "Password", type: "text", required: true, placeholder: "••••••••", icon: <Key className="w-4 h-4" /> },
+        { name: "username", label: "Username", type: "text", required: true, placeholder: "johndoe88", icon: <span className="material-symbols-outlined text-[1rem]">fingerprint</span> },
+        { name: "password", label: "Password", type: "text", required: true, placeholder: "••••••••", icon: <span className="material-symbols-outlined text-[1rem]">key</span> },
         { 
           name: "roles", label: "System Roles", type: "custom", colSpan: 2,
           render: (form) => (
@@ -198,7 +184,7 @@ export default function UsersPage() {
       fields: [
         { name: "firstName", label: "First Name", type: "text", required: true },
         { name: "lastName", label: "Last Name", type: "text", required: true },
-        { name: "email", label: "Email Address", type: "text", required: true, icon: <Mail className="w-4 h-4" />, colSpan: 2 },
+        { name: "email", label: "Email Address", type: "text", required: true, icon: <span className="material-symbols-outlined text-[1rem]">mail</span>, colSpan: 2 },
         { name: "enabled", label: "Account Status", type: "switch", description: "Allow this user to authenticate.", colSpan: 2 }
       ]
     }
@@ -208,8 +194,8 @@ export default function UsersPage() {
     {
       title: "New Credentials",
       fields: [
-        { name: "newPassword", label: "New Password", type: "text", required: true, placeholder: "••••••••", icon: <Key className="w-4 h-4" />, colSpan: 2 },
-        { name: "confirmPassword", label: "Confirm Password", type: "text", required: true, placeholder: "••••••••", icon: <Unlock className="w-4 h-4" />, colSpan: 2 },
+        { name: "newPassword", label: "New Password", type: "text", required: true, placeholder: "••••••••", icon: <span className="material-symbols-outlined text-[1rem]">key</span>, colSpan: 2 },
+        { name: "confirmPassword", label: "Confirm Password", type: "text", required: true, placeholder: "••••••••", icon: <span className="material-symbols-outlined text-[1rem]">lock_open</span>, colSpan: 2 },
       ]
     }
   ];
@@ -225,7 +211,7 @@ export default function UsersPage() {
               {availableRoles.map((role) => (
                 <div 
                   key={role} 
-                  className="flex items-center justify-between rounded-xl border border-border p-4 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                  className="flex items-center justify-between rounded-xl border border-surface-container-highest/50 p-4 bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer"
                   onClick={() => {
                     const current = form.getValues('roles') || [];
                     const next = current.includes(role) ? current.filter((r: string) => r !== role) : [...current, role];
@@ -233,8 +219,8 @@ export default function UsersPage() {
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <Shield className={cn("h-5 w-5", role === 'ADMIN' ? 'text-primary' : role === 'MANAGER' ? 'text-blue-500' : 'text-slate-400')} />
-                    <span className="font-bold tracking-tight">{role}</span>
+                    <span className={cn("material-symbols-outlined text-[1.2rem]", role === 'ADMIN' ? 'text-primary-container' : role === 'MANAGER' ? 'text-blue-400' : 'text-on-surface-variant')}>shield</span>
+                    <span className="font-bold tracking-tight text-on-surface">{role}</span>
                   </div>
                   <Checkbox checked={(form.watch('roles') || []).includes(role)} />
                 </div>
@@ -247,25 +233,29 @@ export default function UsersPage() {
   ];
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight">Users</h1>
-          <p className="text-muted-foreground mt-1">Manage platform staff and administrative privileges.</p>
+    <div className="animate-in fade-in duration-500 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-surface-container-high rounded-[2rem] p-8 md:p-10 border border-surface-container-highest/50 shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-container/10 blur-[50px] rounded-full pointer-events-none" />
+        <div className="relative z-10">
+          <div className="inline-flex rounded-lg bg-primary-container/20 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary-container border border-primary-container/20 mb-4">
+             Identity Management
+          </div>
+          <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tight text-on-surface">Users</h1>
+          <p className="text-on-surface-variant font-medium mt-2">Manage platform staff and administrative privileges.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[1.2rem] text-on-surface-variant">search</span>
             <Input
               placeholder="Search directory..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-48 lg:w-64 pl-9 bg-card shadow-sm border-border rounded-md"
+              className="pl-12 bg-surface-container-lowest border-surface-container-highest/40 h-14 rounded-2xl w-full shadow-lg font-bold placeholder:text-on-surface-variant"
               onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
             />
           </div>
-          <Button onClick={() => setRegisterSheetOpen(true)} size="lg" className="rounded-md shadow-sm">
-            <UserPlus className="mr-2 h-4 w-4" /> Add User
+          <Button onClick={() => setRegisterSheetOpen(true)} size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary-container/20 font-bold shrink-0">
+            <span className="material-symbols-outlined mr-2">person_add</span> Add User
           </Button>
         </div>
       </div>
@@ -277,66 +267,66 @@ export default function UsersPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center py-20 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" /> Indexing user directory...
+        <div className="flex justify-center items-center py-24 text-on-surface-variant">
+          <span className="material-symbols-outlined text-4xl animate-spin text-primary-container mr-3">progress_activity</span> Indexing user directory...
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-[1.5rem] border border-surface-container-highest/50 bg-surface-container-low shadow-xl overflow-hidden">
           <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Account Profile</TableHead>
-                <TableHead>Privileges</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="w-40 text-right">Actions</TableHead>
+            <TableHeader className="bg-surface-container-highest/20">
+              <TableRow className="border-b-surface-container-highest/50">
+                <TableHead className="font-bold text-on-surface">Account Profile</TableHead>
+                <TableHead className="font-bold text-on-surface">Privileges</TableHead>
+                <TableHead className="font-bold text-on-surface">Status</TableHead>
+                <TableHead className="font-bold text-on-surface">Joined</TableHead>
+                <TableHead className="w-40 text-right font-bold text-on-surface">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-24 text-on-surface-variant border-none">
                     <div className="flex flex-col items-center">
-                      <Users className="h-12 w-12 mb-3 opacity-20" />
-                      No matching records found.
+                      <span className="material-symbols-outlined text-6xl mb-4 opacity-20" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
+                      <span className="font-bold text-lg">No matching records found.</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
-                  <TableRow key={user.id} className="group hover:bg-muted/30 transition-colors">
+                  <TableRow key={user.id} className="group hover:bg-surface-container transition-colors border-b-surface-container-highest/30">
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                          <UserIcon className="h-5 w-5" />
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-primary-container/10 flex items-center justify-center text-primary-container">
+                          <span className="material-symbols-outlined">person</span>
                         </div>
                         <div>
-                          <div className="font-bold text-foreground leading-tight">
+                          <div className="font-headline font-black text-on-surface leading-tight text-base">
                             {`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
                           </div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Mail className="h-3 w-3 opacity-60" /> {user.email}
+                          <div className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-1 font-medium">
+                            <span className="material-symbols-outlined text-[12px] opacity-60">mail</span> {user.email}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {(user.roles || []).filter((r: string) => r !== 'default-roles-cinema-realm').length > 0 ? (
                           (user.roles || []).filter((r: string) => r !== 'default-roles-cinema-realm').map((role: string) => (
                             <Badge 
                               key={role} 
                               variant="outline"
                               className={cn(
-                                "rounded-md border-transparent font-black text-[10px] tracking-widest",
-                                role === 'ADMIN' ? 'bg-primary/10 text-primary' : 'bg-blue-500/10 text-blue-500'
+                                "border border-primary-container/30 font-black text-[9px] uppercase tracking-widest px-1.5 py-0.5",
+                                role === 'ADMIN' ? 'bg-primary-container/10 text-primary-container' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
                               )}
                             >
                               {role}
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground opacity-40">standard</span>
+                          <span className="text-[10px] uppercase font-bold text-on-surface-variant opacity-60">standard</span>
                         )}
                       </div>
                     </TableCell>
@@ -347,32 +337,32 @@ export default function UsersPage() {
                             checked={user.enabled} 
                             disabled={user.id === loggedInUserId}
                             onCheckedChange={() => toggleEnabled(user)}
-                            className="data-[state=checked]:bg-emerald-500 scale-90"
+                            className="data-[state=checked]:bg-emerald-500"
                           />
-                          <span className={cn("text-[10px] font-black uppercase tracking-tighter", user.enabled ? 'text-emerald-500' : 'text-muted-foreground')}>
+                          <span className={cn("text-[10px] font-black uppercase tracking-widest", user.enabled ? 'text-emerald-400' : 'text-on-surface-variant/60')}>
                             {user.enabled ? 'Enabled' : 'Disabled'}
                           </span>
                         </div>
                       ) : (
-                        <Badge variant="outline" className={user.enabled ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' : 'opacity-40 rounded-md font-bold uppercase tracking-tighter'}>
+                        <span className={cn("text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-full border", user.enabled ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-surface-container-highest text-on-surface-variant/60 border-surface-container-highest')}>
                           {user.enabled ? 'Active Account' : 'Suspended'}
-                        </Badge>
+                        </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-xs font-medium">
+                    <TableCell className="text-on-surface-variant text-xs font-medium">
                       {user.createdTimestamp ? format(new Date(user.createdTimestamp), 'MMM d, yyyy') : '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       {canManage(user.roles || []) && (
-                        <div className="flex justify-end gap-1 transition-opacity">
-                          <Button title="Edit Profile" variant="ghost" size="icon" onClick={() => handleEdit(user)} className="h-8 w-8 text-primary hover:bg-primary/10">
-                            <Pencil className="h-4 w-4" />
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button title="Edit Profile" variant="ghost" size="icon" onClick={() => handleEdit(user)} className="h-10 w-10 text-primary-container bg-primary-container/10 hover:bg-primary-container/20 rounded-xl shadow-sm">
+                            <span className="material-symbols-outlined text-[1.2rem]">edit</span>
                           </Button>
-                          <Button title="Change Code" variant="ghost" size="icon" onClick={() => handleResetPassword(user)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
-                            <Key className="h-4 w-4" />
+                          <Button title="Change Code" variant="ghost" size="icon" onClick={() => handleResetPassword(user)} className="h-10 w-10 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl shadow-sm">
+                            <span className="material-symbols-outlined text-[1.2rem]">key</span>
                           </Button>
-                          <Button title="Access Shield" variant="ghost" size="icon" onClick={() => handleRoles(user)} className="h-8 w-8 text-indigo-500 hover:bg-indigo-500/10">
-                            <Shield className="h-4 w-4" />
+                          <Button title="Access Shield" variant="ghost" size="icon" onClick={() => handleRoles(user)} className="h-10 w-10 text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-xl shadow-sm">
+                            <span className="material-symbols-outlined text-[1.2rem]">shield</span>
                           </Button>
                           <Button 
                             title={user.id === loggedInUserId ? "Restricted" : "Delete User"} 
@@ -382,9 +372,9 @@ export default function UsersPage() {
                             onClick={() => {
                               if (user.id !== loggedInUserId) handleDelete(user.id);
                             }}
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            className="h-10 w-10 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-xl shadow-sm"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <span className="material-symbols-outlined text-[1.2rem]">delete</span>
                           </Button>
                         </div>
                       )}
@@ -395,15 +385,15 @@ export default function UsersPage() {
             </TableBody>
           </Table>
           
-          <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
+          <div className="p-5 border-t border-surface-container-highest/50 bg-surface-container flex flex-col sm:flex-row justify-between items-center text-sm text-on-surface-variant font-bold gap-4">
             <div>
-              Showing {users.length} of {total} directory entries
+              Showing <span className="text-on-surface">{users.length}</span> of <span className="text-on-surface">{total}</span> directory entries
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-surface-container-highest bg-surface-container-lowest h-10 px-4 rounded-xl shadow-sm">
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled={users.length < 10} onClick={() => setPage(p => p + 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={users.length < 10} onClick={() => setPage(p => p + 1)} className="border-surface-container-highest bg-surface-container-lowest h-10 px-4 rounded-xl shadow-sm">
                 Next
               </Button>
             </div>
@@ -413,11 +403,12 @@ export default function UsersPage() {
 
       {/* Register Sheet */}
       <Sheet open={registerSheetOpen} onOpenChange={setRegisterSheetOpen}>
-        <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
-          <div className="px-8 py-8 border-b border-border shrink-0">
-            <SheetHeader>
-              <SheetTitle className="text-3xl font-extrabold tracking-tight">Create User</SheetTitle>
-              <SheetDescription className="text-base mt-1 text-muted-foreground/80">Register a new access point for the platform.</SheetDescription>
+        <SheetContent className="sm:max-w-xl overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
+          <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
+            <SheetHeader className="relative z-10">
+              <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface">Create User</SheetTitle>
+              <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">Register a new access point for the platform.</SheetDescription>
             </SheetHeader>
           </div>
           <ModernForm
@@ -442,11 +433,12 @@ export default function UsersPage() {
 
       {/* Edit Sheet */}
       <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
-        <SheetContent className="sm:max-w-md overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
-          <div className="px-8 py-8 border-b border-border shrink-0">
-            <SheetHeader>
-              <SheetTitle className="text-3xl font-extrabold tracking-tight">Edit Profile</SheetTitle>
-              <SheetDescription className="text-base mt-1 text-muted-foreground/80">Modify identity details for {selectedUser?.username}.</SheetDescription>
+        <SheetContent className="sm:max-w-md overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
+           <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
+            <SheetHeader className="relative z-10">
+              <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface">Edit Profile</SheetTitle>
+              <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">Modify identity details for {selectedUser?.username}.</SheetDescription>
             </SheetHeader>
           </div>
           <ModernForm
@@ -472,13 +464,14 @@ export default function UsersPage() {
 
       {/* Reset Password Dialog */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent className="sm:max-w-md border-border bg-background p-0 overflow-hidden rounded-2xl shadow-2xl">
-          <div className="p-8 border-b border-border">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                <Unlock className="h-6 w-6 text-amber-500" /> Reset Pin
+        <DialogContent className="sm:max-w-md border-surface-container-highest/50 bg-surface-container-lowest p-0 overflow-hidden rounded-[2rem] shadow-2xl">
+          <div className="p-8 border-b border-surface-container-highest/40 bg-surface-container-lowest relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-amber-500/10 blur-[50px] rounded-full" />
+            <DialogHeader className="relative z-10">
+              <DialogTitle className="text-3xl font-headline font-black tracking-tight flex items-center gap-3 text-on-surface">
+                <span className="material-symbols-outlined text-[2rem] text-amber-500">lock_open</span> Reset Pin
               </DialogTitle>
-              <DialogDescription className="text-base">Assign new security credentials.</DialogDescription>
+              <DialogDescription className="text-base mt-2 text-on-surface-variant font-medium">Assign new security credentials.</DialogDescription>
             </DialogHeader>
           </div>
           <ModernForm
@@ -496,20 +489,21 @@ export default function UsersPage() {
             isSubmitting={saving}
             submitLabel="Override Credentials"
             onCancel={() => setResetDialogOpen(false)}
-            className="p-0 h-auto"
+            className="p-0 h-auto bg-surface-container-lowest"
           />
         </DialogContent>
       </Dialog>
 
       {/* Roles Dialog */}
       <Dialog open={rolesDialogOpen} onOpenChange={setRolesDialogOpen}>
-        <DialogContent className="sm:max-w-md border-border bg-background p-0 overflow-hidden rounded-2xl shadow-2xl">
-          <div className="p-8 border-b border-border">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                <Shield className="h-6 w-6 text-indigo-500" /> Access Matrix
+        <DialogContent className="sm:max-w-md border-surface-container-highest/50 bg-surface-container-lowest p-0 overflow-hidden rounded-[2rem] shadow-2xl">
+          <div className="p-8 border-b border-surface-container-highest/40 bg-surface-container-lowest relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 blur-[50px] rounded-full" />
+            <DialogHeader className="relative z-10">
+              <DialogTitle className="text-3xl font-headline font-black tracking-tight flex items-center gap-3 text-on-surface">
+                <span className="material-symbols-outlined text-[2rem] text-indigo-400">shield</span> Access Matrix
               </DialogTitle>
-              <DialogDescription className="text-base">Calibrate administrative privileges.</DialogDescription>
+              <DialogDescription className="text-base mt-2 text-on-surface-variant font-medium">Calibrate administrative privileges.</DialogDescription>
             </DialogHeader>
           </div>
           <ModernForm
@@ -534,7 +528,7 @@ export default function UsersPage() {
             isSubmitting={saving}
             submitLabel="Update Access"
             onCancel={() => setRolesDialogOpen(false)}
-            className="p-0 h-auto"
+            className="p-0 h-auto bg-surface-container-lowest"
           />
         </DialogContent>
       </Dialog>

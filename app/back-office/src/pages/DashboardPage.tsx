@@ -5,9 +5,7 @@ import { getScreens } from '@/api/screens';
 import { getScreenings } from '@/api/screenings';
 import { getUsers } from '@/api/users';
 import { getBookings } from '@/api/bookings';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Film, Monitor, Calendar, Users, TrendingUp, PlusCircle, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format, subDays, isSameDay } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -72,54 +70,55 @@ export default function DashboardPage() {
   }, []);
 
   const cards = [
-    { title: 'Branches', value: counts.branches, icon: Building2, color: 'from-blue-500/20 to-cyan-500/20', text: 'text-cyan-500' },
-    { title: 'Movies', value: counts.movies, icon: Film, color: 'from-fuchsia-500/20 to-pink-500/20', text: 'text-fuchsia-500' },
-    { title: 'Screens', value: counts.screens, icon: Monitor, color: 'from-violet-500/20 to-purple-500/20', text: 'text-violet-500' },
-    { title: 'Screenings', value: counts.screenings, icon: Calendar, color: 'from-emerald-500/20 to-green-500/20', text: 'text-emerald-500' },
-    { title: 'Users', value: counts.users, icon: Users, color: 'from-orange-500/20 to-red-500/20', text: 'text-orange-500' },
+    { title: 'Branches', value: counts.branches, icon: 'store', bgContainer: 'bg-[#004b73]/20', iconColor: 'text-[#50c8ff]' },
+    { title: 'Movies', value: counts.movies, icon: 'movie', bgContainer: 'bg-[#730055]/20', iconColor: 'text-[#ff50d5]' },
+    { title: 'Screens', value: counts.screens, icon: 'fullscreen', bgContainer: 'bg-[#4b0073]/20', iconColor: 'text-[#d550ff]' },
+    { title: 'Screenings', value: counts.screenings, icon: 'schedule', bgContainer: 'bg-[#007328]/20', iconColor: 'text-[#50ff8e]' },
+    { title: 'Users', value: counts.users, icon: 'group', bgContainer: 'bg-[#733500]/20', iconColor: 'text-[#ff9c50]' },
   ];
 
   return (
-    <div className="page-shell animate-in fade-in duration-500">
+    <div className="page-shell animate-in fade-in duration-500 space-y-6">
       
-      <div className="glass-panel overflow-hidden rounded-[2rem] p-6 md:p-8">
-        <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
+      <div className="bg-surface-container-high overflow-hidden rounded-[2rem] p-8 md:p-10 border border-surface-container-highest/50 shadow-2xl">
+        <div className="grid gap-10 lg:grid-cols-[1.3fr_0.7fr]">
           <div>
-            <div className="inline-flex rounded-full bg-primary/12 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-              Atlas Cinema
+            <div className="inline-flex rounded-lg bg-primary-container/20 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary-container border border-primary-container/20">
+               Welcome back
             </div>
-            <h1 className="mt-4 max-w-2xl text-4xl font-black tracking-tight text-foreground md:text-5xl">
+            <h1 className="mt-4 max-w-2xl text-4xl font-headline font-black tracking-tight text-on-surface md:text-5xl">
               Cinema Dashboard
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Welcome back to the Atlas Cinema management portal.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-on-surface-variant font-medium">
+              Manage branches, configure ticket prices using Drools rules, and monitor your entire cinematic ecosystem seamlessly.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-10 flex flex-wrap items-center gap-4">
               <Link to="/movies">
-                <Button className="font-semibold">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Movie
+                <Button className="font-bold flex items-center h-12 px-8 py-0 rounded-xl shadow-lg hover:shadow-primary-container/20">
+                  <span className="material-symbols-outlined mr-2">add_circle</span> Add Movie
                 </Button>
               </Link>
               <Link to="/screenings">
-                <Button variant="outline" className="font-semibold">
-                  <Calendar className="mr-2 h-4 w-4" /> Schedule Show
+                <Button variant="outline" className="font-bold flex items-center h-12 px-8 py-0 rounded-xl bg-surface-container-highest border-transparent hover:bg-surface-bright">
+                  <span className="material-symbols-outlined mr-2">calendar_add_on</span> Schedule Show
                 </Button>
               </Link>
             </div>
           </div>
-          <div className="rounded-[1.8rem] bg-slate-950 p-6 text-slate-50 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.8)]">
-            <div className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-primary">System Overview</div>
-            <div className="space-y-4">
+          <div className="rounded-[1.8rem] bg-surface-container-highest p-8 text-on-surface flex flex-col justify-center border border-outline-variant/30 relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-container/10 blur-[50px] rounded-full pointer-events-none" />
+            <div className="mb-6 text-xs font-bold uppercase tracking-widest text-primary-container relative z-10">System Overview</div>
+            <div className="space-y-4 relative z-10">
               {[
-                `Track branches, movies, screens, and screenings from one dashboard`,
-                `Monitor current booking activity across the platform`,
-                `Jump directly into pricing and scheduling workflows`,
+                `Track branches, movies, screens, and screenings`,
+                `Monitor current booking activity`,
+                `Jump directly into pricing and scheduling`,
               ].map((item) => (
-                <div key={item} className="flex items-start gap-3 rounded-2xl bg-white/6 p-4 text-sm text-slate-200">
-                  <div className="mt-0.5 rounded-full bg-primary/20 p-1 text-primary">
-                    <Activity className="h-3.5 w-3.5" />
+                <div key={item} className="flex items-start gap-4 rounded-xl">
+                  <div className="mt-0.5 rounded-lg bg-surface-container-low p-1.5 text-primary-container border border-surface-container-highest">
+                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>vital_signs</span>
                   </div>
-                  <span>{item}</span>
+                  <span className="text-sm font-medium">{item}</span>
                 </div>
               ))}
             </div>
@@ -130,76 +129,84 @@ export default function DashboardPage() {
       {loading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i} className="animate-pulse h-32 bg-muted/40 border-muted/20 rounded-2xl" />
+            <div key={i} className="animate-pulse h-36 bg-surface-container-high rounded-[1.8rem]" />
           ))}
         </div>
       ) : (
         <>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {cards.map((card) => (
-              <Card key={card.title} className="glass-panel rounded-[1.7rem] border-white/55 shadow-sm hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                  <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{card.title}</CardTitle>
-                  <div className={`rounded-2xl bg-muted/70 p-2.5 ${card.text}`}>
-                    <card.icon className="h-4 w-4" />
+              <div key={card.title} className="bg-surface-container-lowest rounded-[1.8rem] p-6 border border-surface-container-highest/40 flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 group shadow-lg">
+                <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10 w-full mb-6">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{card.title}</span>
+                  <div className={`rounded-xl p-2.5 ${card.bgContainer} ${card.iconColor}`}>
+                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>{card.icon}</span>
                   </div>
-                </CardHeader>
-                <CardContent className="relative z-10 pt-4">
-                  <div className="text-4xl font-black tracking-tight text-foreground">{card.value}</div>
-                </CardContent>
-              </Card>
+                </div>
+                <div className="relative z-10">
+                  <div className="text-4xl font-headline font-black tracking-tight text-on-surface">{card.value}</div>
+                </div>
+              </div>
             ))}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3 relative z-10">
-            <Card className="glass-panel col-span-2 rounded-[1.8rem] border-white/55 shadow-sm transition-colors">
-              <CardHeader className="border-b border-white/45 pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+            <div className="bg-surface-container-lowest col-span-2 rounded-[2rem] border border-surface-container-highest/40 shadow-xl transition-colors flex flex-col pt-6 pb-4">
+              <div className="border-b border-surface-container-highest/40 pb-5 px-8 mb-6">
+                <h2 className="flex items-center gap-2 text-xl font-bold text-on-surface font-headline">
+                  <span className="material-symbols-outlined text-primary-container">trending_up</span>
                   Weekly Bookings Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 pl-2">
+                </h2>
+              </div>
+              <div className="flex-1 w-full px-4">
                 <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-foreground, #a8a29e)" opacity={0.1} />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-foreground, #a8a29e)', opacity: 0.7, fontWeight: 500 }} dy={10} />
-                      <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: 'var(--color-foreground, #a8a29e)', opacity: 0.7, fontWeight: 500 }} dx={-10} />
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--color-surface-container-highest)" opacity={1} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-on-surface-variant)', fontWeight: 700, fontSize: 12 }} dy={10} />
+                      <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: 'var(--color-on-surface-variant)', fontWeight: 700, fontSize: 12 }} dx={-10} />
                       <RechartsTooltip 
-                        cursor={false} 
-                        contentStyle={{ backgroundColor: 'var(--color-card, #fff)', border: '1px solid var(--color-border, #e5e5e5)', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', color: 'var(--color-foreground, #0a0a0a)', fontWeight: 600 }} 
-                        itemStyle={{ color: 'var(--color-primary, #d946ef)', fontWeight: 700 }}
+                        cursor={{ fill: 'none' }} 
+                        contentStyle={{ backgroundColor: 'var(--color-surface-container-high)', border: 'none', borderRadius: '12px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', color: 'var(--color-on-surface)', fontWeight: 700 }} 
+                        itemStyle={{ color: 'var(--color-primary-container)', fontWeight: 800 }}
                       />
-                      <Bar dataKey="bookings" radius={[6, 6, 0, 0]} className="fill-primary hover:fill-primary/80 transition-colors" />
+                      <Bar dataKey="bookings" radius={[6, 6, 0, 0]} fill="var(--color-primary-container)" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="glass-panel col-span-1 flex flex-col overflow-hidden rounded-[1.8rem] border-white/55 shadow-sm transition-colors">
-              <CardHeader className="border-b border-white/45 pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-                  <Activity className="h-5 w-5 text-emerald-500" />
+            <div className="bg-surface-container-lowest col-span-1 flex flex-col overflow-hidden rounded-[2rem] border border-surface-container-highest/40 shadow-xl transition-colors">
+              <div className="border-b border-surface-container-highest/40 pb-5 pt-6 px-8 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-xl font-bold text-on-surface font-headline">
                   System Health
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center items-center p-8 text-center text-muted-foreground relative z-10">
+                </h2>
+                <div className="bg-emerald-500/20 text-emerald-400 p-1.5 rounded-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[1rem]">check_circle</span>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col justify-center items-center px-8 py-10 text-center text-on-surface-variant relative z-10 bg-gradient-to-b from-transparent to-surface-container-high/30">
                 <div className="mb-6">
-                  <div className="rounded-full bg-emerald-500/10 p-5 text-emerald-500">
-                    <Activity className="h-10 w-10" />
+                  <div className="rounded-full bg-primary-container/10 p-5 text-primary-container border border-primary-container/20 shadow-inner">
+                    <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>monitoring</span>
                   </div>
                 </div>
-                <h3 className="text-3xl font-black text-foreground mb-3">{counts.bookings} <span className="text-lg font-medium text-foreground/60">Total Bookings</span></h3>
-                <p className="leading-relaxed">
-                  All active <strong className="text-primary font-semibold">Drools Pricing Rules</strong> are functioning nominally across your <strong className="text-foreground">{counts.branches}</strong> connected branches.
+                <h3 className="text-4xl font-black text-on-surface mb-3 flex flex-col gap-1 items-center font-headline">
+                  {counts.bookings}
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/80 mt-1">Total Bookings</span>
+                </h3>
+                <p className="leading-relaxed mt-4 font-medium text-sm">
+                  Active <span className="text-primary-container font-black">Drools Rules</span> scaling nominal load across <span className="text-on-surface font-black bg-surface-container-highest px-2 py-0.5 rounded-md text-xs">{counts.branches}</span> branch processors.
                 </p>
-                <Link to="/rules" className="mt-6 w-full">
-                  <Button variant="secondary" className="w-full font-semibold border border-border/50 hover:bg-foreground/10 shadow-sm transition-colors">Manage Pricing Rules</Button>
+                <Link to="/rules" className="mt-8 w-full block">
+                  <Button variant="secondary" className="w-full font-bold h-12 text-sm shadow-md rounded-xl bg-surface-container-highest border-transparent hover:bg-surface-bright">
+                    <span className="material-symbols-outlined mr-2 text-[1.1rem]">rule_settings</span>
+                    Manage Pricing Engine
+                  </Button>
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </>
       )}

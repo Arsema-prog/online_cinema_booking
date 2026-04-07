@@ -1,16 +1,4 @@
 import { useEffect, useState } from 'react';
-import { 
-  Pencil, 
-  Trash2, 
-  Plus, 
-  MonitorPlay, 
-  Loader2, 
-  Users, 
-  Layers, 
-  LayoutGrid, 
-  Hash,
-  MapPin
-} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -131,14 +119,14 @@ export default function ScreensPage() {
           name: "branchId", label: "Assigned Branch", type: "select", required: true,
           options: branches.map(b => ({ label: b.name, value: String(b.id) }))
         },
-        { name: "screenNumber", label: "Sequence Number", type: "number", required: true, icon: <Hash className="w-4 h-4" /> },
+        { name: "screenNumber", label: "Sequence Number", type: "number", required: true, icon: <span className="material-symbols-outlined text-[1rem]">tag</span> },
       ]
     },
     {
       title: "Capacity & Layout",
       fields: [
-        { name: "rowsCount", label: "Rows", type: "number", required: true, icon: <Layers className="w-4 h-4" /> },
-        { name: "seatsPerRow", label: "Seats per Row", type: "number", required: true, icon: <LayoutGrid className="w-4 h-4" /> },
+        { name: "rowsCount", label: "Rows", type: "number", required: true, icon: <span className="material-symbols-outlined text-[1rem]">format_list_bulleted</span> },
+        { name: "seatsPerRow", label: "Seats per Row", type: "number", required: true, icon: <span className="material-symbols-outlined text-[1rem]">apps</span> },
         { 
           name: "isActive", label: "Operational Status", type: "switch", 
           description: "Allow showtimes to be scheduled in this room.", 
@@ -193,25 +181,30 @@ export default function ScreensPage() {
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight">Screens</h1>
-          <p className="text-muted-foreground mt-1">Manage physical screening rooms and their capacities.</p>
+    <div className="animate-in fade-in duration-500 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-surface-container-high rounded-[2rem] p-8 md:p-10 border border-surface-container-highest/50 shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-container/10 blur-[50px] rounded-full pointer-events-none" />
+        <div className="relative z-10">
+          <div className="inline-flex rounded-lg bg-primary-container/20 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary-container border border-primary-container/20 mb-4">
+             Infrastructure
+          </div>
+          <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tight text-on-surface">Screens</h1>
+          <p className="text-on-surface-variant font-medium mt-2">Manage physical screening rooms and their capacities.</p>
         </div>
         <Sheet open={open} onOpenChange={handleOpenChange}>
           <SheetTrigger asChild>
-            <Button size="lg" className="rounded-md shadow-sm">
-              <Plus className="mr-2 h-5 w-5" /> Add Screen Room
+            <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary-container/20 font-bold shrink-0 relative z-10">
+              <span className="material-symbols-outlined mr-2">add</span> Add Screen Room
             </Button>
           </SheetTrigger>
-          <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
-            <div className="px-8 py-8 border-b border-border shrink-0">
-              <SheetHeader>
-                <SheetTitle className="text-3xl font-extrabold tracking-tight">
+          <SheetContent className="sm:max-w-xl overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
+            <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
+              <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
+              <SheetHeader className="relative z-10">
+                <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface">
                   {editingScreen ? 'Edit Screen' : 'Create Screen'}
                 </SheetTitle>
-                <SheetDescription className="text-base mt-2 text-muted-foreground/80">
+                <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">
                   {editingScreen
                     ? 'Update the room configuration below.'
                     : 'Configure a new screening room with automated seat generation.'}
@@ -240,62 +233,62 @@ export default function ScreensPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center py-20 text-muted-foreground font-medium">
-          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" /> Calibrating screens...
+        <div className="flex justify-center items-center py-24 text-on-surface-variant font-medium">
+          <span className="material-symbols-outlined text-4xl animate-spin text-primary-container mr-3">progress_activity</span> Calibrating screens...
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-[1.5rem] bg-surface-container-low overflow-hidden shadow-xl border border-surface-container-highest/50">
           <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="w-16">ID</TableHead>
-                <TableHead>Room Identity</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Specs</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
+            <TableHeader className="bg-surface-container-highest/20">
+              <TableRow className="border-b-surface-container-highest/50">
+                <TableHead className="w-16 font-bold text-on-surface">ID</TableHead>
+                <TableHead className="font-bold text-on-surface">Room Identity</TableHead>
+                <TableHead className="font-bold text-on-surface">Location</TableHead>
+                <TableHead className="font-bold text-on-surface">Specs</TableHead>
+                <TableHead className="font-bold text-on-surface">Capacity</TableHead>
+                <TableHead className="font-bold text-on-surface">Status</TableHead>
+                <TableHead className="w-24 text-right font-bold text-on-surface">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {screens.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-24 text-on-surface-variant border-none">
                     <div className="flex flex-col items-center">
-                      <MonitorPlay className="h-12 w-12 mb-3 opacity-20" />
-                      No screen rooms have been configured yet.
+                      <span className="material-symbols-outlined text-6xl mb-4 opacity-20" style={{ fontVariationSettings: "'FILL' 1" }}>tv_options_edit_channels</span>
+                      <span className="font-bold text-lg">No screen rooms have been configured yet.</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 screens.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((screen) => (
-                  <TableRow key={screen.id} className="group hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-medium text-muted-foreground">{screen.id}</TableCell>
+                  <TableRow key={screen.id} className="group hover:bg-surface-container transition-colors border-b-surface-container-highest/30">
+                    <TableCell className="font-bold text-on-surface-variant/70">#{screen.id}</TableCell>
                     <TableCell>
-                      <div className="font-semibold text-foreground flex items-center gap-1.5">
+                      <div className="font-headline font-black text-on-surface text-lg leading-tight flex items-center gap-2">
                         {screen.name}
-                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold">#{screen.screenNumber}</span>
+                        <span className="text-[9px] bg-primary-container/20 text-primary-container border border-primary-container/30 px-1.5 py-0.5 rounded-md font-black tracking-widest uppercase">#{screen.screenNumber}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="inline-flex items-center text-muted-foreground text-sm">
-                        <MapPin className="h-3 w-3 mr-1 opacity-70" />
+                      <div className="inline-flex items-center text-on-surface-variant font-medium">
+                        <span className="material-symbols-outlined text-[1rem] mr-2 opacity-60">pin_drop</span>
                         {screen.branch.name}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="text-xs font-semibold text-foreground flex items-center">
-                           <Layers className="h-3 w-3 mr-1 opacity-60" /> {screen.rowsCount} Rows
+                      <div className="flex flex-col gap-1">
+                        <div className="text-xs font-bold text-on-surface flex items-center">
+                           <span className="material-symbols-outlined text-[1rem] mr-1.5 opacity-60">format_list_bulleted</span> {screen.rowsCount} Rows
                         </div>
-                        <div className="text-xs text-muted-foreground flex items-center">
-                           <LayoutGrid className="h-3 w-3 mr-1 opacity-40" /> {screen.seatsPerRow} Seats/Row
+                        <div className="text-xs text-on-surface-variant flex items-center font-medium">
+                           <span className="material-symbols-outlined text-[1rem] mr-1.5 opacity-40">apps</span> {screen.seatsPerRow} Seats/Row
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-600 shadow-sm">
-                        <Users className="w-3 h-3 mr-1" />
+                      <span className="inline-flex items-center rounded-lg bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-400 border border-cyan-500/20">
+                        <span className="material-symbols-outlined text-[1rem] mr-1.5">groups</span>
                         {screen.capacity} Seats
                       </span>
                     </TableCell>
@@ -308,17 +301,17 @@ export default function ScreensPage() {
                           className="data-[state=checked]:bg-emerald-500"
                         />
                         {screen.branch.isActive === false && (
-                          <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border/50 font-bold uppercase tracking-tighter">Branch Closed</span>
+                          <span className="text-[9px] text-on-surface-variant/60 bg-surface-container-highest px-2 py-0.5 rounded-full border border-outline-variant/30 font-black uppercase tracking-widest">Branch Closed</span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(screen)} className="h-8 w-8 text-primary hover:bg-primary/10">
-                          <Pencil className="h-4 w-4" />
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(screen)} className="h-10 w-10 text-primary-container bg-primary-container/10 hover:bg-primary-container/20 rounded-xl shadow-sm">
+                          <span className="material-symbols-outlined text-[1.2rem]">edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(screen.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(screen.id)} className="h-10 w-10 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-xl shadow-sm">
+                          <span className="material-symbols-outlined text-[1.2rem]">delete</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -328,15 +321,15 @@ export default function ScreensPage() {
             </TableBody>
           </Table>
           
-          <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
+          <div className="p-5 border-t border-surface-container-highest/50 bg-surface-container flex flex-col sm:flex-row justify-between items-center text-sm text-on-surface-variant font-bold gap-4">
             <div>
-              Showing {Math.min(screens.length, (page * itemsPerPage) + 1)} - {Math.min(screens.length, (page + 1) * itemsPerPage)} of {screens.length} screens
+              Showing <span className="text-on-surface">{Math.min(screens.length, (page * itemsPerPage) + (screens.length > 0 ? 1 : 0))}</span> - <span className="text-on-surface">{Math.min(screens.length, (page + 1) * itemsPerPage)}</span> of <span className="text-on-surface">{screens.length}</span> screens
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-surface-container-highest bg-surface-container-lowest h-10 px-4 rounded-xl shadow-sm">
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= screens.length} onClick={() => setPage(p => p + 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= screens.length} onClick={() => setPage(p => p + 1)} className="border-surface-container-highest bg-surface-container-lowest h-10 px-4 rounded-xl shadow-sm">
                 Next
               </Button>
             </div>
