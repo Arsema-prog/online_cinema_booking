@@ -9,14 +9,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.HttpHeaders;
-import java.net.URI;
+
 import com.cinema.coreservice.service.MinioService;
 import java.util.List;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import java.io.InputStream;
+import com.fasterxml.jackson.databind.ObjectMapper;
 @RestController
 @RequestMapping("/movies")
 @RequiredArgsConstructor
@@ -24,6 +24,7 @@ public class MovieController {
 
     private final MovieService movieService;
     private final MinioService minioService;
+    private final ObjectMapper objectMapper;
 
     @GetMapping
     public ResponseEntity<List<Movie>> getAllMovies() {
@@ -43,19 +44,29 @@ public class MovieController {
     @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'STAFF')")
     public ResponseEntity<Movie> createMovie(
-            @RequestPart("movie") Movie movie,
+            @RequestPart("movie") String movieStr,
             @RequestPart(value = "poster", required = false) MultipartFile poster) {
-        Movie createdMovie = movieService.createMovie(movie, poster);
-        return new ResponseEntity<>(createdMovie, HttpStatus.CREATED);
+        try {
+            Movie movie = objectMapper.readValue(movieStr, Movie.class);
+            Movie createdMovie = movieService.createMovie(movie, poster);
+            return new ResponseEntity<>(createdMovie, HttpStatus.CREATED);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse movie data", e);
+        }
     }
 
     @PutMapping(value = "/{id}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'STAFF')")
     public ResponseEntity<Movie> updateMovie(
             @PathVariable Long id, 
-            @RequestPart("movie") Movie updated,
+            @RequestPart("movie") String movieStr,
             @RequestPart(value = "poster", required = false) MultipartFile poster) {
-        return ResponseEntity.ok(movieService.updateMovie(id, updated, poster));
+        try {
+            Movie updated = objectMapper.readValue(movieStr, Movie.class);
+            return ResponseEntity.ok(movieService.updateMovie(id, updated, poster));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse movie data", e);
+        }
     }
 
     @GetMapping("/{id}/poster")

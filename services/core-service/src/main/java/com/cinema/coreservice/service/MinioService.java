@@ -63,7 +63,7 @@ public class MinioService {
         if (!imageUrl.startsWith("http")) return imageUrl; // Assume it's already uploaded or a path
 
         try {
-            URL url = new URL(imageUrl);
+            URL url = java.net.URI.create(imageUrl).toURL();
             URLConnection conn = url.openConnection();
             conn.setRequestProperty("User-Agent", "Mozilla/5.0");
             conn.setConnectTimeout(5000);

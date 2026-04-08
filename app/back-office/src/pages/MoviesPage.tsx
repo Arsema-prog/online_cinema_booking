@@ -25,7 +25,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
-import { env } from '../../../env';
+import { env } from '../../env';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
