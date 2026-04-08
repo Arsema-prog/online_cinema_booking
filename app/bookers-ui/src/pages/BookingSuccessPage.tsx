@@ -85,13 +85,13 @@ useEffect(() => {
   if (!bookingId) return;
   try {
     // Fetch booking details
-    const bookingResponse = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}`);
+    const bookingResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}`);
     if (!bookingResponse.ok) throw new Error('Booking fetch failed');
     const bookingData = await bookingResponse.json();
     console.log("movies", bookingData );
     
     // Fetch seats for this booking
-    const seatsResponse = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/seats`);
+    const seatsResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/seats`);
     let seatsList: string[] = [];
     
     if (seatsResponse.ok) {

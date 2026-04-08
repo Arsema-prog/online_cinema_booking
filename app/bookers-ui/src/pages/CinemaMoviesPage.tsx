@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useScreenings } from "../hooks/useScreenings";
 import { MovieCard } from "../components/MovieCard";
 import { Film, ArrowLeft, Building, MapPin } from 'lucide-react';
-import { coreClient } from "../httpClient";
+import { apiClient } from "../httpClient";
 
 export const CinemaMoviesPage: React.FC = () => {
   const { cinemaId } = useParams<{ cinemaId: string }>();
@@ -13,7 +13,7 @@ export const CinemaMoviesPage: React.FC = () => {
 
   useEffect(() => {
     if (cinemaId) {
-      coreClient.get(`/branches/${cinemaId}`)
+      apiClient.get(`/api/v1/core/branches/${cinemaId}`)
         .then(res => setCinema(res.data))
         .catch(err => console.error("Failed to fetch cinema details", err));
     }

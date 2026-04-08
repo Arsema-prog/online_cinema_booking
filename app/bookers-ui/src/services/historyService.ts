@@ -18,7 +18,7 @@ export interface BookingHistoryModel {
   paymentTransactionId?: string;
 }
 
-const HISTORY_API_URL = `${env.bookingServiceUrl}/bookings`;
+const HISTORY_API_URL = `${env.apiGatewayUrl}/api/v1/booking/bookings`;
 
 function decodeUserIdFromToken(token?: string): string | null {
   if (!token) return null;

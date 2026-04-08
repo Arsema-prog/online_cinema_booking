@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { coreClient } from '../httpClient';
+import { apiClient } from '../httpClient';
 import { Film, MapPin, Building, Star, ChevronRight, LogIn, UserPlus } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -20,8 +20,8 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [moviesRes, cinemasRes] = await Promise.allSettled([
-        coreClient.get('/movies/trending'),
-        coreClient.get('/branches')
+        apiClient.get('/api/v1/core/movies/trending'),
+        apiClient.get('/api/v1/core/branches')
       ]);
 
       if (moviesRes.status === "fulfilled") {

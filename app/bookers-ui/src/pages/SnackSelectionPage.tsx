@@ -85,7 +85,7 @@ export const SnackSelectionPage: React.FC = () => {
 
     const recoverExpiryFromBooking = async () => {
       try {
-        const response = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}`);
+        const response = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}`);
         if (!response.ok) return;
         const booking = await response.json();
         if (!booking?.createdAt) return;
@@ -134,7 +134,7 @@ export const SnackSelectionPage: React.FC = () => {
     const releaseExpiredHold = async () => {
       releaseTriggeredRef.current = true;
       try {
-        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/cancel`, { method: 'POST' });
+        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/cancel`, { method: 'POST' });
       } catch (error) {
         console.error('Failed to release expired hold immediately', error);
       }
@@ -260,7 +260,7 @@ export const SnackSelectionPage: React.FC = () => {
 
       // Persist snacks to booking
       if (cart.length > 0) {
-        const snacksResponse = await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/snacks`, {
+        const snacksResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/snacks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -284,7 +284,7 @@ export const SnackSelectionPage: React.FC = () => {
 
       // best-effort notify booking service
       try {
-        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
+        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
       } catch (e) {
         console.warn('Failed to notify booking service about payment initiation', e);
       }

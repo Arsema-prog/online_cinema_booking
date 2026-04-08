@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { coreClient } from "../httpClient";
+import { apiClient } from "../httpClient";
 import { ChevronLeft, Calendar, MapPin, Clock, Film } from "lucide-react";
 
 type Screening = {
@@ -29,8 +29,8 @@ export const MovieScreeningsPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    coreClient
-      .get(`/screenings/movie/${movieId}`)
+    apiClient
+      .get(`/api/v1/core/screenings/movie/${movieId}`)
       .then((res) => {
         if (!active) return;
         const payload = res.data;

@@ -15,7 +15,7 @@ export const BookingCancelPage: React.FC = () => {
 
     const release = async () => {
       try {
-        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/cancel`, { method: 'POST' });
+        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/cancel`, { method: 'POST' });
         setReleased(true);
       } catch (error) {
         console.warn('Failed to cancel booking after Stripe cancellation', error);

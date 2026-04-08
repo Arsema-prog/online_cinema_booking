@@ -93,7 +93,7 @@ export const PaymentPage: React.FC = () => {
 
       // First, update booking with snacks if any
       if (normalizedSnacks.length > 0) {
-        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/snacks`, {
+        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/snacks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -118,7 +118,7 @@ export const PaymentPage: React.FC = () => {
       
       // Ensure booking is marked as payment initiated (best effort)
       try {
-        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
+        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
       } catch (e) {
         console.warn('Failed to notify booking service about payment initiation', e);
       }

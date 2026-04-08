@@ -77,10 +77,6 @@ export const confirmBooking = async (bookingId: string, userEmail?: string): Pro
 export const cancelBooking = async (bookingId: string): Promise<void> => {
   await axios.post(`${BOOKING_BASE_URL}/bookings/${bookingId}/cancel`);
 };
-const CORE_BASE_URL =
-  env.coreServiceUrl ??
-  (env.apiGatewayUrl ? `${env.apiGatewayUrl}/api/v1/core` : 'http://localhost:8081');
+const CORE_BASE_URL = env.apiGatewayUrl ? `${env.apiGatewayUrl}/api/v1/core` : 'http://localhost:8090/api/v1/core';
 
-const BOOKING_BASE_URL =
-  env.bookingServiceUrl ??
-  (env.apiGatewayUrl ? `${env.apiGatewayUrl}/api/v1/booking` : 'http://localhost:8082');
+const BOOKING_BASE_URL = env.apiGatewayUrl ? `${env.apiGatewayUrl}/api/v1/booking` : 'http://localhost:8090/api/v1/booking';

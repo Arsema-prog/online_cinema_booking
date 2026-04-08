@@ -5,7 +5,7 @@ import { useBooking } from "../hooks/useBooking";
 import { ChevronLeft, Ticket, Users, CreditCard, RefreshCw, Star } from 'lucide-react';
 import { TicketDisplay } from '../components/TicketDisplay';
 import { ticketGeneratorService, TicketDetails } from '../services/ticketGeneratorService';
-import { coreClient } from "../httpClient";
+import { apiClient } from "../httpClient";
 
 export const BookingPage: React.FC = () => {
   const { screeningId } = useParams(); 
@@ -23,7 +23,7 @@ export const BookingPage: React.FC = () => {
   useEffect(() => {
     const fetchScreeningDetails = async () => {
       try {
-        const response = await coreClient.get(`/screenings/${screeningId}`);
+        const response = await apiClient.get(`/api/v1/core/screenings/${screeningId}`);
         const screeningData = response.data;
         setScreening(screeningData);
         setMovie(screeningData.movie);

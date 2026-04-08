@@ -1,7 +1,7 @@
 // pages/MoviesPage.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { coreClient } from "../httpClient";
+import { apiClient } from "../httpClient";
 import { Film, Building, MapPin, ChevronRight, Star, Search, X } from 'lucide-react';
 
 const toArray = <T,>(payload: unknown): T[] => {
@@ -32,9 +32,9 @@ export const MoviesPage: React.FC = () => {
     const fetchPageData = async () => {
       setLoading(true);
       const [moviesRes, cinemasRes, allMoviesRes] = await Promise.allSettled([
-        coreClient.get('/movies/trending'),
-        coreClient.get('/branches'),
-        coreClient.get('/movies')
+        apiClient.get('/api/v1/core/movies/trending'),
+        apiClient.get('/api/v1/core/branches'),
+        apiClient.get('/api/v1/core/movies')
       ]);
 
       if (moviesRes.status === "fulfilled") {

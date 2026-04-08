@@ -62,12 +62,7 @@ const createClient = (baseURL?: string, name?: string): AxiosInstance => {
 };
 
 console.log("Environment values:", {
-  supportServiceUrl: env.supportServiceUrl,
-  coreServiceUrl: env.coreServiceUrl,
-  apiGatewayUrl: env.apiGatewayUrl,
-  bookingServiceUrl: env.bookingServiceUrl
+  apiGatewayUrl: env.apiGatewayUrl
 });
 
-export const coreClient = createClient(env.coreServiceUrl, "coreClient");
-export const bookingClient = createClient(env.bookingServiceUrl, "bookingClient");
-export const supportClient = createClient(env.supportServiceUrl, "supportClient");
+export const apiClient = createClient(env.apiGatewayUrl, "apiClient");
