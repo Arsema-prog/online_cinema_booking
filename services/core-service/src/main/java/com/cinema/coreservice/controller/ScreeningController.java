@@ -2,6 +2,7 @@ package com.cinema.coreservice.controller;
 
 import com.cinema.coreservice.model.Screening;
 import com.cinema.coreservice.repository.ScreeningRepository;
+import com.cinema.coreservice.service.ScreeningService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 public class ScreeningController {
 
     private final ScreeningRepository screeningRepository;
+    private final ScreeningService screeningService;
 
     @GetMapping
     public List<Screening> getAll() {
@@ -36,7 +38,7 @@ public class ScreeningController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'STAFF')")
     public Screening create(@RequestBody Screening screening) {
-        return screeningRepository.save(screening);
+        return screeningService.createScreening(screening);
     }
     @GetMapping("/debug")
     public List<Long> getAllIds() {

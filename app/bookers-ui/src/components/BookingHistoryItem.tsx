@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BookingHistoryModel, historyService } from '../services/historyService';
 import { Calendar, Clock, MapPin, MonitorPlay, Ticket, Download } from 'lucide-react';
 import { ticketGeneratorService } from '../services/ticketGeneratorService';
+import { env } from '../env';
 
 interface Props {
   booking: BookingHistoryModel;
@@ -43,7 +44,7 @@ export const BookingHistoryItem: React.FC<Props> = ({ booking }) => {
       
       {/* Poster Thumbnail */}
       <div className="w-full md:w-32 h-48 md:h-auto rounded-xl overflow-hidden shrink-0 shadow-lg border border-slate-700">
-        <img src={booking.posterUrl} alt={booking.movieTitle} className="w-full h-full object-cover" />
+        <img src={`${env.apiGatewayUrl}/api/v1/core/movies/${booking.movieId}/poster`} alt={booking.movieTitle} className="w-full h-full object-cover" />
       </div>
 
       <div className="flex-1 flex flex-col justify-between">

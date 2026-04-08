@@ -25,6 +25,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
+import { env } from '../../../env';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -33,7 +34,6 @@ const movieSchema = z.object({
   releaseDate: z.string().min(1, 'Release date is required'),
   genre: z.string().min(1, 'Genre is required'),
   rating: z.coerce.number().min(0).max(10),
-  posterUrl: z.string().url('Invalid image URL').optional().or(z.literal('')),
 });
 
 type MovieFormValues = z.infer<typeof movieSchema>;
@@ -52,7 +52,7 @@ export default function MoviesPage() {
 
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema) as any,
-    defaultValues: { title: '', description: '', duration: 0, releaseDate: '', genre: '', rating: 0, posterUrl: '' },
+    defaultValues: { title: '', description: '', duration: 0, releaseDate: '', genre: '', rating: 0 },
   });
 
   const fetchMovies = async () => {
@@ -73,13 +73,15 @@ export default function MoviesPage() {
     fetchMovies();
   }, []);
 
-  const onSubmit = async (values: MovieFormValues) => {
+  const onSubmit = async (values: MovieFormValues, files: Record<string, File | null>) => {
     try {
       setSaving(true);
+      const posterFile = files['poster'] || undefined;
+      
       if (editingMovie) {
-        await updateMovie(editingMovie.id, values);
+        await updateMovie(editingMovie.id, values, posterFile);
       } else {
-        await createMovie(values);
+        await createMovie(values, posterFile);
       }
       setOpen(false);
       form.reset();
@@ -106,7 +108,7 @@ export default function MoviesPage() {
     {
       title: "Media & Synopsis",
       fields: [
-        { name: "posterUrl", label: "Official Poster", type: "image", placeholder: "Upload film poster" },
+        { name: "poster", label: "Official Poster", type: "image", placeholder: "Upload film poster" },
         { name: "description", label: "Plot Summary", type: "textarea", placeholder: "Synopsis of the film..." },
       ]
     }
@@ -121,7 +123,6 @@ export default function MoviesPage() {
       releaseDate: movie.releaseDate,
       genre: movie.genre,
       rating: movie.rating || 0,
-      posterUrl: movie.posterUrl || '',
     });
     setOpen(true);
   };
@@ -244,13 +245,20 @@ export default function MoviesPage() {
                     <TableCell className="font-bold text-on-surface-variant/70">#{movie.id}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-5">
-                        {movie.posterUrl ? (
-                          <img src={movie.posterUrl} className="h-[4.5rem] w-12 object-cover rounded-md shadow-md border border-surface-container-highest" alt="" />
-                        ) : (
-                          <div className="h-[4.5rem] w-12 bg-surface-container-highest flex items-center justify-center rounded-md text-on-surface-variant/50 border border-outline-variant/30 shadow-inner">
-                            <span className="material-symbols-outlined text-xl">movie</span>
-                          </div>
-                        )}
+                        <img 
+                          src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`} 
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }
+                          }}
+                          className="h-[4.5rem] w-12 object-cover rounded-md shadow-md border border-surface-container-highest" 
+                          alt="" 
+                        />
+                        <div style={{display: 'none'}} className="h-[4.5rem] w-12 bg-surface-container-highest items-center justify-center rounded-md text-on-surface-variant/50 border border-outline-variant/30 shadow-inner">
+                          <span className="material-symbols-outlined text-xl">movie</span>
+                        </div>
                         <div>
                           <div className="font-headline font-black text-on-surface text-lg leading-tight">{movie.title}</div>
                           <div className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest mt-1.5 bg-surface-container-highest/40 inline-flex px-1.5 py-0.5 rounded">{movie.genre}</div>

@@ -145,8 +145,8 @@ export default function ScreeningsPage() {
     {
       title: "Scheduling & Pricing",
       fields: [
-        { name: "startTime", label: "Opening Credits", type: "date", required: true, icon: <span className="material-symbols-outlined text-[1rem]">schedule</span> },
-        { name: "endTime", label: "Expected Credits", type: "date", required: true, description: "Auto-calculated with 20min buffer." },
+        { name: "startTime", label: "Opening Credits", type: "datetime-local", required: true, icon: <span className="material-symbols-outlined text-[1rem]">schedule</span> },
+        { name: "endTime", label: "Expected Credits", type: "datetime-local", required: true, description: "Auto-calculated with 20min buffer." },
         { name: "price", label: "Standard Admission ($)", type: "number", required: true, icon: <span className="material-symbols-outlined text-[1rem]">sell</span> },
       ]
     }

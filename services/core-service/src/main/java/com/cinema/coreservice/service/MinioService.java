@@ -14,6 +14,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.springframework.web.multipart.MultipartFile;
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import jakarta.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +28,35 @@ public class MinioService {
 
     @Value("${minio.bucket}")
     private String bucketName;
+
+    @PostConstruct
+    public void init() {
+        try {
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+            }
+        } catch (Exception e) {
+            log.error("Failed to initialize bucket", e);
+        }
+    }
+
+    public void uploadMoviePoster(Long movieId, MultipartFile file) {
+        try {
+            String objectKey = "posters/movie_" + movieId + ".jpg";
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectKey)
+                            .stream(file.getInputStream(), file.getSize(), -1)
+                            .contentType(file.getContentType() != null ? file.getContentType() : "image/jpeg")
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Failed to upload movie poster to Minio", e);
+            throw new RuntimeException("Failed to upload movie poster to Minio");
+        }
+    }
 
     public String fetchAndUploadImage(String imageUrl) {
         if (imageUrl == null || imageUrl.trim().isEmpty()) return null;
@@ -56,6 +89,21 @@ public class MinioService {
         } catch (Exception e) {
             log.error("Failed to fetch and upload image from " + imageUrl, e);
             return imageUrl; // Fallback to original
+        }
+    }
+
+    public InputStream getMoviePoster(Long movieId) {
+        try {
+            String objectKey = "posters/movie_" + movieId + ".jpg";
+            return minioClient.getObject(
+                    io.minio.GetObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Failed to get movie poster for id: " + movieId, e);
+            return null;
         }
     }
 

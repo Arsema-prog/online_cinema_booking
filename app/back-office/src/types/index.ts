@@ -20,7 +20,6 @@ export interface Movie {
   director?: string;
   releaseDate?: string;
   rating?: number;
-  posterUrl?: string;
   basePrice?: number;
   isActive?: boolean;
 }

@@ -6,6 +6,7 @@ import { ChevronLeft, Ticket, Users, CreditCard, RefreshCw, Star } from 'lucide-
 import { TicketDisplay } from '../components/TicketDisplay';
 import { ticketGeneratorService, TicketDetails } from '../services/ticketGeneratorService';
 import { apiClient } from "../httpClient";
+import { env } from "../env";
 
 export const BookingPage: React.FC = () => {
   const { screeningId } = useParams(); 
@@ -271,8 +272,8 @@ export const BookingPage: React.FC = () => {
         {movie && (
           <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '20px', padding: '20px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
             <div style={{ width: '120px', height: '180px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {movie.posterUrl ? (
-                <img src={movie.posterUrl} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {movie.id ? (
+                <img src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <span style={{ fontSize: '48px' }}>🎬</span>
               )}

@@ -4,7 +4,7 @@ import { env } from '../env';
 export interface BookingHistoryModel {
   id: string;
   movieTitle: string;
-  posterUrl: string;
+  movieId: string;
   cinemaName: string;
   screenNumber: string;
   showTime: string;
@@ -86,7 +86,7 @@ export const historyService = {
         return ({
         id: b.id,
         movieTitle: b.movieTitle || 'Booked Movie', // Placeholder till DTO mapping is exact
-        posterUrl: b.posterUrl || 'https://via.placeholder.com/150',
+        movieId: b.movieId || b.movie_id,
         cinemaName: b.cinemaName || b.branchName || '-',
         screenNumber: b.screenNumber || b.screenName || '-',
         showTime: b.showTime,

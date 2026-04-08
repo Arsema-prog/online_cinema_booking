@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Clock, Calendar, MapPin, ChevronDown, ChevronRight, Building, Ticket, Crown, Star } from 'lucide-react';
+import { env } from '../env';
 
 interface MovieCardProps {
   movie: any;
@@ -200,9 +201,9 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, screenings, onBookS
         overflow: 'hidden',
         backgroundColor: '#1e1b4b'
       }}>
-        {movie.posterUrl ? (
+        {movie ? (
           <img 
-            src={movie.posterUrl} 
+            src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`} 
             alt={movie.title}
             style={{
               width: '100%',

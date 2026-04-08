@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../httpClient";
 import { Film, Building, MapPin, ChevronRight, Star, Search, X } from 'lucide-react';
+import { env } from '../env';
 
 const toArray = <T,>(payload: unknown): T[] => {
   if (Array.isArray(payload)) return payload as T[];
@@ -217,9 +218,9 @@ export const MoviesPage: React.FC = () => {
                   onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
                   <div style={{ height: '300px', background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {movie.posterUrl ? (
+                    {movie.id ? (
                       <img
-                        src={movie.posterUrl}
+                        src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`}
                         alt={movie.title || 'Movie poster'}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />

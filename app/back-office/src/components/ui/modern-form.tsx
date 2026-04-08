@@ -30,6 +30,7 @@ export type FieldType =
   | 'rating' 
   | 'duration'
   | 'file'
+  | 'datetime-local'
   | 'custom';
 
 export interface FormOption {
@@ -439,6 +440,7 @@ export function ModernForm({
         );
       
       case 'date':
+      case 'datetime-local':
         return (
           <FormField
             key={field.name}
@@ -453,7 +455,7 @@ export function ModernForm({
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors pointer-events-none z-10 text-[1.1rem]">calendar_month</span>
                     <Input 
-                      type="date" 
+                      type={field.type} 
                       className={cn(inputClass, "pl-11")} 
                       {..._fieldProps}
                       disabled={isDisabled}

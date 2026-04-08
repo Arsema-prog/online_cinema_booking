@@ -37,8 +37,7 @@ public class Movie {
 
     private Double rating;
 
-    @Column(name = "poster_url")
-    private String posterUrl;
+
 
     @Column(name = "base_price")
     private Double basePrice;
