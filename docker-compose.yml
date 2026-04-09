@@ -57,7 +57,7 @@ services:
     networks:
       - cinema_network
     healthcheck:
-      test: ["CMD-SHELL", "bash -c \"exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'\""]
+      test: ["CMD-SHELL", "bash -c \"exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'\""]
       interval: 10s
       timeout: 10s
       retries: 30
@@ -104,6 +104,13 @@ services:
         condition: service_healthy
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   core-service:
     build: ./services/core-service
@@ -120,6 +127,13 @@ services:
         condition: service_healthy
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   booking-service:
     build: ./services/booking-service
@@ -142,6 +156,13 @@ services:
       - MINIO_USER_HISTORY_BUCKET=user-history
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   payment-service:
     build: ./services/payment-service
@@ -157,6 +178,13 @@ services:
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   support-service:
     build: ./services/support-service
@@ -178,6 +206,13 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
 networks:
   cinema_network:
