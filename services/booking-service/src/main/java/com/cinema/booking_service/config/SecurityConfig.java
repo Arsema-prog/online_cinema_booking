@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/ws-booking", "/ws-booking/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/bookings/shows/*/seats").permitAll()
                         .anyRequest().authenticated()
                 )

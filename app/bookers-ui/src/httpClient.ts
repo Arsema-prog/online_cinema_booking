@@ -66,3 +66,4 @@ console.log("Environment values:", {
 });
 
 export const apiClient = createClient(env.apiGatewayUrl, "apiClient");
+export default apiClient;

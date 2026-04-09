@@ -21,7 +21,11 @@ public class SecurityConfig {
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/api/v1/booking/ws-booking", "/api/v1/booking/ws-booking/**").permitAll()
                 .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/core/movies/**").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/core/branches/**").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/core/screenings/**").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/core/screening-seats/**").permitAll()
                 .pathMatchers("/api/v1/support/api/auth/register").permitAll()
                 .anyExchange().authenticated()
             )

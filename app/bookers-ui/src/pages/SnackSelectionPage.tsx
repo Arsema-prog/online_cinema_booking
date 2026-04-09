@@ -426,7 +426,7 @@ export const SnackSelectionPage: React.FC = () => {
                   </div>
                   {seats && seats.length > 0 && (
                     <div className="text-xs text-muted-foreground leading-relaxed">
-                       {seats.map(s => s).join(', ')}
+                       {seats.map((s: string) => s).join(', ')}
                     </div>
                   )}
                 </div>
