@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useBooking } from "../hooks/useBooking";
-import { ChevronLeft, Ticket, Users, CreditCard, RefreshCw, Star } from 'lucide-react';
+import { ChevronLeft, Ticket, Users, CreditCard, RefreshCw, Star, Info, Wifi, WifiOff, X } from 'lucide-react';
+import { getBookingDetails, getSeatPriceQuote } from "../api/bookingApi";
 import { TicketDisplay } from '../components/TicketDisplay';
 import { ticketGeneratorService, TicketDetails } from '../services/ticketGeneratorService';
 import { apiClient } from "../httpClient";
@@ -14,13 +15,15 @@ export const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const [processing, setProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [showUuid, setShowUuid] = useState<string>('');
   const [movie, setMovie] = useState<any>(null);
   const [screening, setScreening] = useState<any>(null);
   const [ticketDetails, setTicketDetails] = useState<TicketDetails | null>(null);
   const [holdError, setHoldError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [remainingMs, setRemainingMs] = useState<number>(0);
+  const [quotedSeatTotal, setQuotedSeatTotal] = useState<number | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [pricingRuleVersion, setPricingRuleVersion] = useState<string | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   // Fetch screening and movie details
   useEffect(() => {
@@ -40,14 +43,6 @@ export const BookingPage: React.FC = () => {
     }
   }, [screeningId]);
 
-  // Generate UUID from screeningId
-  useEffect(() => {
-    if (screeningId) {
-      const paddedId = screeningId.padStart(12, '0');
-      setShowUuid(`00000000-0000-0000-0000-${paddedId}`);
-    }
-  }, [screeningId]);
-
   const {
     seats,
     loading,
@@ -55,12 +50,83 @@ export const BookingPage: React.FC = () => {
     selectedSeats,
     toggleSeat,
     holdSelectedSeats,
+    clearSelections,
     refreshSeats,
     totalAmount,
     hasSelectedSeats,
     holdingSeats,
-    holdResponse
+    holdResponse,
+    liveUpdatesConnected,
+    showId
   } = useBooking(Number(screeningId));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (selectedSeats.length === 0) {
+      setQuotedSeatTotal(0);
+      setPricingRuleVersion(null);
+      setQuoteError(null);
+      setQuoteLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!screening?.startTime) {
+      setQuotedSeatTotal(null);
+      setPricingRuleVersion(null);
+      setQuoteError(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const loadQuote = async () => {
+      setQuoteLoading(true);
+      setQuoteError(null);
+
+      try {
+        const quote = await getSeatPriceQuote({
+          screeningId: Number(screeningId),
+          seatCount: selectedSeats.length,
+          showTime: screening.startTime
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setQuotedSeatTotal(quote.amount);
+        setPricingRuleVersion(quote.activeRuleVersion ?? null);
+        setQuoteError(null);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        console.warn("Failed to load live seat quote, using fallback subtotal.", err);
+        setQuotedSeatTotal(null);
+        setPricingRuleVersion(null);
+        setQuoteError("Live pricing is unavailable right now. Refresh the map before continuing to checkout.");
+      } finally {
+        if (!cancelled) {
+          setQuoteLoading(false);
+        }
+      }
+    };
+
+    loadQuote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [screening?.startTime, screeningId, selectedSeats.length]);
+
+  const displaySeatTotal = selectedSeats.length === 0
+    ? 0
+    : quotedSeatTotal ?? totalAmount;
+  const canCheckout = hasSelectedSeats && !quoteLoading && quotedSeatTotal !== null;
 
   const activeExternalHolds = seats.filter(
     (seat) =>
@@ -68,10 +134,55 @@ export const BookingPage: React.FC = () => {
       !selectedSeats.some((selected) => selected.id === seat.id)
   ).length;
 
+  const seatSummary = seats.reduce(
+    (summary, seat) => {
+      switch (seat.status) {
+        case "AVAILABLE":
+          summary.available += 1;
+          break;
+        case "HELD":
+          summary.held += 1;
+          break;
+        case "RESERVED":
+          summary.reserved += 1;
+          break;
+        case "CANCELLED":
+          summary.cancelled += 1;
+          break;
+      }
+      return summary;
+    },
+    { available: 0, held: 0, reserved: 0, cancelled: 0 }
+  );
+
   const handleManualRefresh = async () => {
     setRefreshing(true);
-    await refreshSeats();
-    setRefreshing(false);
+    setHoldError(null);
+    try {
+      await refreshSeats();
+    } catch (err: any) {
+      setHoldError(err?.normalizedMessage || err?.message || "Unable to refresh the seat map right now.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const navigateToSnackSelection = async (bookingId: string, expiresAt: string, expiresAtEpochMs?: number) => {
+    const booking = await getBookingDetails(bookingId);
+    const canonicalSeatTotal = Math.max(booking.totalAmount - booking.snacksTotal, 0);
+
+    navigate('/bookers/snacks', {
+      state: {
+        bookingId,
+        showId,
+        seats: selectedSeats.map((seat) => seat.seat.seatNumber),
+        seatTotal: canonicalSeatTotal || displaySeatTotal,
+        holdExpiresAt: expiresAt,
+        holdExpiresAtEpochMs: expiresAtEpochMs,
+        bookingStatus: booking.status,
+        pricingRuleVersion
+      }
+    });
   };
 
   // Handle successful payment redirect from Stripe
@@ -80,7 +191,6 @@ export const BookingPage: React.FC = () => {
     if (urlParams.get('payment') === 'success') {
       const bId = urlParams.get('bookingId');
       if (bId) {
-        setShowUuid(bId);
         handlePaymentSuccess(bId);
       }
     } else if (urlParams.get('payment') === 'cancelled') {
@@ -89,9 +199,13 @@ export const BookingPage: React.FC = () => {
   }, []);
 
   const handleProceedToPayment = async () => {
+    if (!canCheckout) {
+      setHoldError(quoteError || "Live pricing is still loading. Please wait for the quote before checkout.");
+      return;
+    }
+
     setProcessing(true);
     setHoldError(null);
-    console.log("booking id sent : ",)
     
     try {
       const response = await holdSelectedSeats();
@@ -100,22 +214,16 @@ export const BookingPage: React.FC = () => {
       if (!response || !response.bookingId) {
         throw new Error("No booking ID returned from holding seats");
       }
-      
-      // Navigate to snack selection
-      navigate('/bookers/snacks', {
-        state: {
-          bookingId: response.bookingId,
-          showId: showUuid,
-          seats: selectedSeats.map(s => s.seat.seatNumber),
-          seatTotal: totalAmount,
-          holdExpiresAt: response.expiresAt,
-          holdExpiresAtEpochMs: response.expiresAtEpochMs
-        }
-      });
+
+      await navigateToSnackSelection(
+        response.bookingId,
+        response.expiresAt,
+        response.expiresAtEpochMs
+      );
       
     } catch (error: any) {
       console.error("Error holding seats:", error);
-      setHoldError(error.message || "Failed to hold seats. Please try again.");
+      setHoldError(error?.normalizedMessage || error?.message || "Failed to hold seats. Please try again.");
       
       // Refresh seats to get latest status
       await refreshSeats();
@@ -125,9 +233,13 @@ export const BookingPage: React.FC = () => {
   };
 
   const handleRetryHold = async () => {
+    if (!canCheckout) {
+      setHoldError(quoteError || "Live pricing is still loading. Please wait for the quote before checkout.");
+      return;
+    }
+
     setProcessing(true);
     setHoldError(null);
-    setRetryCount(prev => prev + 1);
     
     try {
       const response = await holdSelectedSeats();
@@ -136,28 +248,18 @@ export const BookingPage: React.FC = () => {
       if (!response || !response.bookingId) {
         throw new Error("No booking ID returned from holding seats");
       }
-      
-      // Navigate to snack selection
-      navigate('/bookers/snacks', {
-        state: {
-          bookingId: response.bookingId,
-          showId: showUuid,
-          seats: selectedSeats.map(s => s.seat.seatNumber),
-          seatTotal: totalAmount,
-          holdExpiresAt: response.expiresAt,
-          holdExpiresAtEpochMs: response.expiresAtEpochMs
-        }
-      });
+
+      await navigateToSnackSelection(
+        response.bookingId,
+        response.expiresAt,
+        response.expiresAtEpochMs
+      );
       
     } catch (error: any) {
       console.error("Retry failed:", error);
-      setHoldError(error.message || "Failed again. Please refresh the page.");
+      setHoldError(error?.normalizedMessage || error?.message || "Failed again. Please refresh the page.");
       setProcessing(false);
     }
-  };
-
-  const handleRefreshPage = () => {
-    window.location.reload();
   };
 
   const handlePaymentSuccess = async (bId: string) => {
@@ -185,7 +287,7 @@ export const BookingPage: React.FC = () => {
   // Fallback refresh (websocket is primary)
   useEffect(() => {
     const interval = setInterval(() => {
-      refreshSeats();
+      refreshSeats().catch(() => undefined);
     }, 45000);
     return () => clearInterval(interval);
   }, [refreshSeats]);
@@ -211,20 +313,23 @@ export const BookingPage: React.FC = () => {
 
   const rows = Object.keys(seatsByRow).sort();
 
+  const getSeatCountLabel = (count: number, noun: string) =>
+    `${count} ${noun}${count === 1 ? "" : "s"}`;
+
   const getSeatColorClass = (seat: typeof seats[0]) => {
     if (selectedSeats.some(s => s.id === seat.id)) {
-      return 'bg-primary text-primary-foreground border-primary hover:bg-primary/90';
+      return 'bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg shadow-primary/20';
     }
     
     switch (seat.status?.toUpperCase()) {
       case 'RESERVED':
-        return 'bg-destructive/20 text-destructive border-transparent cursor-not-allowed opacity-50';
+        return 'bg-rose-500/15 text-rose-700 border-rose-500/30 cursor-not-allowed opacity-80';
       case 'HELD':
-        return 'bg-muted text-muted-foreground border-transparent cursor-not-allowed opacity-70';
+        return 'bg-amber-500/15 text-amber-700 border-amber-500/30 cursor-not-allowed';
       case 'CANCELLED':
         return 'bg-muted/50 text-muted-foreground border-transparent cursor-not-allowed opacity-50';
       case 'AVAILABLE':
-        return 'bg-card text-card-foreground hover:border-primary hover:text-primary border-border';
+        return 'bg-emerald-500/10 text-emerald-700 hover:-translate-y-0.5 hover:border-emerald-500 hover:bg-emerald-500/15 border-emerald-500/20 hover:shadow-md';
       default:
         return 'bg-muted text-muted-foreground border-transparent opacity-50';
     }
@@ -265,11 +370,25 @@ export const BookingPage: React.FC = () => {
             </Button>
             <h1 className="font-headline text-xl md:text-3xl font-bold text-foreground tracking-tight">Select Seats</h1>
           </div>
-          
-          <Button variant="secondary" size="sm" onClick={handleManualRefresh} disabled={refreshing} className="gap-2">
-            <RefreshCw size={14} className={cn(refreshing && 'animate-spin')} />
-            <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh Map'}</span>
-          </Button>
+
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "hidden md:flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-wider",
+                liveUpdatesConnected
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-600"
+              )}
+            >
+              {liveUpdatesConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+              {liveUpdatesConnected ? "Live Availability" : "Reconnecting"}
+            </div>
+
+            <Button variant="secondary" size="sm" onClick={handleManualRefresh} disabled={refreshing} className="gap-2">
+              <RefreshCw size={14} className={cn(refreshing && 'animate-spin')} />
+              <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh Map'}</span>
+            </Button>
+          </div>
         </div>
 
         {/* Movie Info Banner */}
@@ -306,6 +425,31 @@ export const BookingPage: React.FC = () => {
           </div>
         )}
 
+        <div className="grid gap-4 md:grid-cols-4 mb-8">
+          <SummaryCard label="Available now" value={seatSummary.available} tone="success" />
+          <SummaryCard label="Selected" value={selectedSeats.length} tone="primary" />
+          <SummaryCard label="Held by others" value={activeExternalHolds} tone="muted" />
+          <SummaryCard label="Reserved" value={seatSummary.reserved} tone="danger" />
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-4 md:p-5 mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-primary/10 text-primary p-2 shrink-0">
+              <Info size={16} />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">Choose up to 8 seats and continue to concessions.</p>
+              <p className="text-sm text-muted-foreground">
+                Green seats are open, amber seats are temporarily held during checkout, and red seats are sold out. Seats become reserved only after Stripe confirms payment.
+              </p>
+            </div>
+          </div>
+          <div className="text-sm text-muted-foreground md:text-right">
+            <div>{getSeatCountLabel(selectedSeats.length, "seat")} selected</div>
+            <div>{getSeatCountLabel(seatSummary.available, "seat")} still open in this screening</div>
+          </div>
+        </div>
+
         {/* Screen visualization */}
         <div className="relative mb-20 text-center select-none pt-12">
           {/* Subtle Screen Curve */}
@@ -319,10 +463,10 @@ export const BookingPage: React.FC = () => {
 
         {/* Legend */}
         <div className="flex flex-wrap gap-6 items-center justify-center mb-8">
-          <LegendItem className="bg-card border border-border" label="Available" />
+          <LegendItem className="bg-emerald-500/10 border-emerald-500/20" label="Available" />
           <LegendItem className="bg-primary text-primary-foreground border-primary" label="Selected" />
-          <LegendItem className="bg-muted border-transparent opacity-70" label="Held" />
-          <LegendItem className="bg-destructive/20 border-transparent opacity-50" label="Reserved" />
+          <LegendItem className="bg-amber-500/15 border-amber-500/30" label="Held" />
+          <LegendItem className="bg-rose-500/15 border-rose-500/30" label="Reserved" />
         </div>
 
         {activeExternalHolds > 0 && (
@@ -344,20 +488,26 @@ export const BookingPage: React.FC = () => {
                     
                     <div className="flex gap-2">
                        {seatsByRow[row]?.map((seat, index) => {
-                         const isAisle = index === 7;
+                         const rowSeats = seatsByRow[row] || [];
+                         const aisleIndex = rowSeats.length > 8 ? Math.floor(rowSeats.length / 2) : -1;
+                         const isAisle = aisleIndex > 0 && index === aisleIndex;
+                         const isSelected = selectedSeats.some((selected) => selected.id === seat.id);
+                         const seatNumberLabel = seat.seat.seatNumber.replace(seat.seat.rowLabel, '');
                          return (
                            <React.Fragment key={seat.id}>
                              {isAisle && <div className="w-6 md:w-8" />}
                              <button
                                onClick={() => toggleSeat(seat)}
                                disabled={seat.status !== 'AVAILABLE'}
+                               aria-pressed={isSelected}
+                               aria-label={`Row ${seat.seat.rowLabel}, seat ${seat.seat.seatNumber}, ${seat.status.toLowerCase()}`}
                                className={cn(
-                                 "w-9 h-9 md:w-11 md:h-11 rounded-t-lg rounded-b-sm border font-bold text-xs md:text-sm transition-all duration-200 flex items-center justify-center shadow-sm",
+                                 "w-9 h-9 md:w-11 md:h-11 rounded-t-lg rounded-b-sm border font-bold text-xs md:text-sm transition-all duration-200 flex items-center justify-center shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                  getSeatColorClass(seat)
                                )}
                                title={`Row ${seat.seat.rowLabel}, Seat ${seat.seat.seatNumber} - $${seat.price}`}
                              >
-                               {seat.seat.seatNumber.replace(seat.seat.rowLabel, '')}
+                               {seatNumberLabel}
                              </button>
                            </React.Fragment>
                          );
@@ -377,9 +527,19 @@ export const BookingPage: React.FC = () => {
       {holdError && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground px-6 py-4 rounded-xl flex items-center gap-4 z-[100] shadow-xl animate-slideIn">
           <span className="font-medium text-sm">{holdError}</span>
-          <Button variant="outline" size="sm" onClick={handleRetryHold} disabled={processing} className="text-destructive border-destructive hover:bg-destructive-foreground hover:text-destructive text-xs font-bold">
-            {processing ? 'Retrying...' : 'Retry'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleRetryHold} disabled={processing || !hasSelectedSeats} className="text-destructive border-destructive hover:bg-destructive-foreground hover:text-destructive text-xs font-bold">
+              {processing ? 'Retrying...' : 'Retry'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setHoldError(null)}
+              className="rounded-full p-1 text-destructive-foreground/80 hover:bg-white/10 hover:text-destructive-foreground"
+              aria-label="Dismiss booking error"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -404,6 +564,16 @@ export const BookingPage: React.FC = () => {
                  </div>
                  <div className="font-headline font-bold text-lg text-foreground">{selectedSeats.length}</div>
                </div>
+
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={clearSelections}
+                 disabled={processing || holdingSeats}
+                 className="shrink-0"
+               >
+                 Clear
+               </Button>
             </div>
 
             <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
@@ -421,9 +591,18 @@ export const BookingPage: React.FC = () => {
                )}
                
                <div className="text-right border-l border-border pl-4 md:pl-6">
-                 <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">Subtotal</div>
+                 <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">
+                   {quoteLoading ? 'Refreshing Quote' : 'Seat Total'}
+                 </div>
                  <div className="font-headline font-bold text-2xl text-primary">
-                   ${totalAmount.toFixed(2)}
+                   {quotedSeatTotal === null && hasSelectedSeats ? '...' : `$${displaySeatTotal.toFixed(2)}`}
+                 </div>
+                 <div className="text-[11px] text-muted-foreground mt-1">
+                   {quoteError
+                     ? quoteError
+                     : pricingRuleVersion
+                     ? `Rules engine: ${pricingRuleVersion}`
+                     : 'Temporary hold only until payment succeeds'}
                  </div>
                </div>
 
@@ -431,6 +610,7 @@ export const BookingPage: React.FC = () => {
                 onClick={handleProceedToPayment} 
                 className="gap-2 h-12 px-8 font-bold text-base w-full md:w-auto shrink-0 shadow-md"
                 isLoading={processing || holdingSeats}
+                disabled={processing || holdingSeats || !canCheckout}
                >
                  <CreditCard size={18} />
                  Checkout
@@ -455,3 +635,27 @@ const LegendItem: React.FC<{ className: string; label: string }> = ({ className,
     <span className="text-xs font-semibold text-muted-foreground">{label}</span>
   </div>
 );
+
+const SummaryCard: React.FC<{
+  label: string;
+  value: number;
+  tone: "default" | "primary" | "muted" | "danger" | "success";
+}> = ({ label, value, tone }) => {
+  const toneClass =
+    tone === "primary"
+      ? "border-primary/20 bg-primary/10 text-primary"
+      : tone === "success"
+        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+      : tone === "danger"
+        ? "border-destructive/20 bg-destructive/10 text-destructive"
+        : tone === "muted"
+          ? "border-amber-500/20 bg-amber-500/10 text-amber-700"
+          : "border-border bg-card text-foreground";
+
+  return (
+    <div className={cn("rounded-2xl border p-4 shadow-sm", toneClass)}>
+      <div className="text-xs font-bold uppercase tracking-[0.25em] opacity-70">{label}</div>
+      <div className="mt-2 font-headline text-3xl font-bold">{value}</div>
+    </div>
+  );
+};

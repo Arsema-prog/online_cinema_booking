@@ -45,6 +45,13 @@ class RulesServiceTest {
         req.setBasePrice(2000L);
         req.setCurrency("USD");
 
-        assertThrows(RuntimeException.class, () -> rulesService.evaluatePrice(req));
+        PriceEvaluationResponse response = rulesService.evaluatePrice(req);
+
+        assertNotNull(response);
+        assertEquals(4000L, response.getFinalPrice());
+        assertEquals("USD", response.getCurrency());
+        assertEquals("fallback-no-active-ruleset", response.getActiveRuleVersion());
+        assertNotNull(response.getBreakdown());
+        assertFalse(response.getBreakdown().isEmpty());
     }
 }

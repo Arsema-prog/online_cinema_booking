@@ -35,11 +35,14 @@ class PaymentServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private PaymentEventPublisher paymentEventPublisher;
+
     private PaymentService paymentService;
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentService(paymentRepository, restTemplate);
+        paymentService = new PaymentService(paymentRepository, restTemplate, paymentEventPublisher);
         ReflectionTestUtils.setField(paymentService, "stripeApiKey", "sk_test_mock");
         ReflectionTestUtils.setField(paymentService, "bookingServiceUrl", "http://booking-service:8082");
     }

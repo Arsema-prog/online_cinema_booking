@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { XCircle, ArrowLeft } from 'lucide-react';
-import { env } from '../env';
+import { cancelBooking } from '../api/bookingApi';
 import { Button } from '@/components/ui/Button';
 
 export const BookingCancelPage: React.FC = () => {
@@ -16,7 +16,7 @@ export const BookingCancelPage: React.FC = () => {
 
     const release = async () => {
       try {
-        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/cancel`, { method: 'POST' });
+        await cancelBooking(bookingId);
         setReleased(true);
       } catch (error) {
         console.warn('Failed to cancel booking after Stripe cancellation', error);

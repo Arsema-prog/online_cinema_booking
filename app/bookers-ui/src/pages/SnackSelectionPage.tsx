@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Plus, Minus, SkipForward, Popcorn, Coffee, Beer, Wine, Milk, Cookie, Sparkles, ArrowRight, Trash2, CreditCard, Loader2 } from 'lucide-react';
-import { env } from '../env';
-import { paymentService } from '../services/paymentService';
-import { getAccessTokenGetter } from '../httpClient';
+import { BookingDetails, cancelBooking, getBookingDetails, getBookingSeats, updateBookingSnacks } from '../api/bookingApi';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +46,7 @@ interface CartItem {
 export const SnackSelectionPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { bookingId, showId, seats, seatTotal, holdExpiresAt, holdExpiresAtEpochMs } = location.state || {};
+  const { bookingId, seats, seatTotal, holdExpiresAt, holdExpiresAtEpochMs } = location.state || {};
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -57,6 +55,8 @@ export const SnackSelectionPage: React.FC = () => {
   const [stripeError, setStripeError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [holdExpired, setHoldExpired] = useState(false);
+  const [bookingSummary, setBookingSummary] = useState<BookingDetails | null>(null);
+  const [seatLabels, setSeatLabels] = useState<string[]>(Array.isArray(seats) ? seats : []);
   
   const clampExpiryToTwoMinutesFromNow = (candidate: number | null): number | null => {
     if (!candidate) return null;
@@ -77,8 +77,46 @@ export const SnackSelectionPage: React.FC = () => {
   }, [bookingId, navigate]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    if (!bookingId) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const loadBookingContext = async () => {
+      try {
+        const [booking, bookingSeats] = await Promise.all([
+          getBookingDetails(bookingId),
+          getBookingSeats(bookingId).catch(() => [])
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setBookingSummary(booking);
+
+        if (bookingSeats.length > 0) {
+          setSeatLabels(bookingSeats.map((seat) => seat.seatNumber));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load booking summary for checkout', error);
+        }
+      }
+    };
+
+    loadBookingContext();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId]);
+
+  useEffect(() => {
     if (resolvedHoldExpiresAtMs) return;
-    if (!bookingId) return;
 
     const parseBackendDateToEpoch = (value: string): number | null => {
       if (!value) return null;
@@ -86,21 +124,6 @@ export const SnackSelectionPage: React.FC = () => {
       const normalized = hasTimezone ? value : `${value}Z`;
       const parsed = Date.parse(normalized);
       return Number.isNaN(parsed) ? null : parsed;
-    };
-
-    const recoverExpiryFromBooking = async () => {
-      try {
-        const response = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}`);
-        if (!response.ok) return;
-        const booking = await response.json();
-        if (!booking?.createdAt) return;
-
-        const createdAtMs = parseBackendDateToEpoch(booking.createdAt);
-        if (!createdAtMs) return;
-        setResolvedHoldExpiresAtMs(createdAtMs + 120000); // Give 2 mins typically
-      } catch (error) {
-        console.error('Failed to recover hold expiry from booking', error);
-      }
     };
 
     if (holdExpiresAt) {
@@ -111,8 +134,13 @@ export const SnackSelectionPage: React.FC = () => {
       }
     }
 
-    recoverExpiryFromBooking();
-  }, [bookingId, resolvedHoldExpiresAtMs, holdExpiresAt]);
+    if (bookingSummary?.createdAt) {
+      const createdAtMs = parseBackendDateToEpoch(bookingSummary.createdAt);
+      if (createdAtMs) {
+        setResolvedHoldExpiresAtMs(clampExpiryToTwoMinutesFromNow(createdAtMs + 120000));
+      }
+    }
+  }, [bookingSummary?.createdAt, resolvedHoldExpiresAtMs, holdExpiresAt]);
 
   useEffect(() => {
     if (!resolvedHoldExpiresAtMs) return;
@@ -139,7 +167,7 @@ export const SnackSelectionPage: React.FC = () => {
     const releaseExpiredHold = async () => {
       releaseTriggeredRef.current = true;
       try {
-        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/cancel`, { method: 'POST' });
+        await cancelBooking(bookingId);
       } catch (error) {
         console.error('Failed to release expired hold immediately', error);
       }
@@ -190,41 +218,20 @@ export const SnackSelectionPage: React.FC = () => {
     return cart.reduce((total, item) => total + (item.snack.price * item.quantity), 0);
   };
 
-  const resolveUserEmail = async (token: string | null | undefined): Promise<string | null> => {
-    let email: string | null = null;
-    if (token) {
-      try {
-        const payload = token.split('.')[1];
-        if (payload) {
-          const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-          email = decoded?.email || (typeof decoded?.preferred_username === 'string' && decoded.preferred_username.includes('@') ? decoded.preferred_username : null);
-        }
-      } catch {}
-    }
-    if (!email) {
-      try {
-        const cached = localStorage.getItem('bookers_user_email');
-        if (cached && cached.includes('@')) {
-          email = cached;
-        }
-      } catch {}
-    }
-    if (!email && token) {
-      try {
-        const userInfoRes = await fetch(
-          `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/userinfo`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (userInfoRes.ok) {
-          const info = await userInfoRes.json();
-          if (info?.email && typeof info.email === 'string') {
-            email = info.email;
-          }
-        }
-      } catch {}
-    }
-    return email;
-  };
+  const resolvedSeatTotal = bookingSummary
+    ? Math.max(bookingSummary.totalAmount - bookingSummary.snacksTotal, 0)
+    : typeof seatTotal === 'number'
+      ? seatTotal
+      : 0;
+
+  const snacksTotalValue = getCartTotal();
+  const checkoutTotal = resolvedSeatTotal + snacksTotalValue;
+  const checkoutStatusLabel =
+    bookingSummary?.status === 'SNACKS_SELECTED'
+      ? 'Concessions saved'
+      : bookingSummary?.status === 'PAYMENT_PENDING' || bookingSummary?.status === 'PAYMENT_INITIATED'
+        ? 'Redirecting to payment'
+        : 'Seats held for checkout';
 
   const handleConfirmPayment = async () => {
     if (holdExpired) {
@@ -240,54 +247,35 @@ export const SnackSelectionPage: React.FC = () => {
         throw new Error('Missing booking reference. Please restart booking.');
       }
 
-      const snacksTotalValue = getCartTotal();
-      const totalAmount = (seatTotal || 0) + snacksTotalValue;
+      let latestBooking = bookingSummary;
+
+      if (cart.length > 0) {
+        latestBooking = await updateBookingSnacks(
+          bookingId,
+          cart.map(item => `${item.quantity}x ${item.snack.name}`).join(', '),
+          snacksTotalValue
+        );
+        setBookingSummary(latestBooking);
+      }
+
+      const totalAmount = latestBooking?.totalAmount && latestBooking.totalAmount > 0
+        ? latestBooking.totalAmount
+        : latestBooking?.totalAmount ?? checkoutTotal;
+
       if (totalAmount <= 0) {
         throw new Error('Total amount must be greater than zero');
       }
 
-      // Persist snacks to booking
-      if (cart.length > 0) {
-        const snacksResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/snacks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            snackDetails: cart.map(item => `${item.quantity}x ${item.snack.name}`).join(', '),
-            snacksTotal: snacksTotalValue
-          })
-        });
-        if (!snacksResponse.ok) {
-          throw new Error('Failed to save snacks for booking');
+      navigate('/bookers/payment', {
+        state: {
+          bookingId,
+          seats: seatLabels,
+          seatTotal: resolvedSeatTotal,
+          snacks: cart,
+          snacksTotal: snacksTotalValue,
+          totalAmount
         }
-      }
-
-      const token = getAccessTokenGetter()();
-      const userEmail = await resolveUserEmail(token);
-      const checkoutEmail = userEmail ?? "";
-      if (checkoutEmail) {
-        try {
-          sessionStorage.setItem('bookers_last_checkout_email', checkoutEmail);
-        } catch {}
-      }
-
-      // best-effort notify booking service
-      try {
-        await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
-      } catch (e) {
-        console.warn('Failed to notify about payment initiation', e);
-      }
-
-      const session = await paymentService.createCheckoutSession(
-        bookingId,
-        totalAmount,
-        {
-          successUrl: `${window.location.origin}/bookers/booking/success?bookingId=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/bookers/booking/cancel?bookingId=${bookingId}`
-        }
-      );
-
-      window.location.href = session.url;
-      return;
+      });
     } catch (error: any) {
       console.error('Payment error:', error);
       setStripeError(error?.message ?? 'Failed to process payment. Please try again.');
@@ -328,6 +316,20 @@ export const SnackSelectionPage: React.FC = () => {
             </span>
           </div>
         )}
+
+        <div className="mb-8 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-bold text-amber-700">Seats are held, not sold</div>
+              <div className="text-xs text-amber-700/80">
+                Your seats stay amber during checkout and are released automatically if payment is not completed.
+              </div>
+            </div>
+            <div className="rounded-full border border-amber-500/30 bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700">
+              {checkoutStatusLabel}
+            </div>
+          </div>
+        </div>
 
         {/* Header */}
         <div className="flex items-center gap-6 mb-12 bg-card border border-border p-4 md:p-6 rounded-3xl shadow-sm">
@@ -421,12 +423,12 @@ export const SnackSelectionPage: React.FC = () => {
                     🎬 Selected Seats
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-foreground text-sm">{seats?.length || 0} Ticket(s)</span>
-                    <span className="text-lg font-bold text-primary">${seatTotal?.toFixed(2) || 0}</span>
+                    <span className="font-medium text-foreground text-sm">{seatLabels.length || 0} Ticket(s)</span>
+                    <span className="text-lg font-bold text-primary">${resolvedSeatTotal.toFixed(2)}</span>
                   </div>
-                  {seats && seats.length > 0 && (
+                  {seatLabels.length > 0 && (
                     <div className="text-xs text-muted-foreground leading-relaxed">
-                       {seats.map((s: string) => s).join(', ')}
+                       {seatLabels.join(', ')}
                     </div>
                   )}
                 </div>
@@ -471,7 +473,7 @@ export const SnackSelectionPage: React.FC = () => {
                   <div className="flex justify-between items-baseline mb-6">
                     <span className="text-sm font-bold text-muted-foreground">Total Due</span>
                     <span className="text-3xl font-headline font-black text-primary tracking-tight">
-                      ${(seatTotal + getCartTotal()).toFixed(2)}
+                      ${checkoutTotal.toFixed(2)}
                     </span>
                   </div>
 
@@ -482,14 +484,14 @@ export const SnackSelectionPage: React.FC = () => {
                       disabled={holdExpired}
                       className="rounded-xl h-12 font-bold gap-2 text-xs"
                     >
-                      <SkipForward size={14} /> Skip
+                      <SkipForward size={14} /> Skip Snacks
                     </Button>
                     <Button
                       onClick={() => setShowPaymentModal(true)}
                       disabled={holdExpired}
                       className="rounded-xl h-12 font-bold gap-2 text-xs shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
                     >
-                      Checkout <ArrowRight size={14} />
+                      Continue to Payment <ArrowRight size={14} />
                     </Button>
                   </div>
                 </div>
@@ -516,21 +518,21 @@ export const SnackSelectionPage: React.FC = () => {
 
             <div className="bg-muted/50 rounded-2xl p-5 mb-8 border border-border">
               <div className="flex justify-between mb-4 pb-4 border-b border-border">
-                <span className="text-muted-foreground text-sm font-medium">Tickets ({seats?.length || 0})</span>
-                <span className="font-bold text-foreground">${seatTotal?.toFixed(2) || 0}</span>
+                <span className="text-muted-foreground text-sm font-medium">Tickets ({seatLabels.length || 0})</span>
+                <span className="font-bold text-foreground">${resolvedSeatTotal.toFixed(2)}</span>
               </div>
               
               {cart.length > 0 && (
                 <div className="flex justify-between mb-4 pb-4 border-b border-border">
                   <span className="text-muted-foreground text-sm font-medium">Snacks & Drinks</span>
-                  <span className="font-bold text-foreground">${getCartTotal().toFixed(2)}</span>
+                  <span className="font-bold text-foreground">${snacksTotalValue.toFixed(2)}</span>
                 </div>
               )}
 
               <div className="flex justify-between items-center mt-2">
                 <span className="text-base font-bold text-foreground">Grand Total</span>
                 <span className="text-2xl font-black text-primary">
-                  ${(seatTotal + getCartTotal()).toFixed(2)}
+                  ${checkoutTotal.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -549,7 +551,7 @@ export const SnackSelectionPage: React.FC = () => {
                 disabled={processing || holdExpired}
                 className="flex-1 rounded-xl h-12 gap-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {holdExpired ? 'Hold Expired' : processing ? <><Loader2 className="animate-spin" size={16}/> Processing</> : <><CreditCard size={16} /> Pay Now</>}
+                {holdExpired ? 'Hold Expired' : processing ? <><Loader2 className="animate-spin" size={16}/> Processing</> : <><CreditCard size={16} /> Continue</>}
               </Button>
             </div>
 

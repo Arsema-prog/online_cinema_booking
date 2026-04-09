@@ -24,6 +24,7 @@ export const useBooking = (screeningId: number) => {
   const [holdingSeats, setHoldingSeats] = useState(false);
   const [seatUuidMap, setSeatUuidMap] = useState<Record<number, string>>({});
   const [showId, setShowId] = useState<string>('');
+  const [liveUpdatesConnected, setLiveUpdatesConnected] = useState(false);
 
   const normalizeStatus = (status: string): ScreeningSeat['status'] => {
     const normalized = status?.toUpperCase();
@@ -33,6 +34,27 @@ export const useBooking = (screeningId: number) => {
     if (normalized === 'CANCELLED') return 'CANCELLED';
     return 'AVAILABLE';
   };
+
+  const getErrorMessage = (err: any, fallback: string) => {
+    const status = err?.status ?? err?.response?.status;
+    if (status === 401) {
+      return "Your session expired. Please sign in again to continue booking.";
+    }
+    return err?.normalizedMessage || err?.response?.data?.message || err?.message || fallback;
+  };
+
+  const applySeatSnapshot = useCallback((nextSeats: ScreeningSeat[]) => {
+    setSeats(nextSeats);
+    setSelectedSeats((prev) =>
+      prev
+        .map((selected) =>
+          nextSeats.find(
+            (seat) => seat.id === selected.id && seat.status === 'AVAILABLE'
+          )
+        )
+        .filter((seat): seat is ScreeningSeat => Boolean(seat))
+    );
+  }, []);
 
   const mergeSeatStatuses = useCallback(
     async (
@@ -82,13 +104,13 @@ export const useBooking = (screeningId: number) => {
         const generatedShowId = `00000000-0000-0000-0000-${paddedId}`;
         const mergedSeats = await mergeSeatStatuses(seatsData, uuidMapping, generatedShowId);
 
-        setSeats(mergedSeats);
+        applySeatSnapshot(mergedSeats);
         setSeatUuidMap(uuidMapping);
         setShowId(generatedShowId);
         
       } catch (err) {
         console.error('Failed to load seat data:', err);
-        setError("Failed to load seat data. Please refresh the page.");
+        setError(getErrorMessage(err, "Failed to load seat data. Please refresh the page."));
       } finally {
         setLoading(false);
       }
@@ -113,6 +135,7 @@ export const useBooking = (screeningId: number) => {
     });
 
     client.onConnect = () => {
+      setLiveUpdatesConnected(true);
       client.subscribe(`/topic/shows/${showId}/seats`, (message) => {
         try {
           const payload = JSON.parse(message.body) as { seatId: string; status: string };
@@ -125,14 +148,33 @@ export const useBooking = (screeningId: number) => {
                 : seat
             )
           );
+
+          if (mappedStatus !== 'AVAILABLE') {
+            setSelectedSeats((prev) =>
+              prev.filter((seat) => seatUuidMap[seat.seat.id] !== payload.seatId)
+            );
+          }
         } catch (e) {
           console.warn("Failed to parse seat websocket payload", e);
         }
       });
     };
 
+    client.onStompError = () => {
+      setLiveUpdatesConnected(false);
+    };
+
+    client.onWebSocketClose = () => {
+      setLiveUpdatesConnected(false);
+    };
+
+    client.onWebSocketError = () => {
+      setLiveUpdatesConnected(false);
+    };
+
     client.activate();
     return () => {
+      setLiveUpdatesConnected(false);
       client.deactivate();
     };
   }, [showId, seatUuidMap]);
@@ -141,30 +183,42 @@ export const useBooking = (screeningId: number) => {
     try {
       const data = await getScreeningSeats(screeningId);
       if (!showId || Object.keys(seatUuidMap).length === 0) {
-        setSeats(data);
+        applySeatSnapshot(data);
         return data;
       }
 
       const merged = await mergeSeatStatuses(data, seatUuidMap, showId);
-      setSeats(merged);
+      applySeatSnapshot(merged);
       return merged;
     } catch (err) {
       console.error('Failed to refresh seats', err);
       throw err;
     }
-  }, [screeningId, seatUuidMap, showId, mergeSeatStatuses]);
+  }, [applySeatSnapshot, screeningId, seatUuidMap, showId, mergeSeatStatuses]);
 
   const toggleSeat = useCallback((seat: ScreeningSeat) => {
-    if (seat.status !== 'AVAILABLE') return;
+    const isSelected = selectedSeats.some((selected) => selected.id === seat.id);
+    if (!isSelected && seat.status !== 'AVAILABLE') {
+      setError('That seat is no longer available. Please choose another seat.');
+      return;
+    }
+
+    if (!isSelected && selectedSeats.length >= 8) {
+      setError('You can select up to 8 seats in a single booking.');
+      return;
+    }
+
+    setError(null);
+
     setSelectedSeats(prev => {
-      const isSelected = prev.some(s => s.id === seat.id);
-      if (isSelected) {
+      const alreadySelected = prev.some(s => s.id === seat.id);
+      if (alreadySelected) {
         return prev.filter(s => s.id !== seat.id);
       } else {
         return [...prev, seat];
       }
     });
-  }, []);
+  }, [selectedSeats]);
 
   const holdSelectedSeats = useCallback(async () => {
     if (selectedSeats.length === 0) {
@@ -214,7 +268,7 @@ export const useBooking = (screeningId: number) => {
         await refreshSeats();
         setSelectedSeats([]);
       } else {
-        setError(err.response?.data?.message || "Failed to hold seats. Please try again.");
+        setError(getErrorMessage(err, "Failed to hold seats. Please try again."));
       }
       throw err;
     } finally {
@@ -270,7 +324,7 @@ export const useBooking = (screeningId: number) => {
       
     } catch (err: any) {
       console.error('Confirm error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || "Failed to confirm booking");
+      setError(getErrorMessage(err, "Failed to confirm booking"));
       throw err;
     } finally {
       setHoldingSeats(false);
@@ -300,7 +354,7 @@ export const useBooking = (screeningId: number) => {
       
     } catch (err: any) {
       console.error('Cancel error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || "Failed to cancel hold");
+      setError(getErrorMessage(err, "Failed to cancel hold"));
       throw err;
     } finally {
       setHoldingSeats(false);
@@ -315,7 +369,14 @@ export const useBooking = (screeningId: number) => {
     const handleBeforeUnload = () => {
       if (!holdResponse?.bookingId) return;
       const cancelUrl = `${env.apiGatewayUrl || "http://localhost:8090"}/api/v1/booking/bookings/${holdResponse.bookingId}/cancel`;
-      navigator.sendBeacon(cancelUrl);
+      const token = getAccessTokenGetter()();
+      fetch(cancelUrl, {
+        method: "POST",
+        keepalive: true,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      }).catch(() => {
+        // Hold expiry in booking-service is still the final fallback if unload cancellation fails.
+      });
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
@@ -337,6 +398,8 @@ export const useBooking = (screeningId: number) => {
     totalAmount,
     holdingSeats,
     hasSelectedSeats: selectedSeats.length > 0,
-    holdResponse
+    holdResponse,
+    liveUpdatesConnected,
+    showId
   };
 };

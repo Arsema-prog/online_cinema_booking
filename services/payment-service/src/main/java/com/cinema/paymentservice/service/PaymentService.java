@@ -30,6 +30,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final RestTemplate restTemplate;
+    private final PaymentEventPublisher eventPublisher;
 
     @Value("${stripe.api-key}")
     private String stripeApiKey;
@@ -37,14 +38,23 @@ public class PaymentService {
     @Value("${booking.service.url:http://booking-service}")
     private String bookingServiceUrl;
 
-    public PaymentService(PaymentRepository paymentRepository, RestTemplate restTemplate) {
+    public PaymentService(
+            PaymentRepository paymentRepository,
+            RestTemplate restTemplate,
+            PaymentEventPublisher eventPublisher
+    ) {
         this.paymentRepository = paymentRepository;
         this.restTemplate = restTemplate;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeApiKey;
+    }
+
+    private boolean isMockMode() {
+        return "sk_test_mock".equals(stripeApiKey);
     }
 
     public CheckoutSessionResponse createCheckoutSession(
@@ -75,7 +85,7 @@ public class PaymentService {
         }
 
         // For development with mock key, return mock response
-        if (stripeApiKey.equals("sk_test_mock")) {
+        if (isMockMode()) {
             log.info("Using mock checkout session response");
             String sessionId = "mock_session_" + request.getBookingId();
             String mockUrl = buildMockCheckoutUrl(request.getBookingId(), sessionId);
@@ -127,6 +137,41 @@ public class PaymentService {
         notifyBookingPaymentInitiated(request.getBookingId());
 
         return new CheckoutSessionResponse(session.getId(), session.getUrl());
+    }
+
+    public CheckoutSessionResponse completeMockCheckout(
+            String sessionId,
+            String callerUserId,
+            boolean privilegedCaller
+    ) {
+        if (!isMockMode()) {
+            throw new IllegalStateException("Mock checkout completion is only available in mock payment mode");
+        }
+        if (sessionId == null || sessionId.isBlank()) {
+            throw new IllegalArgumentException("Session ID is required");
+        }
+
+        Payment payment = paymentRepository.findByStripeSessionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Payment not found for session " + sessionId));
+
+        BookingCheckoutResponse bookingSnapshot = getBookingSnapshot(payment.getBookingId());
+        validateBookingOwnership(bookingSnapshot, payment.getBookingId(), callerUserId, privilegedCaller);
+        validateBookingState(bookingSnapshot, payment.getBookingId());
+
+        if (payment.getStatus() == Payment.PaymentStatus.SUCCEEDED) {
+            return new CheckoutSessionResponse(sessionId, buildMockCheckoutUrl(payment.getBookingId(), sessionId));
+        }
+
+        String mockEventId = "mock_evt_" + UUID.randomUUID();
+        payment.setStripeEventId(mockEventId);
+        payment.setStatus(Payment.PaymentStatus.SUCCEEDED);
+        payment.setFailureReason(null);
+        paymentRepository.save(payment);
+
+        eventPublisher.publishPaymentSucceeded(payment, mockEventId);
+        log.info("Completed mock checkout for booking {}", payment.getBookingId());
+
+        return new CheckoutSessionResponse(sessionId, buildMockCheckoutUrl(payment.getBookingId(), sessionId));
     }
 
     private Payment buildPendingPayment(UUID bookingId, String sessionId, Long amount, String currency) {
@@ -218,7 +263,7 @@ public class PaymentService {
     }
 
     private CheckoutSessionResponse reopenExistingCheckoutSession(Payment payment, UUID bookingId) throws StripeException {
-        if (stripeApiKey.equals("sk_test_mock")) {
+        if (isMockMode()) {
             return new CheckoutSessionResponse(
                     payment.getStripeSessionId(),
                     buildMockCheckoutUrl(bookingId, payment.getStripeSessionId())

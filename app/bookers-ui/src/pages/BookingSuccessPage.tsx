@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, Download, Calendar, MapPin, Clock, Ticket as TicketIcon, Home, Popcorn } from 'lucide-react';
+import { getBookingDetails, getBookingSeats } from '../api/bookingApi';
 import { ticketGeneratorService } from '../services/ticketGeneratorService';
-import { env } from '../env';
 import { Button } from '@/components/ui/Button';
 
 interface BookingDetails {
@@ -74,26 +74,21 @@ export const BookingSuccessPage: React.FC = () => {
   const fetchBookingDetails = async (attempt: number = 0) => {
     if (!bookingId) return;
     try {
-      const bookingResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}`);
-      if (!bookingResponse.ok) throw new Error('Booking fetch failed');
-      const bookingData = await bookingResponse.json();
-      
-      const seatsResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/seats`);
-      let seatsList: string[] = [];
-      
-      if (seatsResponse.ok) {
-        const seatsData = await seatsResponse.json();
-        seatsList = seatsData.map((seat: any) => seat.seatNumber || seat);
-      } else {
-        seatsList = bookingData.seats || [`Seat ${bookingData.seatCount || 1}`];
-      }
+      const [bookingData, seatsData] = await Promise.all([
+        getBookingDetails(bookingId),
+        getBookingSeats(bookingId).catch(() => [])
+      ]);
+
+      const seatsList = seatsData.length > 0
+        ? seatsData.map((seat) => seat.seatNumber || 'Seat')
+        : [`Seat ${bookingData.seatCount || 1}`];
       
       setBooking({
         id: bookingData.id,
         movieTitle: bookingData.movieTitle || 'Movie',
         cinemaName: bookingData.branchName || 'Cinema',
         screenNumber: bookingData.screenName || 'Screen',
-        showTime: bookingData.showTime,
+        showTime: bookingData.showTime || new Date().toISOString(),
         seats: seatsList,
         totalAmount: bookingData.totalAmount || 0,
         snacks: bookingData.snackDetails || (Array.isArray((location.state as any)?.snacks)
@@ -101,7 +96,7 @@ export const BookingSuccessPage: React.FC = () => {
           : undefined),
         snacksTotal: bookingData.snacksTotal,
         status: bookingData.status,
-        bookingDate: bookingData.createdAt
+        bookingDate: bookingData.createdAt || new Date().toISOString()
       });
 
       if (bookingData.status !== 'CONFIRMED' && attempt < 5) {
