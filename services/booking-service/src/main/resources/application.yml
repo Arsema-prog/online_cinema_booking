@@ -36,6 +36,11 @@ spring:
     port: 5672
     username: guest
     password: ${RABBITMQ_PASSWORD:guest}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs}
 
 core:
   service:
@@ -44,6 +49,11 @@ core:
 support:
   service:
     url: http://support-service:8084
+
+booking:
+  hold:
+    ttl-seconds: ${BOOKING_HOLD_TTL_SECONDS:120}
+    ttl-millis: ${BOOKING_HOLD_TTL_MILLIS:120000}
 
 eureka:
   client:
@@ -62,5 +72,5 @@ management:
 minio:
   endpoint: ${MINIO_ENDPOINT:http://minio:9000}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:password123}
+  secret-key: ${MINIO_SECRET_KEY}
   user-history-bucket: ${MINIO_USER_HISTORY_BUCKET:user-history}

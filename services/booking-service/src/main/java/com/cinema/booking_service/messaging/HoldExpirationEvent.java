@@ -2,17 +2,23 @@ package com.cinema.booking_service.messaging;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class PaymentFailedEvent {
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class HoldExpirationEvent {
     private String eventId;
     private UUID bookingId;
-    private String reason;
+    private UUID showId;
+    private UUID userId;
+    private LocalDateTime expiresAt;
+    private LocalDateTime occurredAt;
 }

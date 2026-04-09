@@ -12,5 +12,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaymentSuccessEvent {
+    private String eventId;
     private UUID bookingId;
 }
