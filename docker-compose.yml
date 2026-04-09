@@ -204,6 +204,9 @@ services:
     environment:
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
     networks:
       - cinema_network
     restart: unless-stopped

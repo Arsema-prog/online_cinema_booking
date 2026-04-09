@@ -5,12 +5,18 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+
 @Configuration
+@RequiredArgsConstructor
 public class RabbitCorrelationConfig {
 
-    @Bean
-    public RabbitTemplate rabbitTemplateWithCorrelation(RabbitTemplate rabbitTemplate) {
-        rabbitTemplate.setBeforePublishPostProcessors(message -> {
+    private final RabbitTemplate rabbitTemplate;
+
+    @PostConstruct
+    public void configureRabbitTemplate() {
+        rabbitTemplate.addBeforePublishPostProcessors(message -> {
             String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
             if (correlationId != null && !correlationId.isBlank()) {
                 message.getMessageProperties().setHeader(CorrelationIdFilter.CORRELATION_ID_HEADER, correlationId);
@@ -18,7 +24,6 @@ public class RabbitCorrelationConfig {
             }
             return message;
         });
-        return rabbitTemplate;
     }
 }
 
