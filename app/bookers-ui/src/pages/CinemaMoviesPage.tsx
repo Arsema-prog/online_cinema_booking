@@ -21,9 +21,16 @@ export const CinemaMoviesPage: React.FC = () => {
 
   if (loading || !cinema) {
     return (
-      <div className="bg-cinema-gradient" style={{ minHeight: '100vh', padding: 20 }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div className="skeleton" style={{ width: '200px', height: '40px', borderRadius: 8 }}></div>
+      <div className="min-h-screen bg-background p-8 pt-24 space-y-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="skeleton w-32 h-6 mb-8 rounded" />
+          <div className="skeleton w-full h-32 rounded-2xl mb-12" />
+          <div className="skeleton w-48 h-8 rounded mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-[280px] rounded-2xl" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -31,8 +38,10 @@ export const CinemaMoviesPage: React.FC = () => {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#ef4444' }}>{error}</div>
+      <div className="min-h-screen bg-background flex items-center justify-center p-8">
+        <div className="bg-destructive/10 text-destructive p-6 rounded-2xl max-w-md text-center border border-destructive/20 font-medium">
+          {error}
+        </div>
       </div>
     );
   }
@@ -55,65 +64,56 @@ export const CinemaMoviesPage: React.FC = () => {
   const moviesWithScreenings = Array.from(moviesMap.values());
 
   return (
-    <div className="bg-cinema-gradient" style={{ minHeight: '100vh', padding: 20 }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: "60px" }}>
+    <div className="min-h-screen bg-background p-4 md:p-8 pt-24">
+      <div className="max-w-6xl mx-auto pb-20 animate-fadeIn">
         
         <button 
           onClick={() => navigate('/bookers/movies')}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', 
-            border: 'none', color: '#94a3b8', cursor: 'pointer', marginBottom: 24 
-          }}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 font-medium"
         >
           <ArrowLeft size={20} /> Back to Cinemas
         </button>
 
-        <div style={{ 
-          background: 'rgba(30, 41, 59, 0.7)', padding: 32, borderRadius: 16, 
-          marginBottom: 40, border: '1px solid rgba(139, 92, 246, 0.3)' 
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-            <Building size={32} color="#8b5cf6" />
-            <h1 style={{ color: 'white', fontSize: 32, margin: 0 }}>{cinema.name}</h1>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8' }}>
-            <MapPin size={16} />
-            <span>{cinema.address} • {cinema.city}</span>
+        <div className="bg-card p-8 md:p-10 rounded-3xl mb-12 border border-border shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-3">
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Building className="h-7 w-7 text-primary" />
+              </div>
+              <h1 className="text-foreground font-headline text-4xl md:text-5xl font-black tracking-tight">{cinema.name}</h1>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground font-medium ml-[4.5rem]">
+              <MapPin size={18} />
+              <span>{cinema.address} • {cinema.city}</span>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <Film size={24} color="#8b5cf6" />
-          <h2 style={{ color: 'white', fontSize: 24, margin: 0 }}>Available Movies</h2>
+        <div className="flex items-center gap-3 mb-8 border-b border-border pb-4">
+          <Film className="h-8 w-8 text-primary" />
+          <h2 className="text-foreground font-headline text-3xl font-bold">Available Movies</h2>
         </div>
 
         {moviesWithScreenings.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 60, background: 'rgba(30,30,40,0.4)', borderRadius: 16 }}>
-            <Film size={48} color="#475569" style={{ marginBottom: 16 }} />
-            <h3 style={{ color: 'white' }}>No movies available</h3>
-            <p style={{ color: '#94a3b8' }}>This cinema currently has no scheduled screenings.</p>
+          <div className="flex flex-col items-center justify-center py-20 bg-muted/20 rounded-3xl border border-border border-dashed">
+            <Film className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
+            <h3 className="text-foreground font-headline text-xl font-bold mb-2">No movies available</h3>
+            <p className="text-muted-foreground">This cinema currently has no scheduled screenings.</p>
           </div>
         ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 24,
-          }}>
-            
-{moviesWithScreenings.map((item) => {
-  return (
-    <MovieCard
-  key={item.movie.id}
-  movie={item.movie}
-  screenings={item.screenings}
-  onBookSeats={(screeningId, seatType) => {
-    console.log(`Booking ${seatType} seats for screening ${screeningId}`);
-    navigate(`/bookers/booking/${screeningId}?seatType=${seatType}`);
-  }}
-/>
-  );
-})}
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {moviesWithScreenings.map((item) => (
+              <MovieCard
+                key={item.movie.id}
+                movie={item.movie}
+                screenings={item.screenings}
+                onBookSeats={(screeningId, seatType) => {
+                  console.log(`Booking ${seatType} seats for screening ${screeningId}`);
+                  navigate(`/bookers/booking/${screeningId}?seatType=${seatType}`);
+                }}
+              />
+            ))}
           </div>
         )}
 

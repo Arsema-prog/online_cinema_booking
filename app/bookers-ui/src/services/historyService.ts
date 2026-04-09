@@ -19,6 +19,7 @@ export interface BookingHistoryModel {
 }
 
 const HISTORY_API_URL = `${env.apiGatewayUrl}/api/v1/booking/bookings`;
+const SUPPORT_API_URL = `${env.apiGatewayUrl}/api/v1/support/api/support`;
 
 function decodeUserIdFromToken(token?: string): string | null {
   if (!token) return null;
@@ -113,12 +114,15 @@ export const historyService = {
   async getTicketDownloadUrl(bookingId: string): Promise<string> {
     const token = getAccessTokenGetter()();
     try {
-      const response = await fetch(`http://localhost:8084/api/support/bookings/${bookingId}/ticket-url`, {
+      const response = await fetch(`${SUPPORT_API_URL}/bookings/uuid/${bookingId}/tickets`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to generate secure URL');
-      const data = await response.json();
-      return data.url; // Pre-signed MinIO URL
+      const tickets = await response.json();
+      if (!Array.isArray(tickets) || tickets.length === 0 || !tickets[0]?.pdfObjectKey) {
+        throw new Error('No ticket file found');
+      }
+      return `${SUPPORT_API_URL}/tickets/${tickets[0].id}/qr`;
     } catch (error) {
       console.error('Error generating ticket URL:', error);
       throw error;

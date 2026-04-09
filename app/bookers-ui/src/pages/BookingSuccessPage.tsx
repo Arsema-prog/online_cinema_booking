@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, Ticket, Download, Calendar, MapPin, Clock, Users, CreditCard } from 'lucide-react';
+import { CheckCircle, Download, Calendar, MapPin, Clock, Ticket as TicketIcon, Home, Popcorn } from 'lucide-react';
 import { ticketGeneratorService } from '../services/ticketGeneratorService';
 import { env } from '../env';
+import { Button } from '@/components/ui/Button';
 
 interface BookingDetails {
   id: string;
@@ -21,10 +22,9 @@ interface BookingDetails {
 export const BookingSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const navigate = useNavigate()
-  const sessionId = searchParams.get('session_id');
- const stateBookingId = (location.state as any)?.bookingId;
-  const [bookingId, setBookingId] = useState<string | null>(stateBookingId || null);
+  const navigate = useNavigate();
+  const [bookingId, setBookingId] = useState<string | null>((location.state as any)?.bookingId || searchParams.get('bookingId') || null);
+  
   const [emailFromSession] = useState<string | undefined>(() => {
     try {
       const cached = sessionStorage.getItem('bookers_last_checkout_email');
@@ -33,100 +33,86 @@ export const BookingSuccessPage: React.FC = () => {
       return undefined;
     }
   });
-  const [booking, setBooking] = useState<BookingDetails | null>(
-    (location.state as any)?.booking || null
-  );
+
+  const [booking, setBooking] = useState<BookingDetails | null>((location.state as any)?.booking || null);
   const [loading, setLoading] = useState(!booking);
   const [downloading, setDownloading] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  
   const [showEmailNotice, setShowEmailNotice] = useState<boolean>(
     Boolean((location.state as any)?.emailConfirmationRequested || emailFromSession)
   );
-  const emailTarget = (location.state as any)?.emailTarget as string | undefined;
-  const displayEmailTarget = emailTarget ?? emailFromSession;
-  const processing = false;
-  const holdExpired = false;
 
-useEffect(() => {
+  const displayEmailTarget = (location.state as any)?.emailTarget ?? emailFromSession;
 
-  if (!booking && bookingId) {
-    fetchBookingDetails();
-  }
-}, [booking, bookingId]);
+  useEffect(() => {
+    if (!booking && bookingId) {
+      fetchBookingDetails();
+    }
+  }, [booking, bookingId]);
 
-useEffect(() => {
-  const paramBookingId = searchParams.get('bookingId');
-  if (!bookingId && paramBookingId) {
-    setBookingId(paramBookingId);
-  }
-}, [searchParams, bookingId]);
+  useEffect(() => {
+    if (!showEmailNotice && displayEmailTarget) {
+      setShowEmailNotice(true);
+    }
+  }, [displayEmailTarget, showEmailNotice]);
 
-useEffect(() => {
-  if (!showEmailNotice && displayEmailTarget) {
-    setShowEmailNotice(true);
-  }
-}, [displayEmailTarget, showEmailNotice]);
-
-useEffect(() => {
-  const fetchQrCode = async () => {
-    if (booking) {
-      try {
-        const url = await ticketGeneratorService.getQrCodeUrl(booking.id);
-        setQrCodeUrl(url);
-      } catch (error) {
-        console.error('Failed to fetch QR code:', error);
+  useEffect(() => {
+    const fetchQrCode = async () => {
+      if (booking) {
+        try {
+          const url = await ticketGeneratorService.getQrCodeUrl(booking.id);
+          setQrCodeUrl(url);
+        } catch (error) {
+          console.error('Failed to fetch QR code:', error);
+        }
       }
+    };
+    fetchQrCode();
+  }, [booking]);
+
+  const fetchBookingDetails = async (attempt: number = 0) => {
+    if (!bookingId) return;
+    try {
+      const bookingResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}`);
+      if (!bookingResponse.ok) throw new Error('Booking fetch failed');
+      const bookingData = await bookingResponse.json();
+      
+      const seatsResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/seats`);
+      let seatsList: string[] = [];
+      
+      if (seatsResponse.ok) {
+        const seatsData = await seatsResponse.json();
+        seatsList = seatsData.map((seat: any) => seat.seatNumber || seat);
+      } else {
+        seatsList = bookingData.seats || [`Seat ${bookingData.seatCount || 1}`];
+      }
+      
+      setBooking({
+        id: bookingData.id,
+        movieTitle: bookingData.movieTitle || 'Movie',
+        cinemaName: bookingData.branchName || 'Cinema',
+        screenNumber: bookingData.screenName || 'Screen',
+        showTime: bookingData.showTime,
+        seats: seatsList,
+        totalAmount: bookingData.totalAmount || 0,
+        snacks: bookingData.snackDetails || (Array.isArray((location.state as any)?.snacks)
+          ? (location.state as any).snacks.map((s: any) => `${s.quantity}x ${s.snack?.name || s.name}`).join(', ')
+          : undefined),
+        snacksTotal: bookingData.snacksTotal,
+        status: bookingData.status,
+        bookingDate: bookingData.createdAt
+      });
+
+      if (bookingData.status !== 'CONFIRMED' && attempt < 5) {
+        setTimeout(() => fetchBookingDetails(attempt + 1), 1500);
+      }
+    } catch (error) {
+      console.error('Failed to fetch booking details:', error);
+    } finally {
+      setLoading(false);
     }
   };
-  fetchQrCode();
-}, [booking]);
-
- const fetchBookingDetails = async (attempt: number = 0) => {
-  if (!bookingId) return;
-  try {
-    // Fetch booking details
-    const bookingResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}`);
-    if (!bookingResponse.ok) throw new Error('Booking fetch failed');
-    const bookingData = await bookingResponse.json();
-    console.log("movies", bookingData );
-    
-    // Fetch seats for this booking
-    const seatsResponse = await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/seats`);
-    let seatsList: string[] = [];
-    
-    if (seatsResponse.ok) {
-      const seatsData = await seatsResponse.json();
-      seatsList = seatsData.map((seat: any) => seat.seatNumber || seat);
-    } else {
-      // Fallback: Use booking data or default
-      seatsList = bookingData.seats || [`Seat ${bookingData.seatCount || 1}`];
-    }
-    
-    setBooking({
-      id: bookingData.id,
-      movieTitle: bookingData.movieTitle || 'Movie',
-      cinemaName: bookingData.branchName || 'Cinema',
-      screenNumber: bookingData.screenName || 'Screen',
-      showTime: bookingData.showTime,
-      seats: seatsList,
-      totalAmount: bookingData.totalAmount || 0,
-      snacks: bookingData.snackDetails || (Array.isArray((location.state as any)?.snacks)
-        ? (location.state as any).snacks.map((s: any) => `${s.quantity}x ${s.snack?.name || s.name}`).join(', ')
-        : undefined),
-      snacksTotal: bookingData.snacksTotal,
-      status: bookingData.status,
-      bookingDate: bookingData.createdAt
-    });
-
-    if (bookingData.status !== 'CONFIRMED' && attempt < 5) {
-      setTimeout(() => fetchBookingDetails(attempt + 1), 1500);
-    }
-  } catch (error) {
-    console.error('Failed to fetch booking details:', error);
-  } finally {
-    setLoading(false);
-  }
-};
 
   const handleDownloadTicket = async () => {
     setDownloading(true);
@@ -150,240 +136,175 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+         <p className="text-muted-foreground font-headline font-bold">Finalizing your booking...</p>
       </div>
     );
   }
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Booking Not Found</h2>
-          <button onClick={() => navigate('/bookers/movies')} className="px-6 py-2 bg-indigo-600 rounded-lg">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border p-8 rounded-3xl text-center max-w-sm w-full shadow-sm">
+          <h2 className="text-2xl font-headline font-bold text-foreground mb-4">Booking Not Found</h2>
+          <p className="text-muted-foreground mb-6 text-sm">We couldn't retrieve your booking details.</p>
+          <Button onClick={() => navigate('/bookers/movies')} className="w-full">
             Back to Movies
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
+  const showDate = new Date(booking.showTime);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white py-12">
-  <div className="max-w-2xl mx-auto px-4">
+    <div className="min-h-screen bg-background pt-24 pb-20 px-4 relative overflow-hidden">
+      
+      {/* Celebration Effects (Restructured to use Shadcn borders and clean layout instead of blur) */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[60px] pointer-events-none" />
 
-    {/* Success Header */}
-    <div className="text-center mb-8 relative">
-      <button
-        onClick={() => navigate('/bookers/movies')}
-        style={{
-                  flex: 1,
-                  padding: '14px',
-                  background: processing ? '#334155' : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 40,
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                  cursor: processing || holdExpired ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: processing ? 'none' : '0 4px 12px rgba(139, 92, 246, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  opacity: processing || holdExpired ? 0.5 : 1
-                }}
-        className="absolute right-0 top-0 px-4 py-2 bg-slate-800 hover:bg-indigo-600 rounded-xl text-sm font-semibold transition-colors"
-      >
-        Home
-      </button>
-      <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-500/20 mb-4">
-        <CheckCircle className="w-12 h-12 text-green-500" />
-      </div>
-      <h1 className="text-5xl font-bold mb-2">Booking Confirmed! 🎉</h1>
-      <p className="text-4xl">Your tickets have been confirmed and are ready</p>
-      <p className="text-4xltext-sm mt-2">Booking ID: {booking.id.substring(0, 8)}...</p>
-    </div>
-
-    {showEmailNotice && (
-      <div
-        style={{
-          marginBottom: 16,
-          padding: '14px 16px',
-          borderRadius: 12,
-          border: '1px solid rgba(16,185,129,0.45)',
-          background: 'rgba(6,78,59,0.35)',
-          color: '#bbf7d0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12
-        }}
-      >
-        <div>
-          <div style={{ fontWeight: 700 }}>Confirmation email sent</div>
-          <div style={{ fontSize: 13, opacity: 0.9 }}>
-            {displayEmailTarget ? `Sent to ${displayEmailTarget}` : 'Your booking confirmation was emailed.'}
+      <div className="max-w-2xl mx-auto relative z-10 animate-fadeIn">
+        
+        {/* Success Header Area */}
+        <div className="text-center mb-10 relative">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/bookers/movies')}
+            className="absolute right-0 top-0 hidden md:flex items-center gap-2 rounded-full border-border bg-background hover:bg-muted text-foreground"
+          >
+            <Home size={14} /> Home
+          </Button>
+          
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 mb-6 border border-green-500/20">
+            <CheckCircle className="w-10 h-10 text-green-500" />
+          </div>
+          
+          <h1 className="font-headline text-4xl md:text-5xl font-black text-foreground mb-3 tracking-tight">Booking Confirmed!</h1>
+          <p className="text-muted-foreground font-medium mb-4">Your tickets are ready for the show.</p>
+          <div className="text-xs font-bold bg-muted text-muted-foreground inline-block px-3 py-1 rounded border border-border font-mono tracking-widest">
+             #{booking.id.substring(0, 8).toUpperCase()}
           </div>
         </div>
-        <button
-          onClick={() => setShowEmailNotice(false)}
-          style={{
-            border: 'none',
-            background: 'rgba(15,23,42,0.55)',
-            color: '#bbf7d0',
-            borderRadius: 8,
-            padding: '6px 10px',
-            cursor: 'pointer',
-            fontWeight: 700
-          }}
-        >
-          Dismiss
-        </button>
-      </div>
-    )}
 
-    {/* Ticket Table */}
-    <div className="bg-slate-800 rounded-3xl p-6 border border-slate-700 mb-6 relative overflow-hidden ticket-shape">
+        {showEmailNotice && (
+          <div className="mb-8 p-4 rounded-xl flex justify-between items-center bg-green-500/10 border border-green-500/20 shadow-sm">
+            <div>
+              <div className="font-bold text-green-600 dark:text-green-400 mb-0.5 text-sm">Confirmation Email Sent</div>
+              <div className="text-xs font-medium text-green-600/80 dark:text-green-400/80">
+                {displayEmailTarget ? `Sent to ${displayEmailTarget}` : 'Your booking details were emailed.'}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowEmailNotice(false)}
+              className="border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10 text-xs shadow-none"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
 
-      {/* Cut circles (ticket perforation) */}
-      <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-slate-950 rounded-full z-20"></div>
-      <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-slate-950 rounded-full z-20"></div>
-      <div className="absolute left-0 right-0 top-1/2 flex justify-center">
-        <div className="w-[90%] border-t-2 border-dashed border-slate-700"></div>
-      </div>
+        {/* Digital Ticket Card */}
+        <div className="bg-card rounded-3xl overflow-hidden shadow-sm border border-border mb-8 relative">
+          
+          {/* Ticket Header */}
+          <div className="bg-muted/50 p-6 md:p-8 border-b border-border relative overflow-hidden flex justify-between items-start">
+             <div>
+                <span className="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded mb-3 inline-block">
+                  Admit 1+
+                </span>
+                <h2 className="font-headline text-3xl font-black text-foreground leading-tight mb-2">{booking.movieTitle}</h2>
+                <div className="flex items-center gap-1.5 text-muted-foreground text-sm font-medium">
+                  <MapPin size={16} className="text-primary" /> {booking.cinemaName}
+                </div>
+             </div>
+             {qrCodeUrl && (
+               <div className="bg-white p-2 rounded-xl shadow-sm border border-border shrink-0 hidden sm:block rotate-3 animate-fadeIn">
+                 <img src={qrCodeUrl} alt="QR Code" className="w-20 h-20" />
+               </div>
+             )}
+          </div>
 
-      <table className="w-full text-left border-collapse text-white">
-        <tbody>
-          <tr className="bg-slate-900/50 border-b border-slate-700">
-            <td className="px-4 py-3 font-semibold">Movie</td>
-            <td className="px-4 py-3">{booking.movieTitle}</td>
-          </tr>
-          <tr className="border-b border-slate-700">
-            <td className="px-4 py-3 font-semibold">Cinema</td>
-            <td className="px-4 py-3">{booking.cinemaName}</td>
-          </tr>
-          <tr className="bg-slate-900/50 border-b border-slate-700">
-            <td className="px-4 py-3 font-semibold">Screen</td>
-            <td className="px-4 py-3">{booking.screenNumber}</td>
-          </tr>
-          <tr className="border-b border-slate-700">
-            <td className="px-4 py-3 font-semibold">Date</td>
-            <td className="px-4 py-3">{new Date(booking.showTime).toLocaleDateString()}</td>
-          </tr>
-          <tr className="bg-slate-900/50 border-b border-slate-700">
-            <td className="px-4 py-3 font-semibold">Time</td>
-            <td className="px-4 py-3">{new Date(booking.showTime).toLocaleTimeString()}</td>
-          </tr>
-          <tr className="border-b border-slate-700">
-            <td className="px-4 py-3 font-semibold">Seats</td>
-            <td className="px-4 py-3 text-amber-400">{booking.seats.join(', ')} ({booking.seats.length})</td>
-          </tr>
-          <tr>
-            <td className="px-4 py-3 font-semibold">Total Paid</td>
-            <td className="px-4 py-3 text-indigo-400 text-xl font-bold">
-              ${booking.totalAmount.toFixed(2)}
-            </td>
-          </tr>
-          {booking.snacks && (
-            <tr className="border-t border-slate-700">
-              <td className="px-4 py-3 font-semibold">Snacks</td>
-              <td className="px-4 py-3 text-pink-300">{booking.snacks}</td>
-            </tr>
+          {/* Ticket Body Grid */}
+          <div className="p-6 md:p-8 space-y-6 relative">
+            <div className="grid grid-cols-2 gap-6 relative z-10">
+              
+              <div>
+                <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest block mb-1 flex items-center gap-1.5"><Calendar size={12}/> Date</span>
+                <span className="font-headline font-bold text-foreground text-lg">{showDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+              </div>
+              
+              <div>
+                <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest block mb-1 flex items-center gap-1.5"><Clock size={12}/> Time</span>
+                <span className="font-headline font-bold text-foreground text-lg">{showDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              
+              <div>
+                <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest block mb-1 flex items-center gap-1.5"><MapPin size={12}/> Screen</span>
+                <span className="font-headline font-bold text-foreground text-lg">{booking.screenNumber}</span>
+              </div>
+
+              <div>
+                <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest block mb-1 flex items-center gap-1.5"><TicketIcon size={12}/> Seats</span>
+                <span className="font-headline font-bold text-primary text-xl tracking-wide">{booking.seats.join(', ')}</span>
+              </div>
+
+            </div>
+
+            {/* Snacks Section */}
+            {booking.snacks && (
+              <div className="pt-6 border-t border-border relative z-10">
+                 <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Popcorn size={12}/> Add-ons</span>
+                 <p className="text-foreground font-medium bg-muted/50 p-4 rounded-xl border border-border text-sm">{booking.snacks}</p>
+              </div>
+            )}
+
+            {/* Total Paid */}
+            <div className="pt-6 border-t border-border flex justify-between items-end relative z-10 bg-muted/30 -mx-6 md:-mx-8 -mb-6 md:-mb-8 p-6 md:p-8">
+              <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">Total Paid</span>
+              <span className="font-headline text-3xl font-black text-primary">
+                ${booking.totalAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+          
+           {/* Mobile QR Code (Shows up only on small screens at the bottom) */}
+           {qrCodeUrl && (
+            <div className="bg-muted p-6 border-t border-border flex justify-center sm:hidden">
+               <div className="bg-white p-3 rounded-xl shadow-sm">
+                 <img src={qrCodeUrl} alt="QR Code" className="w-24 h-24" />
+               </div>
+            </div>
           )}
-        </tbody>
-      </table>
 
-      {/* QR Code */}
-      <div className="absolute bottom-4 right-4 bg-white p-2 rounded-lg shadow-lg">
-        <img
-          src={qrCodeUrl || ''}
-          alt="Ticket QR"
-          className="w-24 h-24"
-        />
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button
+            onClick={handleDownloadTicket}
+            disabled={downloading}
+            className="flex-1 rounded-xl h-14 font-bold gap-2 shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Download size={18} />
+            {downloading ? 'Generating...' : 'Download PDF Ticket'}
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={() => navigate('/bookers/history')}
+            className="flex-1 rounded-xl h-14 font-bold gap-2 bg-card hover:bg-muted text-foreground border-border"
+          >
+            <TicketIcon size={18} /> My Bookings
+          </Button>
+        </div>
+
       </div>
     </div>
-
-    {/* Buttons */}
-    <div className="flex gap-4">
-      <button
-        onClick={handleDownloadTicket}
-         style={{
-                  flex: 1,
-                  padding: '14px',
-                  background:'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 40,
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow:  '0 4px 12px rgba(139, 92, 246, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  opacity:  1
-                }}
-        className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl text-white font-semibold flex items-center justify-center gap-2"
-        disabled={downloading}
-      >
-        <Download size={20} />
-        {downloading ? 'Generating...' : 'Download Ticket'}
-      </button>
-      <button
-        onClick={() => navigate('/bookers/history')}
-         style={{
-                  flex: 1,
-                  padding: '14px',
-                  background:'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 40,
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow:  '0 4px 12px rgba(139, 92, 246, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  opacity:  1
-                }}
-        className="flex-1 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-semibold"
-      >
-        View My Bookings
-      </button>
-    </div>
-
-    {/* Ticket Shape CSS */}
-    <style>{`
-      .ticket-shape {
-        clip-path: polygon(
-          0% 0%,
-          100% 0%,
-          100% 20%,
-          95% 25%,
-          100% 30%,
-          100% 70%,
-          95% 75%,
-          100% 80%,
-          100% 100%,
-          0% 100%,
-          0% 80%,
-          5% 75%,
-          0% 70%,
-          0% 30%,
-          5% 25%,
-          0% 20%
-        );
-      }
-    `}</style>
-  </div>
-</div>
   );
 };

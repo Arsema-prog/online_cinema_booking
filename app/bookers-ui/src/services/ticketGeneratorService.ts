@@ -1,6 +1,7 @@
 
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
+import { env } from '../env';
 
 export interface TicketDetails {
   moviePoster: string | undefined;
@@ -184,15 +185,16 @@ export const ticketGeneratorService = {
  
   async getTicketDetails(bookingId: string): Promise<TicketDetails> {
     try {
+      const bookingBase = `${env.apiGatewayUrl}/api/v1/booking/bookings`;
       // Fetch booking details from the API
-      const response = await fetch(`http://localhost:8082/bookings/${bookingId}`);
+      const response = await fetch(`${bookingBase}/${bookingId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch booking details');
       }
       const booking = await response.json();
       
       // Fetch seat details for this booking
-      const seatsResponse = await fetch(`http://localhost:8082/bookings/${bookingId}/seats`);
+      const seatsResponse = await fetch(`${bookingBase}/${bookingId}/seats`);
       let seats: string[] = [];
       
       if (seatsResponse.ok) {

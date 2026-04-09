@@ -1,5 +1,7 @@
 // hooks/useBooking.ts
 import { useState, useEffect, useCallback } from "react";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 import { getAccessTokenGetter } from "../httpClient";
 import { 
   getScreeningSeats, 
@@ -11,6 +13,7 @@ import {
   ScreeningSeat,
   HoldResponse 
 } from "../api/bookingApi";
+import { env } from "../env";
 
 export const useBooking = (screeningId: number) => {
   const [seats, setSeats] = useState<ScreeningSeat[]>([]);
@@ -95,6 +98,44 @@ export const useBooking = (screeningId: number) => {
       loadData();
     }
   }, [screeningId]);
+
+  useEffect(() => {
+    if (!showId || Object.keys(seatUuidMap).length === 0) {
+      return;
+    }
+
+    const token = getAccessTokenGetter()();
+    const wsBase = env.apiGatewayUrl || "http://localhost:8090";
+    const client = new Client({
+      webSocketFactory: () => new SockJS(`${wsBase}/api/v1/booking/ws-booking`),
+      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      reconnectDelay: 4000
+    });
+
+    client.onConnect = () => {
+      client.subscribe(`/topic/shows/${showId}/seats`, (message) => {
+        try {
+          const payload = JSON.parse(message.body) as { seatId: string; status: string };
+          if (!payload?.seatId || !payload?.status) return;
+          const mappedStatus = normalizeStatus(payload.status);
+          setSeats((prev) =>
+            prev.map((seat) =>
+              seatUuidMap[seat.seat.id] === payload.seatId
+                ? { ...seat, status: mappedStatus }
+                : seat
+            )
+          );
+        } catch (e) {
+          console.warn("Failed to parse seat websocket payload", e);
+        }
+      });
+    };
+
+    client.activate();
+    return () => {
+      client.deactivate();
+    };
+  }, [showId, seatUuidMap]);
 
   const refreshSeats = useCallback(async () => {
     try {
@@ -269,6 +310,16 @@ export const useBooking = (screeningId: number) => {
   const clearSelections = useCallback(() => {
     setSelectedSeats([]);
   }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!holdResponse?.bookingId) return;
+      const cancelUrl = `${env.apiGatewayUrl || "http://localhost:8090"}/api/v1/booking/bookings/${holdResponse.bookingId}/cancel`;
+      navigator.sendBeacon(cancelUrl);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [holdResponse]);
 
   const totalAmount = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
 

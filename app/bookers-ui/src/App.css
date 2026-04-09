@@ -1,82 +1,102 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  /* Dark Mode Colors (Cinema Theme) */
-  --background: #0a0f1e;
-  --foreground: #ffffff;
-  --card: #141b2b;
-  --card-foreground: #ffffff;
-  --primary: #8b5cf6;
-  --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  --secondary-foreground: #ffffff;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --accent: #ec4899;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #8b5cf6;
-  --radius: 0.75rem;
+/* Theme setup for Tailwind V4 (aligned with Back-office standard) */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
   
-  /* Cinema-specific colors */
-  --screen: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
-  --seat-available: #10b981;
-  --seat-selected: #8b5cf6;
-  --seat-booked: #ef4444;
-  --seat-blocked: #64748b;
-  --popcorn: #f59e0b;
-}
-
-[data-theme="light"] {
-  /* Light Mode Colors */
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #8b5cf6;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #e2e8f0;
-  --muted-foreground: #64748b;
-  --accent: #ec4899;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #f1f5f9;
-  --ring: #8b5cf6;
+  --font-sans: 'Outfit', -apple-system, sans-serif;
+  --font-headline: 'Outfit', -apple-system, sans-serif;
   
-  --screen: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
-  --seat-available: #10b981;
-  --seat-selected: #8b5cf6;
-  --seat-booked: #ef4444;
-  --seat-blocked: #94a3b8;
-  --popcorn: #f59e0b;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  /* Specific Interactive Cinema UI variants */
+  --color-seat-available: hsl(var(--seat-available));
+  --color-seat-selected: hsl(var(--seat-selected));
+  --color-seat-booked: hsl(var(--seat-booked));
+  --color-seat-blocked: hsl(var(--seat-blocked));
 }
 
-* {
-  border-color: var(--border);
-  box-sizing: border-box;
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 6%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262.1 83.3% 57.8%; /* Rich Purple matched to backoffice */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 0.75rem;
+
+    /* Cinematic Seat Mapping Variables */
+    --seat-available: 142.1 70.6% 45.3%;
+    --seat-selected: 262.1 83.3% 57.8%;
+    --seat-booked: 0 62.8% 30.6%;
+    --seat-blocked: 215 20.2% 65.1%;
+  }
+
+  /* Keep base unified with dark mode standard */
+  * {
+    border-color: var(--color-border);
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+  }
 }
 
-html, body {
-  overflow-x: hidden;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  background: var(--background);
-  color: var(--foreground);
-}
-
-body {
-  font-family: 'Inter', 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+/* Base resets & utilities */
+@layer utilities {
+  .glass-panel {
+    @apply bg-card/40 backdrop-blur-md border border-border shadow-lg;
+  }
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-sm border border-border transition-all duration-300;
+  }
+  .glass-card:hover {
+    @apply hover:border-primary/50 hover:-translate-y-1 shadow-xl shadow-primary/5;
+  }
 }
 
 /* Custom Scrollbar */
@@ -86,23 +106,23 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--secondary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--muted);
-  border-radius: 4px;
+  background: hsl(var(--border));
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: hsl(var(--muted-foreground));
 }
 
 /* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -111,73 +131,9 @@ body {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.6s ease-out;
+  animation: fadeIn 0.4s ease-out;
 }
 
-@keyframes slideIn {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-  }
-}
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* --- New Cinematic UI additions --- */
-
-/* Complex Gradients */
-.bg-cinema-gradient {
-  background: linear-gradient(180deg, #4A00E0 0%, #6A11FF 30%, #0F2027 70%, #203A43 100%);
-  background-attachment: fixed;
-}
-
-.bg-booking-gradient {
-  background: linear-gradient(180deg, rgba(74, 0, 224, 0.8) 0%, rgba(106, 17, 255, 0.6) 30%, #0F2027 70%, #2C5364 100%);
-  background-attachment: fixed;
-}
-
-/* Glassmorphism */
-.glass-panel {
-  background: rgba(20, 27, 43, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-}
-
-.glass-card {
-  background: rgba(30, 41, 59, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-}
-
-.glass-card:hover {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px -10px rgba(106, 17, 255, 0.5);
-}
-
-/* Loading Skeletons */
 @keyframes shimmer {
   0% {
     background-position: -1000px 0;
@@ -188,53 +144,19 @@ body {
 }
 
 .skeleton {
-  background: #1e293b;
-  background-image: linear-gradient(to right, #1e293b 0%, #334155 20%, #1e293b 40%, #1e293b 100%);
+  background: hsl(var(--muted));
+  background-image: linear-gradient(to right, hsl(var(--muted)) 0%, hsl(var(--border)) 20%, hsl(var(--muted)) 40%, hsl(var(--muted)) 100%);
   background-repeat: no-repeat;
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear forwards;
 }
 
-.glass-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.glass-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-.day-content {
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-}
-
-.day-content.collapsed {
-  max-height: 0;
-}
-
-.day-content.expanded {
-  max-height: 1000px;
-}
-
+/* Ticket hole cutouts helper */
 .ticket-table tr td:first-child::before {
   content: '';
   width: 6px;
   height: 6px;
-  background: #1e293b; /* same as outer bg */
+  background: hsl(var(--background));
   border-radius: 50%;
   display: inline-block;
   margin-right: 6px;

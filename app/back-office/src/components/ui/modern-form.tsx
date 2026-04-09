@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -94,6 +94,22 @@ export function ModernForm({
   const values = form.watch();
 
   const [files, setFiles] = useState<Record<string, File | null>>({});
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    const nextPreviewUrls: Record<string, string> = {};
+    Object.entries(files).forEach(([name, file]) => {
+      if (file) {
+        nextPreviewUrls[name] = URL.createObjectURL(file);
+      }
+    });
+    setPreviewUrls(nextPreviewUrls);
+
+    return () => {
+      Object.values(nextPreviewUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
 
   const handleFileChange = (name: string, file: File | null) => {
     setFiles(prev => ({ ...prev, [name]: file }));
@@ -248,7 +264,6 @@ export function ModernForm({
             control={form.control}
             name={field.name}
             render={({ field: _fieldProps }) => {
-              const fileInputRef = useRef<HTMLInputElement>(null);
               const currentFile = files[field.name];
               const currentUrl = _fieldProps.value;
 
@@ -267,7 +282,7 @@ export function ModernForm({
                             handleFileChange(field.name, e.dataTransfer.files[0]);
                           }
                         }}
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => fileInputRefs.current[field.name]?.click()}
                         className={cn(
                           "relative overflow-hidden group cursor-pointer border-2 border-dashed rounded-2xl p-10 transition-colors flex flex-col items-center justify-center text-center",
                           (currentUrl || currentFile) ? 'border-primary-container/30 bg-primary-container/5' : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-high bg-surface-container-lowest'
@@ -286,7 +301,7 @@ export function ModernForm({
                         {(currentUrl || currentFile) && (
                           <div className="flex flex-col items-center gap-4">
                             <img
-                              src={currentFile ? URL.createObjectURL(currentFile) : currentUrl}
+                              src={currentFile ? previewUrls[field.name] : currentUrl}
                               alt="Preview"
                               className="h-32 object-contain rounded-xl shadow-lg border border-surface-container-highest"
                             />
@@ -296,7 +311,9 @@ export function ModernForm({
                           </div>
                         )}
                         <input
-                          ref={fileInputRef}
+                          ref={(el) => {
+                            fileInputRefs.current[field.name] = el;
+                          }}
                           type="file"
                           accept="image/*"
                           className="hidden"
@@ -475,7 +492,6 @@ export function ModernForm({
             control={form.control}
             name={field.name}
             render={({ field: _fieldProps }) => {
-              const fileInputRef = useRef<HTMLInputElement>(null);
               const currentFile = files[field.name];
 
               return (
@@ -492,7 +508,7 @@ export function ModernForm({
                           handleFileChange(field.name, e.dataTransfer.files[0]);
                         }
                       }}
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => fileInputRefs.current[field.name]?.click()}
                       className={cn(
                         "relative overflow-hidden group cursor-pointer border-2 border-dashed rounded-2xl p-10 transition-colors flex flex-col items-center justify-center text-center",
                         currentFile ? 'border-primary-container/30 bg-primary-container/5' : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-high bg-surface-container-lowest'
@@ -517,7 +533,9 @@ export function ModernForm({
                         </div>
                       )}
                       <input
-                        ref={fileInputRef}
+                        ref={(el) => {
+                          fileInputRefs.current[field.name] = el;
+                        }}
                         type="file"
                         className="hidden"
                         onChange={(e) => {

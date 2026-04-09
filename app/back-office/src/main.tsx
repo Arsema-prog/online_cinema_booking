@@ -4,6 +4,9 @@ import { RouterProvider } from 'react-router-dom';
 import { router } from './router';
 import { AuthProvider } from './auth/AuthContext';
 import { ThemeProvider } from './components/theme-provider';
+import "@fontsource/outfit/400.css";
+import "@fontsource/outfit/600.css";
+import "@fontsource/outfit/700.css";
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

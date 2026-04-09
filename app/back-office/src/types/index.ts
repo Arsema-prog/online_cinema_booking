@@ -14,6 +14,7 @@ export interface Branch {
 export interface Movie {
   id: number;
   title: string;
+  posterUrl?: string;
   genre: string;
   duration: number;
   description?: string;

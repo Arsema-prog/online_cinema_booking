@@ -1,4 +1,3 @@
-// pages/BookingPage.tsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useBooking } from "../hooks/useBooking";
@@ -7,6 +6,8 @@ import { TicketDisplay } from '../components/TicketDisplay';
 import { ticketGeneratorService, TicketDetails } from '../services/ticketGeneratorService';
 import { apiClient } from "../httpClient";
 import { env } from "../env";
+import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
 export const BookingPage: React.FC = () => {
   const { screeningId } = useParams(); 
@@ -19,6 +20,7 @@ export const BookingPage: React.FC = () => {
   const [ticketDetails, setTicketDetails] = useState<TicketDetails | null>(null);
   const [holdError, setHoldError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [remainingMs, setRemainingMs] = useState<number>(0);
 
   // Fetch screening and movie details
   useEffect(() => {
@@ -59,6 +61,12 @@ export const BookingPage: React.FC = () => {
     holdingSeats,
     holdResponse
   } = useBooking(Number(screeningId));
+
+  const activeExternalHolds = seats.filter(
+    (seat) =>
+      seat.status === "HELD" &&
+      !selectedSeats.some((selected) => selected.id === seat.id)
+  ).length;
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
@@ -174,13 +182,24 @@ export const BookingPage: React.FC = () => {
     navigate('/bookers');
   };
 
-  // Auto-refresh every 15 seconds
+  // Fallback refresh (websocket is primary)
   useEffect(() => {
     const interval = setInterval(() => {
       refreshSeats();
-    }, 15000);
+    }, 45000);
     return () => clearInterval(interval);
   }, [refreshSeats]);
+
+  useEffect(() => {
+    if (!holdResponse?.expiresAtEpochMs) {
+      setRemainingMs(0);
+      return;
+    }
+    const tick = () => setRemainingMs(Math.max(0, holdResponse.expiresAtEpochMs! - Date.now()));
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [holdResponse?.expiresAtEpochMs]);
 
   // Group seats by row
   const seatsByRow = seats.reduce((acc, seat) => {
@@ -192,31 +211,31 @@ export const BookingPage: React.FC = () => {
 
   const rows = Object.keys(seatsByRow).sort();
 
-  const getSeatColor = (seat: typeof seats[0]) => {
+  const getSeatColorClass = (seat: typeof seats[0]) => {
     if (selectedSeats.some(s => s.id === seat.id)) {
-      return '#10b981'; // Selected - bright green
+      return 'bg-primary text-primary-foreground border-primary hover:bg-primary/90';
     }
     
     switch (seat.status?.toUpperCase()) {
       case 'RESERVED':
-        return '#ef4444'; // Reserved - red
+        return 'bg-destructive/20 text-destructive border-transparent cursor-not-allowed opacity-50';
       case 'HELD':
-        return '#f59e0b'; // Held - orange/amber
+        return 'bg-muted text-muted-foreground border-transparent cursor-not-allowed opacity-70';
       case 'CANCELLED':
-        return '#6b7280'; // Cancelled - gray
+        return 'bg-muted/50 text-muted-foreground border-transparent cursor-not-allowed opacity-50';
       case 'AVAILABLE':
-        return '#1e293b'; // Available - dark slate
+        return 'bg-card text-card-foreground hover:border-primary hover:text-primary border-border';
       default:
-        return '#1e293b';
+        return 'bg-muted text-muted-foreground border-transparent opacity-50';
     }
   };
 
   if (loading && seats.length === 0) {
     return (
-      <div style={{ minHeight: '100vh', background: '#020617', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, border: '4px solid #8b5cf6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-          <p>Loading seats...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center">
+           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+           <p className="text-muted-foreground font-medium">Loading interactive seat map</p>
         </div>
       </div>
     );
@@ -224,251 +243,215 @@ export const BookingPage: React.FC = () => {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', background: '#020617', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ background: '#0f172a', padding: 32, borderRadius: 16, textAlign: 'center', maxWidth: 400 }}>
-          <h2 style={{ color: '#ef4444', marginBottom: 16 }}>Error</h2>
-          <p style={{ color: '#94a3b8', marginBottom: 24 }}>{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            style={{ 
-              padding: '12px 24px', 
-              background: '#8b5cf6', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: 8, 
-              fontSize: 16, 
-              cursor: 'pointer' 
-            }}
-          >
-            Try Again
-          </button>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border p-8 rounded-2xl text-center max-w-sm">
+          <h2 className="text-destructive font-headline text-2xl font-bold mb-4">Session Error</h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-booking-gradient" style={{ minHeight: '100vh', color: 'white', paddingBottom: hasSelectedSeats ? 120 : 40, width: '100%' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
+    <div className="min-h-screen bg-background pb-32 animate-fadeIn">
+      <div className="max-w-5xl mx-auto px-4 pt-24 pb-8">
         
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button onClick={() => navigate(-1)} style={{ background: '#1e293b', border: 'none', color: 'white', width: 40, height: 40, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease' }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#8b5cf6'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#1e293b'}>
+        <div className="flex justify-between items-center mb-8 bg-card border border-border p-4 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="rounded-full shrink-0">
               <ChevronLeft size={20} />
-            </button>
-            <h1 style={{ fontSize: 28, margin: 0 }}>Select Your Seats</h1>
+            </Button>
+            <h1 className="font-headline text-xl md:text-3xl font-bold text-foreground tracking-tight">Select Seats</h1>
           </div>
           
-          <button onClick={handleManualRefresh} disabled={refreshing} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: '#1e293b', border: 'none', borderRadius: 30, color: 'white', fontSize: 14, cursor: refreshing ? 'not-allowed' : 'pointer', opacity: refreshing ? 0.5 : 1 }}>
-            <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
+          <Button variant="secondary" size="sm" onClick={handleManualRefresh} disabled={refreshing} className="gap-2">
+            <RefreshCw size={14} className={cn(refreshing && 'animate-spin')} />
+            <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh Map'}</span>
+          </Button>
         </div>
 
-        {/* Movie Poster and Info */}
+        {/* Movie Info Banner */}
         {movie && (
-          <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '20px', padding: '20px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-            <div style={{ width: '120px', height: '180px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="bg-card border border-border rounded-3xl p-6 mb-12 flex flex-col md:flex-row gap-6 items-center shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 blur-[50px] rounded-full pointer-events-none" />
+            <div className="h-40 w-28 md:h-48 md:w-32 rounded-xl overflow-hidden shrink-0 bg-muted relative z-10 border border-border">
               {movie.id ? (
-                <img src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`} alt={movie.title} className="w-full h-full object-cover" />
               ) : (
-                <span style={{ fontSize: '48px' }}>🎬</span>
+                <span className="flex items-center justify-center h-full text-4xl">🎬</span>
               )}
             </div>
-            <div style={{ flex: 1 }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0', color: 'white' }}>{movie.title}</h2>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                <span style={{ padding: '4px 12px', background: 'rgba(139, 92, 246, 0.2)', borderRadius: '20px', fontSize: '12px', color: '#a78bfa' }}>{movie.genre}</span>
-                <span style={{ padding: '4px 12px', background: 'rgba(51, 65, 85, 0.8)', borderRadius: '20px', fontSize: '12px', color: '#94a3b8' }}>{movie.duration} min</span>
+            
+            <div className="flex-1 text-center md:text-left z-10 w-full">
+              <h2 className="font-headline text-2xl md:text-4xl font-bold text-foreground mb-3 tracking-tight">{movie.title}</h2>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                <span className="px-3 py-1 bg-primary/10 rounded-max text-[10px] font-bold tracking-widest uppercase text-primary border border-primary/20">{movie.genre}</span>
+                <span className="px-3 py-1 bg-muted rounded-max text-[10px] font-bold tracking-widest uppercase text-muted-foreground border border-border">{movie.duration} min</span>
                 {movie.rating && (
-                  <span style={{ padding: '4px 12px', background: 'rgba(234, 179, 8, 0.2)', borderRadius: '20px', fontSize: '12px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Star size={12} fill="#fbbf24" /> {movie.rating}
+                  <span className="px-3 py-1 bg-accent/10 rounded-max text-[10px] font-bold tracking-widest uppercase flex items-center gap-1 text-accent border border-accent/20">
+                    <Star size={12} className="fill-accent" /> {movie.rating}
                   </span>
                 )}
               </div>
-              <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 8px 0', lineHeight: 1.5 }}>{movie.description || "No description available"}</p>
+              <p className="text-muted-foreground text-sm line-clamp-2 md:line-clamp-3 mb-3">{movie.description}</p>
               {screening && (
-                <div style={{ color: '#64748b', fontSize: '12px', marginTop: '8px' }}>Showtime: {new Date(screening.startTime).toLocaleString()}</div>
+                <div className="text-foreground text-sm font-semibold inline-flex items-center gap-2">
+                  <span className="bg-primary px-2 py-1 rounded text-primary-foreground text-xs uppercase shadow-sm">Showtime</span>
+                  {new Date(screening.startTime).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
               )}
             </div>
           </div>
         )}
 
         {/* Screen visualization */}
-        <div style={{ position: 'relative', marginBottom: 48, textAlign: 'center' }}>
-          <div style={{ height: 8, background: 'linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%)', width: '70%', margin: '0 auto', borderRadius: '4px 4px 0 0' }} />
-          <p style={{ color: '#94a3b8', marginTop: 8, fontSize: 14, textTransform: 'uppercase', letterSpacing: 2 }}>SCREEN</p>
-          <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', fontSize: 32 }}>🎬</div>
+        <div className="relative mb-20 text-center select-none pt-12">
+          {/* Subtle Screen Curve */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] md:w-[60%] h-24 rounded-[100%] border-t-[8px] border-primary/30 blur-[2px]" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] md:w-[60%] h-24 rounded-[100%] border-t-[4px] border-primary/80" />
+          
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[80%] md:w-[60%] h-32 bg-gradient-to-b from-primary/10 to-transparent blur-2xl pointer-events-none" />
+          
+          <p className="text-muted-foreground mt-8 text-xs uppercase tracking-[0.4em] font-bold">SCREEN</p>
         </div>
 
-        {/* Seat legend */}
-        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginBottom: 32, padding: '16px 24px', background: '#0f172a', borderRadius: 50, flexWrap: 'wrap' }}>
-          <LegendItem color="#1e293b" label="Available" />
-          <LegendItem color="#10b981" label="Selected" />
-          <LegendItem color="#f59e0b" label="Held" />
-          <LegendItem color="#ef4444" label="Reserved" />
-          <LegendItem color="#6b7280" label="Cancelled" />
+        {/* Legend */}
+        <div className="flex flex-wrap gap-6 items-center justify-center mb-8">
+          <LegendItem className="bg-card border border-border" label="Available" />
+          <LegendItem className="bg-primary text-primary-foreground border-primary" label="Selected" />
+          <LegendItem className="bg-muted border-transparent opacity-70" label="Held" />
+          <LegendItem className="bg-destructive/20 border-transparent opacity-50" label="Reserved" />
         </div>
 
-        {/* Seat Map */}
-        <div className="glass-panel" style={{ borderRadius: 24, padding: 32, marginBottom: 32, overflowX: 'auto' }}>
-          {rows.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>No seats available for this screening</div>
-          ) : (
-            <>
-              <div style={{ minWidth: rows.length * 70 }}>
+        {activeExternalHolds > 0 && (
+          <div className="mb-8 p-3 rounded-lg bg-accent/10 border border-accent/20 text-accent text-sm text-center font-medium">
+            {activeExternalHolds} seat(s) are actively being looked at by others.
+          </div>
+        )}
+
+        {/* Interactive Seat Map */}
+        <div className="bg-card border border-border p-6 md:p-12 rounded-3xl overflow-x-auto shadow-sm relative">
+          <div className="min-w-fit mx-auto">
+            {rows.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-xl">No seats configuration available.</div>
+            ) : (
+              <div className="flex flex-col gap-3">
                 {rows.map(row => (
-                  <div key={row} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-                    <div style={{ width: 40, fontWeight: 'bold', color: '#94a3b8', fontSize: 18 }}>{row}</div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {seatsByRow[row]?.map((seat, index) => {
-                        const isAisle = index === 7;
-                        return (
-                          <React.Fragment key={seat.id}>
-                            {isAisle && <div style={{ width: 24 }} />}
-                            <button
-                              onClick={() => toggleSeat(seat)}
-                              disabled={seat.status !== 'AVAILABLE'}
-                              style={{
-                                width: 45, height: 45, background: getSeatColor(seat),
-                                border: selectedSeats.some(s => s.id === seat.id) ? '3px solid #8b5cf6' : 'none',
-                                borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 'bold',
-                                cursor: seat.status === 'AVAILABLE' ? 'pointer' : 'not-allowed',
-                                opacity: seat.status !== 'AVAILABLE' ? 0.5 : 1, transition: 'all 0.2s ease',
-                                boxShadow: '0 4px 6px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                              }}
-                              title={`Row ${seat.seat.rowLabel}, Seat ${seat.seat.seatNumber} - $${seat.price} (${seat.status})`}
-                            >
-                              {seat.seat.seatNumber.replace(seat.seat.rowLabel, '')}
-                            </button>
-                          </React.Fragment>
-                        );
-                      })}
+                  <div key={row} className="flex items-center gap-4 md:gap-6 group">
+                    <div className="w-6 md:w-8 font-headline font-bold text-muted-foreground/50 transition-colors group-hover:text-foreground">{row}</div>
+                    
+                    <div className="flex gap-2">
+                       {seatsByRow[row]?.map((seat, index) => {
+                         const isAisle = index === 7;
+                         return (
+                           <React.Fragment key={seat.id}>
+                             {isAisle && <div className="w-6 md:w-8" />}
+                             <button
+                               onClick={() => toggleSeat(seat)}
+                               disabled={seat.status !== 'AVAILABLE'}
+                               className={cn(
+                                 "w-9 h-9 md:w-11 md:h-11 rounded-t-lg rounded-b-sm border font-bold text-xs md:text-sm transition-all duration-200 flex items-center justify-center shadow-sm",
+                                 getSeatColorClass(seat)
+                               )}
+                               title={`Row ${seat.seat.rowLabel}, Seat ${seat.seat.seatNumber} - $${seat.price}`}
+                             >
+                               {seat.seat.seatNumber.replace(seat.seat.rowLabel, '')}
+                             </button>
+                           </React.Fragment>
+                         );
+                       })}
                     </div>
+                    
+                    <div className="w-6 md:w-8 font-headline font-bold text-muted-foreground/50 text-right transition-colors group-hover:text-foreground">{row}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 80, marginTop: 24, color: '#94a3b8', fontSize: 13 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 2, height: 24, background: '#334155' }} /><span>Left Aisle</span></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 2, height: 24, background: '#334155' }} /><span>Right Aisle</span></div>
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Error Toast Notification */}
+      {/* Error Toast */}
       {holdError && (
-        <div style={{
-          position: 'fixed',
-          top: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#ef4444',
-          color: 'white',
-          padding: '16px 24px',
-          borderRadius: 12,
-          display: 'flex',
-          gap: 16,
-          alignItems: 'center',
-          zIndex: 1000,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          animation: 'slideDown 0.3s ease'
-        }}>
-          <span>{holdError}</span>
-          <button
-            onClick={handleRetryHold}
-            disabled={processing}
-            style={{
-              background: 'white',
-              color: '#ef4444',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: 8,
-              cursor: processing ? 'not-allowed' : 'pointer',
-              fontWeight: 'bold',
-              opacity: processing ? 0.5 : 1
-            }}
-          >
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground px-6 py-4 rounded-xl flex items-center gap-4 z-[100] shadow-xl animate-slideIn">
+          <span className="font-medium text-sm">{holdError}</span>
+          <Button variant="outline" size="sm" onClick={handleRetryHold} disabled={processing} className="text-destructive border-destructive hover:bg-destructive-foreground hover:text-destructive text-xs font-bold">
             {processing ? 'Retrying...' : 'Retry'}
-          </button>
-          <button
-            onClick={handleRefreshPage}
-            style={{
-              background: 'transparent',
-              color: 'white',
-              border: '1px solid white',
-              padding: '8px 16px',
-              borderRadius: 8,
-              cursor: 'pointer'
-            }}
-          >
-            Refresh Page
-          </button>
+          </Button>
         </div>
       )}
 
-      {/* Fixed bottom booking summary */}
+      {/* Cart Summary Bar - Sticky Bottom */}
       {hasSelectedSeats && (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#0f172a', borderTop: '2px solid #1e293b', padding: '20px', boxShadow: '0 -8px 20px rgba(0,0,0,0.5)', zIndex: 50 }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 14, marginBottom: 4 }}><Ticket size={16} /><span>Selected Seats</span></div>
-                <div style={{ fontSize: 20, fontWeight: 'bold' }}>{selectedSeats.map(s => s.seat.seatNumber).join(', ')}</div>
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 14, marginBottom: 4 }}><Users size={16} /><span>Total Seats</span></div>
-                <div style={{ fontSize: 20, fontWeight: 'bold' }}>{selectedSeats.length}</div>
-              </div>
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 md:p-6 z-50 animate-slideIn shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 md:gap-8">
+            
+            <div className="flex items-center gap-6 md:gap-12 w-full md:w-auto overflow-hidden">
+               <div className="flex-1 md:flex-none">
+                 <div className="flex items-center gap-2 text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">
+                   <Ticket size={12} /> Selected Seats
+                 </div>
+                 <div className="font-headline font-bold text-lg text-foreground truncate max-w-[250px]">
+                   {selectedSeats.map(s => s.seat.seatNumber).join(', ')}
+                 </div>
+               </div>
+               
+               <div>
+                 <div className="flex items-center gap-2 text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">
+                   <Users size={12} /> Total Tickets
+                 </div>
+                 <div className="font-headline font-bold text-lg text-foreground">{selectedSeats.length}</div>
+               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#94a3b8', fontSize: 14 }}>Total Amount</div>
-                <div style={{ fontSize: 32, fontWeight: 'bold', background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>${totalAmount.toFixed(2)}</div>
-              </div>
-              <button onClick={handleProceedToPayment} disabled={processing || holdingSeats} style={{ padding: '16px 40px', background: processing || holdingSeats ? '#334155' : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', color: 'white', border: 'none', borderRadius: 40, fontSize: 18, fontWeight: 'bold', cursor: processing || holdingSeats ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)', display: 'flex', alignItems: 'center', gap: 8, opacity: processing || holdingSeats ? 0.5 : 1 }}>
-                <CreditCard size={20} />
-                {processing || holdingSeats ? 'Processing...' : 'Proceed to Payment'}
-              </button>
+
+            <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
+               {remainingMs > 0 && (
+                 <div className="text-right">
+                   <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">Hold Expiration</div>
+                   <div className={cn(
+                     "font-headline font-bold text-xl tabular-nums",
+                     remainingMs < 15000 ? "text-destructive animate-pulse" : "text-foreground"
+                   )}>
+                     {Math.floor(remainingMs / 60000).toString().padStart(2, "0")}:
+                     {Math.floor((remainingMs % 60000) / 1000).toString().padStart(2, "0")}
+                   </div>
+                 </div>
+               )}
+               
+               <div className="text-right border-l border-border pl-4 md:pl-6">
+                 <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider mb-1">Subtotal</div>
+                 <div className="font-headline font-bold text-2xl text-primary">
+                   ${totalAmount.toFixed(2)}
+                 </div>
+               </div>
+
+               <Button 
+                onClick={handleProceedToPayment} 
+                className="gap-2 h-12 px-8 font-bold text-base w-full md:w-auto shrink-0 shadow-md"
+                isLoading={processing || holdingSeats}
+               >
+                 <CreditCard size={18} />
+                 Checkout
+               </Button>
             </div>
+            
           </div>
         </div>
       )}
 
-      {/* Ticket Display */}
+      {/* Ticket Overlay */}
       {ticketDetails && (
         <TicketDisplay ticket={ticketDetails} onDownload={handleTicketDownload} onClose={handleTicketClose} />
       )}
-
-      <style>{`
-        @keyframes spin { 
-          to { transform: rotate(360deg); } 
-        } 
-        .spin { 
-          animation: spin 1s linear infinite; 
-        }
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };
 
-const LegendItem: React.FC<{ color: string; label: string }> = ({ color, label }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-    <div style={{ width: 24, height: 24, background: color, borderRadius: 6, boxShadow: '0 2px 4px rgba(0,0,0,0.2)', border: color === '#1e293b' ? '1px solid #334155' : 'none' }} />
-    <span style={{ fontSize: 14 }}>{label}</span>
+const LegendItem: React.FC<{ className: string; label: string }> = ({ className, label }) => (
+  <div className="flex items-center gap-2">
+    <div className={cn("w-5 h-5 rounded border", className)} />
+    <span className="text-xs font-semibold text-muted-foreground">{label}</span>
   </div>
 );

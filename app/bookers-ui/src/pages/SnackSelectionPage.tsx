@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Plus, Minus, ShoppingCart, SkipForward, Popcorn, Coffee, Beer, Wine, Milk, Cookie, Sparkles, ArrowRight, Trash2, CreditCard, Loader2 } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, SkipForward, Popcorn, Coffee, Beer, Wine, Milk, Cookie, Sparkles, ArrowRight, Trash2, CreditCard, Loader2 } from 'lucide-react';
 import { env } from '../env';
 import { paymentService } from '../services/paymentService';
 import { getAccessTokenGetter } from '../httpClient';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 interface Snack {
   id: string;
@@ -27,14 +29,14 @@ const snacks: Snack[] = [
 
 const getIcon = (snackName: string) => {
   switch (snackName) {
-    case 'Popcorn': return <Popcorn size={40} className="text-amber-400" />;
-    case 'Soda': return <Coffee size={40} className="text-blue-400" />;
-    case 'Bottled Water': return <Milk size={40} className="text-cyan-400" />;
-    case 'Fresh Juice': return <Wine size={40} className="text-orange-400" />;
-    case 'Beer': return <Beer size={40} className="text-yellow-400" />;
-    case 'Nachos': return <Cookie size={40} className="text-amber-500" />;
-    case 'Candy': return <Cookie size={40} className="text-pink-400" />;
-    default: return <Sparkles size={40} className="text-purple-400" />;
+    case 'Popcorn': return <Popcorn size={40} className="text-amber-500" />;
+    case 'Soda': return <Coffee size={40} className="text-sky-500" />;
+    case 'Bottled Water': return <Milk size={40} className="text-cyan-500" />;
+    case 'Fresh Juice': return <Wine size={40} className="text-orange-500" />;
+    case 'Beer': return <Beer size={40} className="text-yellow-500" />;
+    case 'Nachos': return <Cookie size={40} className="text-amber-600" />;
+    case 'Candy': return <Cookie size={40} className="text-pink-500" />;
+    default: return <Sparkles size={40} className="text-primary" />;
   }
 };
 
@@ -55,14 +57,17 @@ export const SnackSelectionPage: React.FC = () => {
   const [stripeError, setStripeError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [holdExpired, setHoldExpired] = useState(false);
+  
   const clampExpiryToTwoMinutesFromNow = (candidate: number | null): number | null => {
     if (!candidate) return null;
     const maxAllowed = Date.now() + 120000;
     return Math.min(candidate, maxAllowed);
   };
+  
   const [resolvedHoldExpiresAtMs, setResolvedHoldExpiresAtMs] = useState<number | null>(
     clampExpiryToTwoMinutesFromNow(holdExpiresAtEpochMs || null)
   );
+  
   const releaseTriggeredRef = useRef(false);
 
   useEffect(() => {
@@ -92,7 +97,7 @@ export const SnackSelectionPage: React.FC = () => {
 
         const createdAtMs = parseBackendDateToEpoch(booking.createdAt);
         if (!createdAtMs) return;
-        setResolvedHoldExpiresAtMs(createdAtMs + 120000);
+        setResolvedHoldExpiresAtMs(createdAtMs + 120000); // Give 2 mins typically
       } catch (error) {
         console.error('Failed to recover hold expiry from booking', error);
       }
@@ -185,32 +190,17 @@ export const SnackSelectionPage: React.FC = () => {
     return cart.reduce((total, item) => total + (item.snack.price * item.quantity), 0);
   };
 
-  const handleSkip = () => {
-    if (holdExpired) return;
-    setShowPaymentModal(true);
-  };
-
-  const handleProceed = () => {
-    if (holdExpired) return;
-    setShowPaymentModal(true);
-  };
-
   const resolveUserEmail = async (token: string | null | undefined): Promise<string | null> => {
     let email: string | null = null;
-
     if (token) {
       try {
         const payload = token.split('.')[1];
         if (payload) {
           const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-          email = decoded?.email
-            || (typeof decoded?.preferred_username === 'string' && decoded.preferred_username.includes('@')
-              ? decoded.preferred_username
-              : null);
+          email = decoded?.email || (typeof decoded?.preferred_username === 'string' && decoded.preferred_username.includes('@') ? decoded.preferred_username : null);
         }
       } catch {}
     }
-
     if (!email) {
       try {
         const cached = localStorage.getItem('bookers_user_email');
@@ -219,7 +209,6 @@ export const SnackSelectionPage: React.FC = () => {
         }
       } catch {}
     }
-
     if (!email && token) {
       try {
         const userInfoRes = await fetch(
@@ -234,7 +223,6 @@ export const SnackSelectionPage: React.FC = () => {
         }
       } catch {}
     }
-
     return email;
   };
 
@@ -286,7 +274,7 @@ export const SnackSelectionPage: React.FC = () => {
       try {
         await fetch(`${env.apiGatewayUrl}/api/v1/booking/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
       } catch (e) {
-        console.warn('Failed to notify booking service about payment initiation', e);
+        console.warn('Failed to notify about payment initiation', e);
       }
 
       const session = await paymentService.createCheckoutSession(
@@ -313,636 +301,270 @@ export const SnackSelectionPage: React.FC = () => {
     : snacks.filter(s => s.category === selectedCategory);
 
   if (!bookingId) {
-    return <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+       <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+       Loading checkout session...
+    </div>;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background p-4 md:p-8 pt-24 pb-32 animate-fadeIn relative">
+      
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
+        
         {resolvedHoldExpiresAtMs && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: '12px 16px',
-              borderRadius: 12,
-              border: holdExpired ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(245,158,11,0.5)',
-              background: holdExpired
-                ? 'rgba(127, 29, 29, 0.35)'
-                : 'rgba(120, 53, 15, 0.35)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 12
-            }}
-          >
-            <span style={{ color: holdExpired ? '#fecaca' : '#fde68a', fontWeight: 700 }}>
+          <div className={cn(
+            "mb-8 p-4 border rounded-2xl flex justify-between items-center transition-colors duration-500 shadow-sm",
+            holdExpired ? "bg-destructive/10 border-destructive" : "bg-muted border-border"
+          )}>
+            <span className={cn("font-bold text-sm", holdExpired ? "text-destructive" : "text-muted-foreground")}>
               {holdExpired ? 'Seat hold expired. Your seats are being released.' : 'Seat hold expires in'}
             </span>
-            <span style={{ color: holdExpired ? '#fca5a5' : '#fbbf24', fontSize: 24, fontWeight: 800 }}>
+            <span className={cn("text-2xl font-headline font-black tabular-nums", holdExpired ? "text-destructive" : "text-foreground")}>
               {formatSeconds(secondsLeft)}
             </span>
           </div>
         )}
 
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-3 bg-slate-800 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
-          >
+        <div className="flex items-center gap-6 mb-12 bg-card border border-border p-4 md:p-6 rounded-3xl shadow-sm">
+          <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="rounded-full shrink-0">
             <ChevronLeft size={24} />
-          </button>
+          </Button>
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
-              Add Snacks & Drinks
+            <h1 className="font-headline text-3xl md:text-4xl font-bold text-foreground mb-1 tracking-tight">
+              Snacks & Beverages
             </h1>
-            <p className="text-slate-300 mt-1 text-2xl">
-              Make your movie experience even better!
+            <p className="text-muted-foreground font-medium text-sm">
+              Elevate your cinematic experience
             </p>
           </div>
         </div>
 
-        {/* Grid Layout - Left: Payment Summary, Right: Snacks */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* LEFT SIDE - Payment Summary */}
-          <div className="lg:col-span-1">
-            <div className="glass-card" style={{
-              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
-              borderRadius: 16,
-              overflow: 'hidden',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(139, 92, 246, 0.2)',
-              position: 'sticky',
-              top: 20
-            }}>
-              <div style={{
-                padding: 20,
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1))'
-              }}>
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <CreditCard size={24} className="text-indigo-400" />
-                  Payment Summary
-                </h2>
-              </div>
-
-              <div style={{ padding: 20, 
-                fontSize: 25
-              }}>
-                <div className="mb-4 pb-4 border-b border-slate-700">
-                  <div className="text-slate-400 text-sm mb-2 flex items-center gap-2">
-                    <span>🎬</span> Selected Seats
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg">{seats?.length || 0} seats</span>
-                    <span className="text-xl font-semibold text-indigo-400">${seatTotal?.toFixed(2) || 0}</span>
-                  </div>
-                  {seats && seats.length > 0 && (
-                    <div className="text-sm text-slate-500 mt-2">
-                      {seats.join(', ')}
-                    </div>
-                  )}
-                </div>
-
-                {cart.length > 0 ? (
-                  <div className="mb-4 pb-4 border-b border-slate-700">
-                    <div className="text-slate-400 text-sm mb-2 flex items-center gap-2">
-                      <span>🍿</span> Snacks Ordered
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {cart.map(item => (
-                        <div key={item.snack.id} className="flex justify-between items-center mb-3 p-2 bg-slate-700/30 rounded-lg">
-                          <div>
-                            <span className="font-semibold">{item.quantity}x</span>
-                            <span className="ml-2 text-sm">{item.snack.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm text-indigo-400">
-                              ${(item.snack.price * item.quantity).toFixed(2)}
-                            </span>
-                            <button
-                              onClick={() => removeFromCart(item.snack.id)}
-                              className="w-7 h-7 rounded-full bg-red-600/20 hover:bg-red-600 flex items-center justify-center transition-all duration-200"
-                            >
-                              <Minus size={12} className="text-red-400" />
-                            </button>
-                            <button
-                              onClick={() => removeAllFromCart(item.snack.id)}
-                              className="w-7 h-7 rounded-full bg-red-600/20 hover:bg-red-600 flex items-center justify-center transition-all duration-200"
-                            >
-                              <Trash2 size={12} className="text-red-400" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-slate-500 mb-4">
-                    🍿 No snacks selected yet
-                  </div>
-                )}
-
-                <div className="mb-6 pt-2">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-xl font-bold">Total Amount</span>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
-                      ${(seatTotal + getCartTotal()).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSkip}
-                    disabled={holdExpired}
-                    style={{
-                      flex: 1,
-                      padding: '14px',
-                      background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 40,
-                      fontSize: 16,
-                      fontWeight: 'bold',
-                      cursor: holdExpired ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      opacity: holdExpired ? 0.5 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.02)';
-                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.5)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-                    }}
-                  >
-                    <SkipForward size={18} />
-                    Skip
-                  </button>
-                  <button
-                    onClick={handleProceed}
-                    disabled={holdExpired}
-                    style={{
-                      flex: 1,
-                      padding: '14px',
-                      background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 40,
-                      fontSize: 16,
-                      fontWeight: 'bold',
-                      cursor: holdExpired ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      opacity: holdExpired ? 0.5 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.02)';
-                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.5)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-                    }}
-                  >
-                    Proceed
-                    <ArrowRight size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT SIDE - Snack Menu with 3 columns */}
-          <div className="lg:col-span-1"
-          style={{
-      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
-      borderRadius: 16,
-      overflow: 'hidden',
-      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(139, 92, 246, 0.2)',
-      height: '100%',
-       
-    }}>
-            {/* Category Tabs */}
-            <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
+          {/* Main Content - Snacks Catalog */}
+          <div className="lg:col-span-8 order-2 lg:order-1 space-y-6">
+            
+            {/* Categories */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide shrink-0">
               {categories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  style={{
-                    padding: '10px 24px',
-                    background: selectedCategory === cat 
-                      ? 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)'
-                      : 'rgba(30, 41, 59, 0.8)',
-                    color: 'white',
-                    border: '1px solid rgba(139, 92, 246, 0.2)',
-                    height: '100%',
-                    borderRadius: 16,
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: selectedCategory === cat ? '0 4px 12px rgba(139, 92, 246, 0.3)' : 'none',
-                    textTransform: 'capitalize',
-                  
-
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedCategory !== cat) {
-                      e.currentTarget.style.background = 'rgba(139, 92, 246, 0.3)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedCategory !== cat) {
-                      e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
-                    }
-                  }}
+                  className={cn(
+                    "px-6 py-2.5 rounded-full font-bold text-sm capitalize whitespace-nowrap transition-all duration-200 border",
+                    selectedCategory === cat 
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                      : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80 hover:text-foreground"
+                  )}
                 >
                   {cat}
                 </button>
               ))}
             </div>
 
-            {/* Snack Grid - 3 COLUMNS PER ROW */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Snack Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {filteredSnacks.map(snack => (
-                <div
-                  key={snack.id}
-                  className="glass-card"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
-                    borderRadius: 16,
-                    overflow: 'hidden',
-                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(139, 92, 246, 0.2)',
-                    cursor: 'pointer', display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-                  gap: 24,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  {/* Snack Icon/Image Area */}
-                  <div style={{
-                    height: 100,
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    overflow: 'hidden',
-                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))'
-                  }}>
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-600/20 to-pink-600/20 rounded-xl flex items-center justify-center shadow-lg">
-                      {getIcon(snack.name)}
-                    </div>
-                    
-                    {/* Price Badge */}
-                    <div style={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      background: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
-                      padding: '2px 8px',
-                      borderRadius: 20,
-                      fontSize: 11,
-                      fontWeight: 'bold',
-                      color: 'white',
-                      zIndex: 1,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                    }}>
-                      ${snack.price.toFixed(2)}
-                    </div>
+                <div key={snack.id} className="group bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full">
+                  <div className="relative h-32 bg-muted/50 flex items-center justify-center p-4">
+                     <div className="relative z-10 w-20 h-20 bg-background rounded-full flex items-center justify-center shadow-sm border border-border group-hover:scale-110 transition-transform">
+                        {getIcon(snack.name)}
+                     </div>
+                     <div className="absolute top-3 right-3 bg-background px-3 py-1 rounded-full text-xs font-bold text-foreground shadow-sm border border-border">
+                        ${snack.price.toFixed(2)}
+                     </div>
                   </div>
                   
-                  {/* Snack Info */}
-                  <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ 
-                      color: 'white', 
-                      fontSize: 20, 
-                      marginBottom: 6,
-                      fontWeight: 'bold',
-                      textAlign: 'center'
-                    }}>
-                      {snack.name}
-                    </h3>
-                    
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                      <div style={{ 
-                        background: `rgba(139, 92, 246, 0.2)`,
-                        padding: '2px 8px',
-                        borderRadius: 20,
-                        fontSize: 9,
-                        color: '#c084fc',
-                        textTransform: 'capitalize'
-                      }}>
-                        {snack.category}
-                      </div>
+                  <div className="p-5 flex-1 flex flex-col border-t border-border">
+                    <div className="flex items-start justify-between mb-2">
+                       <h3 className="font-headline text-lg font-bold text-card-foreground group-hover:text-primary transition-colors">{snack.name}</h3>
                     </div>
-
-                    <p style={{ 
-                      color: '#94a3b8', 
-                      fontSize: 20, 
-                      lineHeight: 1.4,
-                      marginBottom: 12,
-                      textAlign: 'center'
-                    }}>
-                      {snack.description.length > 40 
-                        ? `${snack.description.substring(0, 40)}...` 
-                        : snack.description}
+                    <p className="text-muted-foreground text-xs line-clamp-2 mb-6 flex-1">
+                      {snack.description}
                     </p>
-
-                   
-                  </div>
-                  <div  style={{
-                    height: 100,
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    overflow: 'hidden',
-                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))'
-                  }}> 
-                     {/* Add Button */}
-                    <button
-                      onClick={() => addToCart(snack)}
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 40,
-                        fontSize: 20,
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        marginTop: 'auto'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.5)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)';
-                      }}
+                    
+                    <Button 
+                      onClick={() => addToCart(snack)} 
+                      variant="outline"
+                      className="w-full gap-2 rounded-xl font-bold bg-muted hover:bg-primary hover:text-primary-foreground border-border hover:border-primary transition-all text-xs"
                     >
-                      <Plus size={14} />
-                      Add
-                    </button>
-                    </div>
+                      <Plus size={16} /> Add to Cart
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
+            
           </div>
+
+          {/* Sidebar - Cart Summary */}
+          <div className="lg:col-span-4 order-1 lg:order-2 sticky top-24">
+            <div className="bg-card rounded-3xl overflow-hidden border border-border shadow-md">
+              
+              <div className="p-6 border-b border-border bg-muted/30">
+                <h2 className="font-headline text-xl font-bold text-foreground flex items-center gap-3">
+                  <CreditCard className="text-primary h-5 w-5" /> Order Summary
+                </h2>
+              </div>
+
+              <div className="p-6 space-y-6">
+                
+                {/* Seats Summary */}
+                <div className="space-y-3 pb-6 border-b border-border">
+                  <div className="text-muted-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                    🎬 Selected Seats
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-foreground text-sm">{seats?.length || 0} Ticket(s)</span>
+                    <span className="text-lg font-bold text-primary">${seatTotal?.toFixed(2) || 0}</span>
+                  </div>
+                  {seats && seats.length > 0 && (
+                    <div className="text-xs text-muted-foreground leading-relaxed">
+                       {seats.map(s => s).join(', ')}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cart Items */}
+                <div className="space-y-4 pb-6 border-b border-border">
+                   <div className="text-muted-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-4">
+                    🍿 Snacks & Drinks
+                  </div>
+                  
+                  {cart.length > 0 ? (
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                      {cart.map(item => (
+                        <div key={item.snack.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-xl border border-border">
+                          <div className="flex-1 flex items-center">
+                            <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded text-xs mr-3">{item.quantity}x</span>
+                            <span className="text-foreground text-sm font-medium">{item.snack.name}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-foreground text-sm mr-2">
+                              ${(item.snack.price * item.quantity).toFixed(2)}
+                            </span>
+                            <button onClick={() => removeFromCart(item.snack.id)} className="w-6 h-6 rounded-full border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors">
+                              <Minus size={12} />
+                            </button>
+                            <button onClick={() => removeAllFromCart(item.snack.id)} className="w-6 h-6 rounded-full border border-destructive/20 bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors">
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 bg-muted/30 rounded-xl border border-border border-dashed">
+                      <p className="text-muted-foreground text-xs">No snacks selected</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Totals & Submit */}
+                <div className="pt-2">
+                  <div className="flex justify-between items-baseline mb-6">
+                    <span className="text-sm font-bold text-muted-foreground">Total Due</span>
+                    <span className="text-3xl font-headline font-black text-primary tracking-tight">
+                      ${(seatTotal + getCartTotal()).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowPaymentModal(true)}
+                      disabled={holdExpired}
+                      className="rounded-xl h-12 font-bold gap-2 text-xs"
+                    >
+                      <SkipForward size={14} /> Skip
+                    </Button>
+                    <Button
+                      onClick={() => setShowPaymentModal(true)}
+                      disabled={holdExpired}
+                      className="rounded-xl h-12 font-bold gap-2 text-xs shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      Checkout <ArrowRight size={14} />
+                    </Button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      {/* Payment Modal Popup */}
+      {/* Payment Modal Overlay */}
       {showPaymentModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.85)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          animation: 'fadeIn 0.3s ease-out'
-        }} onClick={() => !processing && setShowPaymentModal(false)}>
-          <div style={{
-            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-            borderRadius: 24,
-            padding: 32,
-            maxWidth: 500,
-            width: '90%',
-            border: '1px solid #334155',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-            animation: 'slideUp 0.3s ease-out'
-          }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-fadeIn" onClick={() => !processing && setShowPaymentModal(false)}>
+          <div className="w-full max-w-md bg-card border border-border rounded-3xl shadow-xl p-6 md:p-8 animate-slideIn" onClick={e => e.stopPropagation()}>
             
-            <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <div style={{
-                width: 64,
-                height: 64,
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px'
-              }}>
-                <CreditCard size={32} className="text-white" />
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
+                <CreditCard size={28} className="text-primary" />
               </div>
-              <h2 style={{ fontSize: 28, fontWeight: 'bold', marginBottom: 8 }}>Confirm Payment</h2>
-              <p style={{ color: '#94a3b8' }}>Review your order before proceeding</p>
+              <h2 className="font-headline text-2xl font-bold text-foreground mb-1">Secure Checkout</h2>
+              <p className="text-muted-foreground text-xs">Review your final order amount</p>
             </div>
 
-            <div style={{ marginBottom: 24 }}>
-              <div style={{
-                background: '#0f172a',
-                borderRadius: 16,
-                padding: 16,
-                marginBottom: 16
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ color: '#94a3b8' }}>🎬 Seats ({seats?.length || 0})</span>
-                  <span className="font-semibold">${seatTotal?.toFixed(2) || 0}</span>
-                </div>
-                
-                {cart.length > 0 && (
-                  <div style={{ borderTop: '1px solid #334155', paddingTop: 12, marginTop: 4 }}>
-                    <div style={{ color: '#94a3b8', marginBottom: 8 }}>🍿 Snacks</div>
-                    {cart.map(item => (
-                      <div key={item.snack.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 4 }}>
-                        <span>{item.quantity}x {item.snack.name}</span>
-                        <span>${(item.snack.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            <div className="bg-muted/50 rounded-2xl p-5 mb-8 border border-border">
+              <div className="flex justify-between mb-4 pb-4 border-b border-border">
+                <span className="text-muted-foreground text-sm font-medium">Tickets ({seats?.length || 0})</span>
+                <span className="font-bold text-foreground">${seatTotal?.toFixed(2) || 0}</span>
               </div>
-
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(236,72,153,0.15) 100%)',
-                borderRadius: 16,
-                padding: 16,
-                border: '1px solid rgba(139,92,246,0.3)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 18, fontWeight: 'bold' }}>Total Amount</span>
-                  <span style={{
-                    fontSize: 28,
-                    fontWeight: 'bold',
-                    background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}>
-                    ${(seatTotal + getCartTotal()).toFixed(2)}
-                  </span>
+              
+              {cart.length > 0 && (
+                <div className="flex justify-between mb-4 pb-4 border-b border-border">
+                  <span className="text-muted-foreground text-sm font-medium">Snacks & Drinks</span>
+                  <span className="font-bold text-foreground">${getCartTotal().toFixed(2)}</span>
                 </div>
+              )}
+
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-base font-bold text-foreground">Grand Total</span>
+                <span className="text-2xl font-black text-primary">
+                  ${(seatTotal + getCartTotal()).toFixed(2)}
+                </span>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setShowPaymentModal(false)}
                 disabled={processing}
-                style={{
-                  flex: 1,
-                  padding: '14px',
-                  background: '#334155',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 40,
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                  cursor: processing ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  opacity: processing ? 0.5 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!processing) {
-                    e.currentTarget.style.background = '#475569';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#334155';
-                }}
+                className="flex-1 rounded-xl h-12 text-sm"
               >
-                Cancel
-              </button>
-              <button
+                Go Back
+              </Button>
+              <Button
                 onClick={handleConfirmPayment}
                 disabled={processing || holdExpired}
-                style={{
-                  flex: 1,
-                  padding: '14px',
-                  background: processing ? '#334155' : 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 40,
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                  cursor: processing || holdExpired ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: processing ? 'none' : '0 4px 12px rgba(139, 92, 246, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  opacity: processing || holdExpired ? 0.5 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!processing) {
-                    e.currentTarget.style.transform = 'scale(1.02)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.5)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!processing) {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-                  }
-                }}
+                className="flex-1 rounded-xl h-12 gap-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {holdExpired ? (
-                  <>
-                    <CreditCard size={20} />
-                    Hold Expired
-                  </>
-                ) : processing ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard size={20} />
-                    Pay Now
-                  </>
-                )}
-              </button>
+                {holdExpired ? 'Hold Expired' : processing ? <><Loader2 className="animate-spin" size={16}/> Processing</> : <><CreditCard size={16} /> Pay Now</>}
+              </Button>
             </div>
-            
+
             {stripeError && (
-              <div style={{
-                marginTop: 12,
-                padding: '10px 12px',
-                background: 'rgba(239,68,68,0.15)',
-                border: '1px solid rgba(248,113,113,0.35)',
-                borderRadius: 12,
-                color: '#fecdd3',
-                fontWeight: 600
-              }}>
+              <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-xs font-medium text-center">
                 {stripeError}
               </div>
             )}
-
-            <p className="text-center text-slate-500 text-xs mt-4">
-              You will be redirected to secure payment gateway
+            <p className="text-center text-muted-foreground text-[10px] mt-6 uppercase tracking-wider">
+              You will be redirected securely to complete payment.
             </p>
           </div>
         </div>
       )}
 
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-          from {
-            transform: translateY(30px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-      `}</style>
     </div>
   );
 };

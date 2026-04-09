@@ -190,39 +190,39 @@ export default function ScreeningsPage() {
 
   return (
     <div className="animate-in fade-in duration-500 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-surface-container-high rounded-[2rem] p-8 md:p-10 border border-surface-container-highest/50 shadow-2xl relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-container/10 blur-[50px] rounded-full pointer-events-none" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card rounded-[2rem] p-8 md:p-10 border border-border shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full pointer-events-none" />
         <div className="relative z-10">
-          <div className="inline-flex rounded-lg bg-primary-container/20 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary-container border border-primary-container/20 mb-4">
+          <div className="inline-flex rounded-lg bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/20 mb-4">
              Scheduling Systems
           </div>
-          <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tight text-on-surface">Showtimes</h1>
-          <p className="text-on-surface-variant font-medium mt-2">Orchestrate screening schedules and ticket pricing.</p>
+          <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tight text-foreground">Showtimes</h1>
+          <p className="text-muted-foreground font-medium mt-2">Orchestrate screening schedules and ticket pricing.</p>
         </div>
         <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[1.2rem] text-on-surface-variant">search</span>
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[1.2rem] text-muted-foreground">search</span>
             <Input 
               placeholder="Search schedules..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-12 bg-surface-container-lowest border-surface-container-highest/40 h-14 rounded-2xl w-full shadow-lg font-bold placeholder:text-on-surface-variant"
+              className="pl-12 bg-background border-border h-14 rounded-2xl w-full shadow-lg font-bold placeholder:text-muted-foreground"
             />
           </div>
           <Sheet open={open} onOpenChange={handleOpenChange}>
             <SheetTrigger asChild>
-              <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary-container/20 font-bold shrink-0">
+              <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary/20 font-bold shrink-0">
                 <span className="material-symbols-outlined mr-2">add</span> Schedule Showtime
               </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
-              <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
+            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-card p-0 flex flex-col shadow-2xl">
+              <div className="px-10 py-8 border-b border-border shrink-0 bg-card relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-primary/5 blur-[40px] rounded-full" />
                 <SheetHeader className="relative z-10">
-                  <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface flex items-center gap-2">
+                  <SheetTitle className="text-3xl font-headline font-black tracking-tight text-foreground flex items-center gap-2">
                     <span className="material-symbols-outlined text-[2rem] text-primary">videocam</span> Session Config
                   </SheetTitle>
-                  <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">
+                  <SheetDescription className="text-base mt-2 text-muted-foreground font-medium">
                     Define a new screening session with dynamic time logic.
                   </SheetDescription>
                 </SheetHeader>
@@ -251,25 +251,25 @@ export default function ScreeningsPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center py-24 text-on-surface-variant font-medium">
-          <span className="material-symbols-outlined text-4xl animate-spin text-primary-container mr-3">progress_activity</span> Calibrating showtimes...
+        <div className="flex justify-center items-center py-24 text-muted-foreground font-medium">
+          <span className="material-symbols-outlined text-4xl animate-spin text-primary mr-3">progress_activity</span> Calibrating showtimes...
         </div>
       ) : (
-        <div className="rounded-[1.5rem] bg-surface-container-low overflow-hidden shadow-xl border border-surface-container-highest/50">
+        <div className="rounded-[1.5rem] bg-card overflow-hidden shadow-2xl border border-border">
           <Table>
-            <TableHeader className="bg-surface-container-highest/20">
-              <TableRow className="border-b-surface-container-highest/50">
-                <TableHead className="font-bold text-on-surface">Feature Film</TableHead>
-                <TableHead className="font-bold text-on-surface">Timing</TableHead>
-                <TableHead className="font-bold text-on-surface">Venue</TableHead>
-                <TableHead className="font-bold text-on-surface">Fare</TableHead>
-                <TableHead className="w-24 text-right font-bold text-on-surface">Actions</TableHead>
+            <TableHeader className="bg-muted/50">
+              <TableRow className="border-b-border">
+                <TableHead className="font-bold text-muted-foreground">Feature Film</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Timing</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Venue</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Fare</TableHead>
+                <TableHead className="w-24 text-right font-bold text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredScreenings.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-24 text-on-surface-variant border-none">
+                  <TableCell colSpan={6} className="text-center py-24 text-muted-foreground border-none">
                     <div className="flex flex-col items-center">
                       <span className="material-symbols-outlined text-6xl mb-4 opacity-20" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
                       <span className="font-bold text-lg">No showtimes have been scheduled for this criteria.</span>
@@ -278,19 +278,19 @@ export default function ScreeningsPage() {
                 </TableRow>
               ) : (
                 filteredScreenings.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((scr) => (
-                  <TableRow key={scr.id} className="group hover:bg-surface-container transition-colors border-b-surface-container-highest/30">
+                  <TableRow key={scr.id} className="group hover:bg-muted/30 transition-colors border-b-border">
                     <TableCell>
                       <div className="flex items-center gap-4">
                         {scr.movie.posterUrl ? (
                           <img src={scr.movie.posterUrl} className="h-12 w-8 rounded overflow-hidden shadow-md object-cover" alt="" />
                         ) : (
-                           <div className="h-12 w-8 bg-surface-container-highest rounded flex items-center justify-center">
-                             <span className="material-symbols-outlined text-on-surface-variant">movie</span>
+                           <div className="h-12 w-8 bg-muted rounded flex items-center justify-center">
+                             <span className="material-symbols-outlined text-muted-foreground">movie</span>
                            </div>
                         )}
                         <div>
-                          <div className="font-headline font-black text-on-surface text-base leading-tight">{scr.movie.title}</div>
-                          <div className="text-[10px] text-on-surface-variant uppercase flex items-center font-bold tracking-widest gap-1 mt-1">
+                          <div className="font-headline font-black text-foreground text-base leading-tight">{scr.movie.title}</div>
+                          <div className="text-[10px] text-muted-foreground uppercase flex items-center font-bold tracking-widest gap-1 mt-1">
                             <span className="material-symbols-outlined text-[10px]">info</span> {scr.movie.genre.split(',')[0]}
                           </div>
                         </div>
@@ -298,38 +298,38 @@ export default function ScreeningsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-0.5">
-                        <div className="font-bold flex items-center text-on-surface">
+                        <div className="font-bold flex items-center text-foreground">
                           {new Date(scr.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          <span className="material-symbols-outlined mx-2 text-[1rem] text-on-surface-variant/50">arrow_forward</span>
+                          <span className="material-symbols-outlined mx-2 text-[1rem] text-muted-foreground/50">arrow_forward</span>
                           {new Date(scr.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        <div className="text-xs text-on-surface-variant flex items-center font-medium mt-1">
+                        <div className="text-xs text-muted-foreground flex items-center font-medium mt-1">
                           <span className="material-symbols-outlined text-[1rem] mr-1 opacity-60">calendar_month</span> {new Date(scr.startTime).toLocaleDateString()}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        <div className="font-bold text-on-surface flex items-center">
+                        <div className="font-bold text-foreground flex items-center">
                           <span className="material-symbols-outlined text-[1rem] mr-1.5 opacity-60">tv</span> {scr.screen.name}
                         </div>
-                        <div className="text-[9px] uppercase font-black text-primary-container tracking-widest bg-primary-container/10 px-1.5 py-0.5 rounded w-fit border border-primary-container/20">
+                        <div className="text-[9px] uppercase font-black text-primary tracking-widest bg-primary/10 px-1.5 py-0.5 rounded w-fit border border-primary/20">
                           {scr.screen.branch.name}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-on-surface text-base">${(scr.price || 0).toFixed(2)}</span>
+                        <span className="font-black text-foreground text-base">${(scr.price || 0).toFixed(2)}</span>
                         <span className="material-symbols-outlined text-yellow-500 text-[1rem]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(scr)} className="h-10 w-10 text-primary-container bg-primary-container/10 hover:bg-primary-container/20 rounded-xl shadow-sm">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(scr)} className="h-10 w-10 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl shadow-sm">
                           <span className="material-symbols-outlined text-[1.2rem]">edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(scr.id)} className="h-10 w-10 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-xl shadow-sm">
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(scr.id)} className="h-10 w-10 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl shadow-sm">
                           <span className="material-symbols-outlined text-[1.2rem]">delete</span>
                         </Button>
                       </div>
@@ -340,15 +340,15 @@ export default function ScreeningsPage() {
             </TableBody>
           </Table>
           
-          <div className="p-5 border-t border-surface-container-highest/50 bg-surface-container flex flex-col sm:flex-row justify-between items-center text-sm text-on-surface-variant font-bold gap-4">
+          <div className="p-5 border-t border-border bg-muted/20 flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground font-bold gap-4">
             <div>
-              Showing <span className="text-on-surface">{Math.min(filteredScreenings.length, (page * itemsPerPage) + (filteredScreenings.length > 0 ? 1 : 0))}</span> - <span className="text-on-surface">{Math.min(filteredScreenings.length, (page + 1) * itemsPerPage)}</span> of <span className="text-on-surface">{filteredScreenings.length}</span> sessions
+              Showing <span className="text-foreground">{Math.min(filteredScreenings.length, (page * itemsPerPage) + (filteredScreenings.length > 0 ? 1 : 0))}</span> - <span className="text-foreground">{Math.min(filteredScreenings.length, (page + 1) * itemsPerPage)}</span> of <span className="text-foreground">{filteredScreenings.length}</span> sessions
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-surface-container-highest bg-surface-container-lowest h-10 px-4 rounded-xl shadow-sm">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border bg-card hover:bg-muted h-10 px-4 rounded-xl shadow-sm">
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= filteredScreenings.length} onClick={() => setPage(p => p + 1)} className="border-surface-container-highest bg-surface-container-lowest h-10 px-4 rounded-xl shadow-sm">
+              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= filteredScreenings.length} onClick={() => setPage(p => p + 1)} className="border-border bg-card hover:bg-muted h-10 px-4 rounded-xl shadow-sm">
                 Next
               </Button>
             </div>
