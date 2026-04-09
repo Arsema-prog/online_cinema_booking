@@ -7,6 +7,8 @@ import java.util.List;
 public class PriceEvaluationResponse {
     private Long finalPrice;
     private String currency;
+    private String activeRuleVersion;
+    private String evaluatedAt;
     private List<BreakdownItem> breakdown;
 
     @Data

@@ -27,10 +27,14 @@ public class RulesService {
 
     private final RuleSetRepository ruleSetRepository;
     private KieContainer kieContainer;
+    private RuleSet activeRuleSet;
 
     @PostConstruct
     public void init() {
-        ruleSetRepository.findByActiveTrue().ifPresent(this::compileAndSetContainer);
+        ruleSetRepository.findByActiveTrue().ifPresent(ruleSet -> {
+            compileAndSetContainer(ruleSet);
+            this.activeRuleSet = ruleSet;
+        });
     }
 
     private void compileAndSetContainer(RuleSet ruleSet) {
@@ -44,6 +48,7 @@ public class RulesService {
                 throw new RuntimeException("Compilation errors: " + kieBuilder.getResults().toString());
             }
             this.kieContainer = kieServices.newKieContainer(kieServices.getRepository().getDefaultReleaseId());
+            this.activeRuleSet = ruleSet;
             log.info("Activated ruleset version: {}", ruleSet.getVersion());
         } catch (Exception e) {
             log.error("Failed to compile ruleset", e);
@@ -64,6 +69,14 @@ public class RulesService {
         newRuleSet.setActive(true);
         newRuleSet.setActivatedAt(Instant.now());
         ruleSetRepository.save(newRuleSet);
+        this.activeRuleSet = newRuleSet;
+    }
+
+    @Transactional
+    public void activateRuleSetByVersion(String version) {
+        RuleSet ruleSet = ruleSetRepository.findByVersion(version)
+                .orElseThrow(() -> new RuntimeException("RuleSet version not found: " + version));
+        activateRuleSet(ruleSet);
     }
 
     @Transactional
@@ -72,9 +85,9 @@ public class RulesService {
                 .orElseThrow(() -> new RuntimeException("RuleSet not found"));
         if (ruleSet.isActive()) {
             ruleSet.setActive(false);
-            ruleSet.setActivatedAt(null);
             ruleSetRepository.save(ruleSet);
             this.kieContainer = null;
+            this.activeRuleSet = null;
         }
     }
 
@@ -110,6 +123,17 @@ public class RulesService {
         return ruleSet;
     }
 
+    public void validateRules(String drlContent, String versionHint) {
+        RuleSet previousRuleSet = this.activeRuleSet;
+        KieContainer previousContainer = this.kieContainer;
+        RuleSet probe = new RuleSet();
+        probe.setVersion(versionHint != null ? versionHint : "validation");
+        probe.setDrlContent(drlContent);
+        compileAndSetContainer(probe);
+        this.activeRuleSet = previousRuleSet;
+        this.kieContainer = previousContainer;
+    }
+
     public PriceEvaluationResponse evaluatePrice(PriceEvaluationRequest request) {
         if (kieContainer == null) {
             throw new RuntimeException("No active ruleset");
@@ -124,8 +148,10 @@ public class RulesService {
             kieSession.fireAllRules();
 
             PriceEvaluationResponse response = new PriceEvaluationResponse();
-            response.setFinalPrice(request.getFinalPrice());
+            response.setFinalPrice(request.getFinalPrice() != null ? request.getFinalPrice() : request.getBasePrice());
             response.setCurrency(request.getCurrency());
+            response.setActiveRuleVersion(activeRuleSet != null ? activeRuleSet.getVersion() : "unknown");
+            response.setEvaluatedAt(Instant.now().toString());
             response.setBreakdown(breakdown);
             return response;
         } finally {

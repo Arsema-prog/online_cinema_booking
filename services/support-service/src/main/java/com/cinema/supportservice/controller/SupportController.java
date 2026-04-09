@@ -71,6 +71,13 @@ public class SupportController {
         List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
         return ResponseEntity.ok(tickets);
     }
+
+    @GetMapping("/bookings/uuid/{bookingId}/tickets")
+    public ResponseEntity<List<Ticket>> getTicketsForBookingUuid(@PathVariable UUID bookingId) {
+        Long mappedBookingId = convertToLong(bookingId);
+        List<Ticket> tickets = ticketRepository.findByBookingId(mappedBookingId);
+        return ResponseEntity.ok(tickets);
+    }
     // Staff ticket validation
     @PostMapping("/tickets/{ticketId}/validate")
     public ResponseEntity<Ticket> validateTicket(@PathVariable UUID ticketId) {
@@ -86,5 +93,19 @@ public class SupportController {
         ticketRepository.save(ticket);
 
         return ResponseEntity.ok(ticket);
+    }
+
+    private Long convertToLong(UUID uuid) {
+        String uuidStr = uuid.toString();
+        String lastPart = uuidStr.substring(uuidStr.lastIndexOf('-') + 1);
+        String numericPart = lastPart.replaceFirst("^0+(?!$)", "");
+        if (numericPart.isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(numericPart);
+        } catch (NumberFormatException e) {
+            return (long) Math.abs(uuid.hashCode() % 10000);
+        }
     }
 }

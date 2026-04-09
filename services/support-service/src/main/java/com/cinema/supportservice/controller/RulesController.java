@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.Valid;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +65,13 @@ public class RulesController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/activate/version/{version}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Void> activateRulesetVersion(@PathVariable String version) {
+        rulesService.activateRuleSetByVersion(version);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{ruleId}/deactivate")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     public ResponseEntity<Void> deactivateRuleset(@PathVariable Long ruleId) {
@@ -78,8 +86,19 @@ public class RulesController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/validate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Void> validateRules(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "version", required = false) String version
+    ) throws IOException {
+        String drlContent = new String(file.getBytes(), StandardCharsets.UTF_8);
+        rulesService.validateRules(drlContent, version);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/evaluate/price")
-    public ResponseEntity<PriceEvaluationResponse> evaluatePrice(@RequestBody PriceEvaluationRequest request) {
+    public ResponseEntity<PriceEvaluationResponse> evaluatePrice(@Valid @RequestBody PriceEvaluationRequest request) {
         PriceEvaluationResponse response = rulesService.evaluatePrice(request);
         return ResponseEntity.ok(response);
     }
