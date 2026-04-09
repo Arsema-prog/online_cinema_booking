@@ -11,13 +11,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -158,37 +158,38 @@ export default function RulesPage() {
           <Button variant="outline" size="lg" className="rounded-2xl h-14 px-6 border-surface-container-highest bg-surface-container-lowest font-bold shadow-lg shrink-0" onClick={fetchRulesets}>
             <span className="material-symbols-outlined mr-2">sync</span> Sync Registry
           </Button>
-          <Sheet open={open} onOpenChange={handleOpenChange}>
-            <SheetTrigger asChild>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
               <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary-container/20 font-bold shrink-0">
                 <span className="material-symbols-outlined mr-2">upload_file</span> Import Ruleset
               </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
-              <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
-                <SheetHeader className="relative z-10">
-                  <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[2rem] text-primary-container">terminal</span> Rules Import
-                  </SheetTitle>
-                  <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-surface-container-lowest/95 backdrop-blur-2xl border-none shadow-2xl rounded-[3rem] max-h-[90vh] flex flex-col">
+              <div className="px-12 py-10 border-b border-surface-container-highest/40 shrink-0 relative overflow-hidden backdrop-blur-3xl bg-surface-container-lowest/50">
+                <div className="absolute right-0 top-0 w-64 h-64 bg-primary-container/20 blur-[80px] rounded-full pointer-events-none" />
+                <DialogHeader className="relative z-10 text-left">
+                  <DialogTitle className="text-4xl font-headline font-black tracking-tight text-on-surface flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[2.5rem] text-primary-container">terminal</span> Rules Import
+                  </DialogTitle>
+                  <DialogDescription className="text-lg mt-3 text-on-surface-variant/80 font-medium">
                     Deploy new business logic via Drools Rule Language (DRL).
-                  </SheetDescription>
-                </SheetHeader>
+                  </DialogDescription>
+                </DialogHeader>
               </div>
               
-              <ModernForm
-                schema={rulesetSchema}
-                defaultValues={form.getValues()}
-                onSubmit={onSubmit as any}
-                sections={rulesetFormSections}
-                isSubmitting={saving}
-                submitLabel="Compile & Deploy"
-                onCancel={() => setOpen(false)}
-                className="flex-1 overflow-hidden"
-              />
-            </SheetContent>
-          </Sheet>
+              <div className="flex-1 overflow-y-auto">
+                <ModernForm
+                  schema={rulesetSchema}
+                  defaultValues={form.getValues()}
+                  onSubmit={onSubmit as any}
+                  sections={rulesetFormSections}
+                  isSubmitting={saving}
+                  submitLabel="Compile & Deploy"
+                  onCancel={() => setOpen(false)}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -282,29 +283,30 @@ export default function RulesPage() {
         </div>
       )}
 
-      {/* Source Viewer Sheet */}
-      <Sheet open={sourceViewerOpen} onOpenChange={setSourceViewerOpen}>
-        <SheetContent className="sm:max-w-4xl border-l border-surface-container-highest/50 bg-[#0d1117] p-0 flex flex-col shadow-2xl z-[100]">
-           <div className="px-10 py-8 border-b border-white/5 shrink-0 bg-[#161b22]">
-              <SheetHeader>
-                <SheetTitle className="text-2xl font-headline font-black text-white flex items-center gap-3">
-                  <span className="material-symbols-outlined text-emerald-400">terminal</span> drl_viewer
-                </SheetTitle>
-                <SheetDescription className="text-gray-400 font-medium text-base mt-2">
+      {/* Source Viewer Dialog */}
+      <Dialog open={sourceViewerOpen} onOpenChange={setSourceViewerOpen}>
+        <DialogContent className="sm:max-w-4xl bg-[#0d1117]/95 backdrop-blur-2xl border-none p-0 flex flex-col shadow-2xl rounded-[3rem] max-h-[90vh] z-[100] overflow-hidden">
+           <div className="px-12 py-10 border-b border-white/5 shrink-0 bg-[#161b22]/50 backdrop-blur-3xl relative overflow-hidden">
+              <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
+              <DialogHeader className="relative z-10 text-left">
+                <DialogTitle className="text-3xl font-headline font-black text-white flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[2rem] text-emerald-400">terminal</span> drl_viewer
+                </DialogTitle>
+                <DialogDescription className="text-gray-400 font-medium text-lg mt-3">
                   Read-only access to compiled rule buffers.
-                </SheetDescription>
-              </SheetHeader>
+                </DialogDescription>
+              </DialogHeader>
            </div>
-           <div className="flex-1 overflow-auto p-6 bg-[#0d1117]">
-              <pre className="font-mono text-sm leading-relaxed p-6 rounded-[1rem] bg-black/40 border border-white/5 text-gray-300">
+           <div className="flex-1 overflow-auto p-8 bg-[#0d1117]/80">
+              <pre className="font-mono text-sm leading-relaxed p-6 rounded-[1.5rem] bg-black/40 border border-white/5 text-gray-300">
                 <code>{selectedSource}</code>
               </pre>
            </div>
-           <div className="p-6 border-t border-white/5 bg-[#161b22] flex justify-end">
-              <Button variant="ghost" className="text-gray-400 hover:text-white rounded-xl font-bold" onClick={() => setSourceViewerOpen(false)}>Close Inspector</Button>
+           <div className="p-8 border-t border-white/5 bg-[#161b22]/80 flex justify-end">
+              <Button variant="ghost" className="text-gray-400 hover:text-white rounded-xl font-bold h-12 px-6" onClick={() => setSourceViewerOpen(false)}>Close Inspector</Button>
            </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/auth/AuthContext';
@@ -401,66 +400,68 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Register Sheet */}
-      <Sheet open={registerSheetOpen} onOpenChange={setRegisterSheetOpen}>
-        <SheetContent className="sm:max-w-xl overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
-          <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
-            <SheetHeader className="relative z-10">
-              <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface">Create User</SheetTitle>
-              <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">Register a new access point for the platform.</SheetDescription>
-            </SheetHeader>
+      {/* Register Dialog */}
+      <Dialog open={registerSheetOpen} onOpenChange={setRegisterSheetOpen}>
+        <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-surface-container-lowest/95 backdrop-blur-2xl border-none shadow-2xl rounded-[3rem] max-h-[90vh] flex flex-col">
+          <div className="px-12 py-10 border-b border-surface-container-highest/40 shrink-0 relative overflow-hidden backdrop-blur-3xl bg-surface-container-lowest/50">
+            <div className="absolute right-0 top-0 w-64 h-64 bg-primary-container/20 blur-[80px] rounded-full pointer-events-none" />
+            <DialogHeader className="relative z-10 text-left">
+              <DialogTitle className="text-4xl font-headline font-black tracking-tight text-on-surface">Create User</DialogTitle>
+              <DialogDescription className="text-lg mt-3 text-on-surface-variant/80 font-medium">Register a new access point for the platform.</DialogDescription>
+            </DialogHeader>
           </div>
-          <ModernForm
-            schema={registerSchema}
-            defaultValues={{ username: '', email: '', firstName: '', lastName: '', password: '', roles: ['STAFF'] }}
-            onSubmit={async (values) => {
-              try {
-                setSaving(true);
-                await registerUser(values);
-                setRegisterSheetOpen(false);
-                fetchUsers();
-              } finally { setSaving(false); }
-            }}
-            sections={registerSections}
-            isSubmitting={saving}
-            submitLabel="Deploy Account"
-            onCancel={() => setRegisterSheetOpen(false)}
-            className="flex-1 overflow-hidden"
-          />
-        </SheetContent>
-      </Sheet>
+          <div className="flex-1 overflow-y-auto">
+            <ModernForm
+              schema={registerSchema}
+              defaultValues={{ username: '', email: '', firstName: '', lastName: '', password: '', roles: ['STAFF'] }}
+              onSubmit={async (values) => {
+                try {
+                  setSaving(true);
+                  await registerUser(values);
+                  setRegisterSheetOpen(false);
+                  fetchUsers();
+                } finally { setSaving(false); }
+              }}
+              sections={registerSections}
+              isSubmitting={saving}
+              submitLabel="Deploy Account"
+              onCancel={() => setRegisterSheetOpen(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {/* Edit Sheet */}
-      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
-        <SheetContent className="sm:max-w-md overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
-           <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
-            <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
-            <SheetHeader className="relative z-10">
-              <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface">Edit Profile</SheetTitle>
-              <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">Modify identity details for {selectedUser?.username}.</SheetDescription>
-            </SheetHeader>
+      {/* Edit Dialog */}
+      <Dialog open={editSheetOpen} onOpenChange={setEditSheetOpen}>
+        <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-surface-container-lowest/95 backdrop-blur-2xl border-none shadow-2xl rounded-[3rem] max-h-[90vh] flex flex-col">
+           <div className="px-12 py-10 border-b border-surface-container-highest/40 shrink-0 relative overflow-hidden backdrop-blur-3xl bg-surface-container-lowest/50">
+            <div className="absolute right-0 top-0 w-64 h-64 bg-primary-container/20 blur-[80px] rounded-full pointer-events-none" />
+            <DialogHeader className="relative z-10 text-left">
+              <DialogTitle className="text-4xl font-headline font-black tracking-tight text-on-surface">Edit Profile</DialogTitle>
+              <DialogDescription className="text-lg mt-3 text-on-surface-variant/80 font-medium">Modify identity details for {selectedUser?.username}.</DialogDescription>
+            </DialogHeader>
           </div>
-          <ModernForm
-            schema={editSchema}
-            defaultValues={selectedUser ? { email: selectedUser.email, firstName: selectedUser.firstName, lastName: selectedUser.lastName, enabled: selectedUser.enabled } : {}}
-            onSubmit={async (values) => {
-              if (!selectedUser) return;
-              try {
-                setSaving(true);
-                await updateUser(selectedUser.id, values);
-                setEditSheetOpen(false);
-                fetchUsers();
-              } finally { setSaving(false); }
-            }}
-            sections={editSections}
-            isSubmitting={saving}
-            submitLabel="Sync Profile"
-            onCancel={() => setEditSheetOpen(false)}
-            className="flex-1 overflow-hidden"
-          />
-        </SheetContent>
-      </Sheet>
+          <div className="flex-1 overflow-y-auto">
+            <ModernForm
+              schema={editSchema}
+              defaultValues={selectedUser ? { email: selectedUser.email, firstName: selectedUser.firstName, lastName: selectedUser.lastName, enabled: selectedUser.enabled } : {}}
+              onSubmit={async (values) => {
+                if (!selectedUser) return;
+                try {
+                  setSaving(true);
+                  await updateUser(selectedUser.id, values);
+                  setEditSheetOpen(false);
+                  fetchUsers();
+                } finally { setSaving(false); }
+              }}
+              sections={editSections}
+              isSubmitting={saving}
+              submitLabel="Sync Profile"
+              onCancel={() => setEditSheetOpen(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Reset Password Dialog */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>

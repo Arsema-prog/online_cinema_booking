@@ -80,7 +80,7 @@ export function ModernForm({
   onSubmit,
   sections,
   isSubmitting = false,
-  submitLabel = 'Save Changes',
+  submitLabel = 'Save Features',
   onCancel,
   form: externalForm,
   className
@@ -118,8 +118,9 @@ export function ModernForm({
     }
   };
 
-  const inputClass = "w-full bg-surface-container-high border-transparent rounded-xl focus-visible:ring-2 focus-visible:ring-primary-container transition-all text-on-surface";
-  const labelClass = "block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3 transition-colors";
+  // Radically updated for a tactile, cinematic, huge ticketing UI aesthetic
+  const inputClass = "w-full h-14 px-5 bg-background border-border/60 hover:border-border rounded-xl text-base font-medium transition-all focus-visible:bg-muted/10 focus-visible:border-primary/50 focus-visible:ring-[4px] focus-visible:ring-primary/10 shadow-[0_2px_4px_rgba(0,0,0,0.05)_inset]";
+  const labelClass = "block text-sm font-bold text-foreground mb-2 flex items-center justify-between";
 
   const renderField = (field: ModernFormField) => {
     if (field.visible && !field.visible(values)) return null;
@@ -136,22 +137,22 @@ export function ModernForm({
             control={form.control}
             name={field.name}
             render={({ field: _fieldProps }) => (
-              <FormItem className={cn("group", field.colSpan === 2 ? 'col-span-2' : '')}>
+              <FormItem className={cn("group flex flex-col pt-1", field.colSpan === 2 ? 'col-span-1 md:col-span-2' : '')}>
                 <FormLabel className={labelClass}>
-                  {field.required && '* '}{field.label}
+                  <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
                 </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    {field.icon && (
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors z-10 flex items-center">
-                        {field.icon}
-                      </div>
-                    )}
+                <div className="relative">
+                  {field.icon && (
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors pointer-events-none z-10 flex items-center text-[1.2rem]">
+                      {field.icon}
+                    </div>
+                  )}
+                  <FormControl>
                     <Input 
                       type={field.type}
                       step={field.step}
                       placeholder={field.placeholder} 
-                      className={cn(inputClass, field.icon && "pl-11")} 
+                      className={cn(inputClass, field.icon ? "pl-12" : "pl-4")} 
                       {..._fieldProps} 
                       onChange={(e) => {
                         const val = field.type === 'number' ? (e.target.value === '' ? undefined : Number(e.target.value)) : e.target.value;
@@ -160,10 +161,10 @@ export function ModernForm({
                       value={_fieldProps.value ?? ''}
                       disabled={isDisabled}
                     />
-                  </div>
-                </FormControl>
-                {field.description && <FormDescription className="text-xs text-on-surface-variant/60">{field.description}</FormDescription>}
-                <FormMessage />
+                  </FormControl>
+                </div>
+                {field.description && <FormDescription className="text-xs text-muted-foreground mt-1.5 font-medium">{field.description}</FormDescription>}
+                <FormMessage className="text-xs text-destructive font-semibold" />
               </FormItem>
             )}
           />
@@ -176,20 +177,20 @@ export function ModernForm({
             control={form.control}
             name={field.name}
             render={({ field: _fieldProps }) => (
-              <FormItem className="col-span-2 group">
+              <FormItem className="col-span-1 md:col-span-2 flex flex-col group pt-1">
                 <FormLabel className={labelClass}>
-                  {field.required && '* '}{field.label}
+                  <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
                 </FormLabel>
                 <FormControl>
                   <Textarea 
                     placeholder={field.placeholder} 
-                    className={cn(inputClass, "min-h-[140px] resize-none py-4 px-5 leading-relaxed")} 
+                    className={cn(inputClass, "min-h-[140px] resize-y py-4 px-5 leading-relaxed")} 
                     {..._fieldProps}
                     disabled={isDisabled}
                   />
                 </FormControl>
-                {field.description && <FormDescription className="text-xs text-on-surface-variant/60">{field.description}</FormDescription>}
-                <FormMessage />
+                {field.description && <FormDescription className="text-xs text-muted-foreground mt-1.5 font-medium">{field.description}</FormDescription>}
+                <FormMessage className="text-xs text-destructive font-semibold" />
               </FormItem>
             )}
           />
@@ -202,9 +203,9 @@ export function ModernForm({
             control={form.control}
             name={field.name}
             render={({ field: _fieldProps }) => (
-              <FormItem className={cn("group", field.colSpan === 2 ? 'col-span-2' : '')}>
+              <FormItem className={cn("group flex flex-col pt-1", field.colSpan === 2 ? 'col-span-1 md:col-span-2' : '')}>
                 <FormLabel className={labelClass}>
-                  {field.required && '* '}{field.label}
+                  <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
                 </FormLabel>
                 <Select 
                   onValueChange={_fieldProps.onChange} 
@@ -213,18 +214,18 @@ export function ModernForm({
                   disabled={isDisabled}
                 >
                   <FormControl>
-                    <SelectTrigger className={inputClass}>
-                      <SelectValue placeholder={field.placeholder || "Select an option"} />
+                    <SelectTrigger className={cn(inputClass, "font-medium text-base")}>
+                      <SelectValue placeholder={field.placeholder || "Select an option..."} />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border-border/80 rounded-xl shadow-2xl backdrop-blur-md">
                     {currentOptions && (currentOptions as FormOption[]).map(opt => (
-                      <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                      <SelectItem key={opt.value} value={String(opt.value)} className="focus:bg-muted focus:text-foreground rounded-lg mx-1.5 my-1 cursor-pointer text-base py-2 font-medium">{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {field.description && <FormDescription className="text-xs text-on-surface-variant/60">{field.description}</FormDescription>}
-                <FormMessage />
+                {field.description && <FormDescription className="text-xs text-muted-foreground mt-1.5 font-medium">{field.description}</FormDescription>}
+                <FormMessage className="text-xs text-destructive font-semibold" />
               </FormItem>
             )}
           />
@@ -237,19 +238,19 @@ export function ModernForm({
             control={form.control}
             name={field.name}
             render={({ field: _fieldProps }) => (
-              <FormItem className={cn("flex items-center justify-between p-5 bg-surface-container-lowest rounded-xl", field.colSpan === 2 ? 'col-span-2' : '')}>
-                <div>
-                  <FormLabel className="text-sm font-bold text-on-surface block mb-1">{field.label}</FormLabel>
-                  <FormDescription className="text-xs text-on-surface-variant">
-                    {field.description || "Toggle this setting value"}
+              <FormItem className={cn("flex flex-row items-center justify-between p-6 bg-muted/20 border border-border/40 rounded-2xl", field.colSpan === 2 ? 'col-span-1 md:col-span-2' : '')}>
+                <div className="space-y-1">
+                  <FormLabel className="text-base font-bold text-foreground">{field.label}</FormLabel>
+                  <FormDescription className="text-sm text-muted-foreground font-medium">
+                    {field.description || "Toggle to enable or disable"}
                   </FormDescription>
                 </div>
                 <FormControl>
                   <Switch
-                    checked={_fieldProps.value}
+                    checked={!!_fieldProps.value}
                     onCheckedChange={_fieldProps.onChange}
                     disabled={isDisabled}
-                    className="data-[state=checked]:bg-primary-container"
+                    className="data-[state=checked]:bg-primary h-[24px] w-[44px] [&_span]:h-[18px] [&_span]:w-[18px] [&_span[data-state=checked]]:translate-x-[20px] scale-125 origin-right"
                   />
                 </FormControl>
               </FormItem>
@@ -268,9 +269,9 @@ export function ModernForm({
               const currentUrl = _fieldProps.value;
 
               return (
-                <FormItem className="col-span-2 group">
+                <FormItem className="col-span-1 md:col-span-2 group pt-1">
                   <FormLabel className={labelClass}>
-                    {field.required && '* '}{field.label}
+                    <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
                   </FormLabel>
                   <FormControl>
                     <div className="flex flex-col gap-4">
@@ -284,17 +285,19 @@ export function ModernForm({
                         }}
                         onClick={() => fileInputRefs.current[field.name]?.click()}
                         className={cn(
-                          "relative overflow-hidden group cursor-pointer border-2 border-dashed rounded-2xl p-10 transition-colors flex flex-col items-center justify-center text-center",
-                          (currentUrl || currentFile) ? 'border-primary-container/30 bg-primary-container/5' : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-high bg-surface-container-lowest'
+                          "relative overflow-hidden group cursor-pointer border-2 border-dashed rounded-2xl p-10 py-12 transition-all flex flex-col items-center justify-center text-center",
+                          (currentUrl || currentFile) ? 'border-primary/50 bg-primary/5 hover:border-primary' : 'border-border/60 hover:border-primary/50 bg-muted/10 hover:bg-muted/20'
                         )}
                       >
                         {!(currentUrl || currentFile) && (
                           <>
-                            <span className="material-symbols-outlined text-4xl text-outline-variant group-hover:text-primary-container transition-colors mb-4">cloud_upload</span>
-                            <h3 className="font-medium text-sm text-on-surface shrink-0 mb-1">
-                              Drag image here or <span className="text-primary-container font-bold">browse files</span>
+                            <div className="rounded-full bg-background border border-border shadow-sm p-4 mb-4 text-muted-foreground group-hover:text-primary transition-colors">
+                              <span className="material-symbols-outlined text-3xl">photo_library</span>
+                            </div>
+                            <h3 className="font-bold text-lg text-foreground mb-1.5">
+                              Drag image here or <span className="text-primary underline decoration-primary/30 underline-offset-4">browse files</span>
                             </h3>
-                            <p className="text-[10px] text-on-surface-variant">Recommended size: 800x600px (JPG/PNG)</p>
+                            <p className="text-sm text-muted-foreground font-medium">Supports JPG, PNG in high resolution</p>
                           </>
                         )}
                         
@@ -303,10 +306,10 @@ export function ModernForm({
                             <img
                               src={currentFile ? previewUrls[field.name] : currentUrl}
                               alt="Preview"
-                              className="h-32 object-contain rounded-xl shadow-lg border border-surface-container-highest"
+                              className="h-40 object-contain rounded-xl shadow-lg border-4 border-background"
                             />
-                            <div className="flex items-center gap-2 text-xs font-bold text-primary-container bg-primary-container/10 px-4 py-2 rounded-lg hover:bg-primary-container/20 transition-colors">
-                              <span className="material-symbols-outlined text-sm">image</span> Replace Media
+                            <div className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-2 bg-primary/10 px-6 py-3 rounded-xl border border-primary/20">
+                              <span className="material-symbols-outlined text-[1.2rem]">swap_calls</span> Replace Media
                             </div>
                           </div>
                         )}
@@ -324,13 +327,14 @@ export function ModernForm({
                           }}
                         />
                       </div>
+                      
                       <div className="relative">
                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <span className="text-on-surface-variant/60 text-[10px] uppercase font-bold tracking-widest">Alt URL</span>
+                            <span className="text-muted-foreground text-[11px] font-black uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">URL</span>
                          </div>
                          <Input
-                           placeholder="https://..."
-                           className={cn(inputClass, "pl-[4.5rem]")}
+                           placeholder="Paste an external image link..."
+                           className={cn(inputClass, "pl-[4.5rem] font-medium text-sm")}
                            value={currentUrl || ''}
                            onChange={(e) => {
                              form.setValue(field.name, e.target.value);
@@ -341,147 +345,10 @@ export function ModernForm({
                       </div>
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive font-semibold mt-2" />
                 </FormItem>
               );
             }}
-          />
-        );
-
-      case 'rating':
-        return (
-          <FormField
-            key={field.name}
-            control={form.control}
-            name={field.name}
-            render={({ field: _fieldProps }) => (
-              <FormItem className={cn("flex flex-col group", field.colSpan === 2 ? 'col-span-2' : '')}>
-                <FormLabel className={labelClass}>
-                  {field.required && '* '}{field.label}
-                </FormLabel>
-                <FormControl>
-                  <div className="flex flex-col gap-4 rounded-xl border border-transparent bg-surface-container-high p-4 py-3.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-                          <button
-                            type="button"
-                            key={star}
-                            onClick={() => _fieldProps.onChange(star)}
-                            className={cn(
-                              "transition-all duration-300 outline-none flex items-center justify-center p-1",
-                              (_fieldProps.value || 0) >= star 
-                                ? 'text-secondary-fixed-dim drop-shadow-[0_0_8px_rgba(233,196,0,0.4)] scale-110' 
-                                : 'text-on-surface-variant/30 hover:text-secondary-fixed-dim/40 hover:scale-110'
-                            )}
-                          >
-                            <span className="material-symbols-outlined fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                          </button>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number" step="0.1" min="0" max="10"
-                          className="w-16 h-8 text-center font-black bg-surface-container-lowest py-0 px-0 rounded-lg text-sm"
-                          {..._fieldProps}
-                          value={_fieldProps.value ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value === '' ? undefined : Number(e.target.value);
-                            _fieldProps.onChange(val);
-                          }}
-                          disabled={isDisabled}
-                        />
-                        <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase">/ 10</span>
-                      </div>
-                    </div>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        );
-
-      case 'duration':
-        return (
-          <FormField
-            key={field.name}
-            control={form.control}
-            name={field.name}
-            render={({ field: _fieldProps }) => {
-              const totalMins = _fieldProps.value || 0;
-              const h = Math.floor(totalMins / 60);
-              const m = totalMins % 60;
-              return (
-                <FormItem className={cn("group", field.colSpan === 2 ? 'col-span-2' : '')}>
-                  <FormLabel className={labelClass}>
-                    {field.required && '* '}{field.label}
-                  </FormLabel>
-                  <FormControl>
-                    <div className={cn("flex items-center gap-3 rounded-xl bg-surface-container-high py-2 px-3 focus-within:ring-2 ring-primary-container transition-all", isDisabled && "opacity-50 pointer-events-none")}>
-                      <div className="flex flex-1 items-center gap-2">
-                        <span className="material-symbols-outlined text-on-surface-variant/50 ml-2 text-sm">schedule</span>
-                        <Input 
-                          type="number" min="0" placeholder="0" 
-                          className="h-10 border-transparent bg-transparent rounded-none px-2 focus:ring-0 text-right w-14 font-black text-on-surface shadow-none"
-                          value={h || ''} 
-                          onChange={(e) => {
-                            let val = parseInt(e.target.value) || 0;
-                            _fieldProps.onChange(val * 60 + m);
-                          }}
-                          disabled={isDisabled}
-                        />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 mr-2">Hrs</span>
-                      </div>
-                      <div className="h-6 w-[1px] bg-surface-container-highest" />
-                      <div className="flex flex-1 items-center gap-2">
-                        <Input 
-                          type="number" min="0" max="59" placeholder="00"
-                          className="h-10 border-transparent bg-transparent rounded-none px-2 focus:ring-0 text-right w-14 font-black text-on-surface shadow-none"
-                          value={m || ''} 
-                          onChange={(e) => {
-                            let val = parseInt(e.target.value) || 0;
-                            _fieldProps.onChange(h * 60 + val);
-                          }}
-                          disabled={isDisabled}
-                        />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 mr-2">Min</span>
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
-        );
-      
-      case 'date':
-      case 'datetime-local':
-        return (
-          <FormField
-            key={field.name}
-            control={form.control}
-            name={field.name}
-            render={({ field: _fieldProps }) => (
-              <FormItem className={cn("group", field.colSpan === 2 ? 'col-span-2' : '')}>
-                <FormLabel className={labelClass}>
-                  {field.required && '* '}{field.label}
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors pointer-events-none z-10 text-[1.1rem]">calendar_month</span>
-                    <Input 
-                      type={field.type} 
-                      className={cn(inputClass, "pl-11")} 
-                      {..._fieldProps}
-                      disabled={isDisabled}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
           />
         );
 
@@ -495,9 +362,9 @@ export function ModernForm({
               const currentFile = files[field.name];
 
               return (
-                <FormItem className="col-span-2 group">
+                <FormItem className="col-span-1 md:col-span-2 group pt-1">
                   <FormLabel className={labelClass}>
-                    {field.required && '* '}{field.label}
+                    <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
                   </FormLabel>
                   <FormControl>
                     <div 
@@ -510,26 +377,26 @@ export function ModernForm({
                       }}
                       onClick={() => fileInputRefs.current[field.name]?.click()}
                       className={cn(
-                        "relative overflow-hidden group cursor-pointer border-2 border-dashed rounded-2xl p-10 transition-colors flex flex-col items-center justify-center text-center",
-                        currentFile ? 'border-primary-container/30 bg-primary-container/5' : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-high bg-surface-container-lowest'
+                        "relative overflow-hidden group cursor-pointer border-2 border-dashed rounded-2xl p-10 py-12 transition-all flex flex-col items-center justify-center text-center",
+                        currentFile ? 'border-primary/50 bg-primary/5 hover:border-primary' : 'border-border/60 hover:border-primary/50 bg-muted/10 hover:bg-muted/20'
                       )}
                     >
                       {!currentFile ? (
                         <>
-                          <span className="material-symbols-outlined text-4xl text-outline-variant group-hover:text-primary-container transition-colors mb-4">cloud_upload</span>
-                          <h3 className="font-medium text-sm text-on-surface shrink-0 mb-1">{field.placeholder || "Click or drag file here"}</h3>
-                          <p className="text-[10px] text-on-surface-variant">{field.description || "Upload a document"}</p>
+                          <div className="rounded-full bg-background border border-border shadow-sm p-4 mb-4 text-muted-foreground group-hover:text-primary transition-colors">
+                            <span className="material-symbols-outlined text-3xl">upload_file</span>
+                          </div>
+                          <h3 className="font-bold text-lg text-foreground mb-1.5">{field.placeholder || "Drag document here or click to browse"}</h3>
+                          <p className="text-sm text-muted-foreground font-medium">{field.description || "Upload a document"}</p>
                         </>
                       ) : (
-                        <div className="flex flex-col items-center gap-4 text-on-surface">
-                          <div className="p-4 rounded-full bg-emerald-500/10 text-emerald-500 mb-2">
-                            <span className="material-symbols-outlined text-3xl">description</span>
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="p-4 rounded-full bg-primary/10 text-primary mb-2 border border-primary/20 shadow-inner">
+                            <span className="material-symbols-outlined text-4xl">draft</span>
                           </div>
-                          <div className="font-bold text-sm tracking-tight">{currentFile.name}</div>
-                          <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{(currentFile.size / 1024).toFixed(1)} KB</div>
-                          <div className="flex items-center gap-2 text-xs font-bold text-primary-container bg-primary-container/10 px-4 py-2 rounded-lg hover:bg-primary-container/20 transition-colors mt-2">
-                            Replace File
-                          </div>
+                          <div className="font-bold text-base text-foreground tracking-tight">{currentFile.name}</div>
+                          <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded">{(currentFile.size / 1024).toFixed(1)} KB</div>
+                          <div className="text-sm font-bold text-primary hover:text-primary/80 transition-colors mt-3 px-5 py-2 hover:bg-primary/10 rounded-xl">Tap to replace</div>
                         </div>
                       )}
                       <input
@@ -546,16 +413,156 @@ export function ModernForm({
                       />
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive font-semibold mt-2" />
                 </FormItem>
               );
             }}
           />
         );
 
+      case 'rating':
+        return (
+          <FormField
+            key={field.name}
+            control={form.control}
+            name={field.name}
+            render={({ field: _fieldProps }) => (
+              <FormItem className={cn("flex flex-col group pt-1", field.colSpan === 2 ? 'col-span-1 md:col-span-2' : '')}>
+                <FormLabel className={labelClass}>
+                  <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
+                </FormLabel>
+                <FormControl>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-5 p-3 px-4 rounded-xl bg-background border border-border/60 shadow-[0_2px_4px_rgba(0,0,0,0.05)_inset]">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
+                        <button
+                          type="button"
+                          key={star}
+                          onClick={() => _fieldProps.onChange(star)}
+                          className={cn(
+                            "transition-all duration-200 outline-none flex items-center justify-center p-1.5 rounded-full",
+                            (_fieldProps.value || 0) >= star 
+                              ? 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)] scale-110' 
+                              : 'text-muted-foreground/20 hover:text-yellow-500/50 hover:bg-muted'
+                          )}
+                        >
+                          <span className="material-symbols-outlined fill-current text-lg md:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center bg-muted/30 border border-border/60 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all h-11">
+                      <Input
+                        type="number" step="0.1" min="0" max="10"
+                        className="w-16 h-full text-center font-bold text-lg bg-transparent border-none py-0 px-0 outline-none focus-visible:ring-0 shadow-none rounded-none"
+                        {..._fieldProps}
+                        value={_fieldProps.value ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? undefined : Number(e.target.value);
+                          _fieldProps.onChange(val);
+                        }}
+                        disabled={isDisabled}
+                      />
+                      <span className="pr-4 text-sm font-bold text-muted-foreground bg-muted/50 h-full flex items-center border-l border-border/40 pl-3">/ 10</span>
+                    </div>
+                  </div>
+                </FormControl>
+                <FormMessage className="text-xs text-destructive font-semibold" />
+              </FormItem>
+            )}
+          />
+        );
+
+      case 'duration':
+        return (
+          <FormField
+            key={field.name}
+            control={form.control}
+            name={field.name}
+            render={({ field: _fieldProps }) => {
+              const totalMins = _fieldProps.value || 0;
+              const h = Math.floor(totalMins / 60);
+              const m = totalMins % 60;
+              return (
+                <FormItem className={cn("group flex flex-col pt-1", field.colSpan === 2 ? 'col-span-1 md:col-span-2' : '')}>
+                  <FormLabel className={labelClass}>
+                    <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
+                  </FormLabel>
+                  <FormControl>
+                    <div className={cn(
+                      "flex items-center h-14 bg-background border border-border/60 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)_inset] transition-all hover:border-border overflow-hidden focus-within:bg-muted/10 focus-within:border-primary/50 focus-within:ring-[4px] focus-within:ring-primary/10", 
+                      isDisabled && "opacity-50 pointer-events-none"
+                    )}>
+                      <div className="pl-5 pr-4 border-r border-border/30 h-full flex items-center bg-muted/10">
+                        <span className="material-symbols-outlined text-muted-foreground text-[1.4rem]">schedule</span>
+                      </div>
+                      <div className="flex flex-1 items-center px-1 h-full">
+                        <Input 
+                          type="number" min="0" placeholder="0" 
+                          className="h-full border-transparent bg-transparent rounded-none px-2 focus:ring-0 focus-visible:ring-0 text-right w-16 font-bold text-lg shadow-none text-foreground"
+                          value={h || ''} 
+                          onChange={(e) => {
+                            let val = parseInt(e.target.value) || 0;
+                            _fieldProps.onChange(val * 60 + m);
+                          }}
+                          disabled={isDisabled}
+                        />
+                        <span className="text-sm text-muted-foreground mr-2 select-none font-bold">hrs</span>
+                      </div>
+                      <div className="h-8 w-px bg-border/40 mx-1" />
+                      <div className="flex flex-1 items-center px-1 h-full">
+                        <Input 
+                          type="number" min="0" max="59" placeholder="00"
+                          className="h-full border-transparent bg-transparent rounded-none px-2 focus:ring-0 focus-visible:ring-0 text-right w-16 font-bold text-lg shadow-none text-foreground"
+                          value={m || ''} 
+                          onChange={(e) => {
+                            let val = parseInt(e.target.value) || 0;
+                            _fieldProps.onChange(h * 60 + val);
+                          }}
+                          disabled={isDisabled}
+                        />
+                        <span className="text-sm text-muted-foreground mr-4 select-none font-bold">min</span>
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-xs text-destructive font-semibold" />
+                </FormItem>
+              );
+            }}
+          />
+        );
+      
+      case 'date':
+      case 'datetime-local':
+        return (
+          <FormField
+            key={field.name}
+            control={form.control}
+            name={field.name}
+            render={({ field: _fieldProps }) => (
+              <FormItem className={cn("group flex flex-col pt-1", field.colSpan === 2 ? 'col-span-1 md:col-span-2' : '')}>
+                <FormLabel className={labelClass}>
+                  <span>{field.label} {field.required && <span className="text-primary ml-1">*</span>}</span>
+                </FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-colors pointer-events-none z-10 text-[1.3rem]">event</span>
+                    <Input 
+                      type={field.type} 
+                      className={cn(inputClass, "pl-12 font-medium [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer")} 
+                      {..._fieldProps}
+                      disabled={isDisabled}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage className="text-xs text-destructive font-semibold" />
+              </FormItem>
+            )}
+          />
+        );
+
       case 'custom':
         return (
-          <div key={field.name} className={field.colSpan === 2 ? 'col-span-2' : ''}>
+          <div key={field.name} className={field.colSpan === 2 ? 'col-span-1 md:col-span-2' : ''}>
              {field.render ? field.render(form) : null}
           </div>
         );
@@ -572,48 +579,42 @@ export function ModernForm({
           e.preventDefault();
           form.handleSubmit((data) => onSubmit(data, files))(e);
         }} 
-        className={cn("flex flex-col h-full", className)}
+        className={cn("flex flex-col h-full bg-card rounded-[2.5rem] relative contain-layout", className)}
       >
-        <div className="flex-1 overflow-y-auto hide-scrollbar p-6 lg:p-10 space-y-10">
+        <div className="flex-1 overflow-y-auto px-6 py-8 md:px-12 md:py-10 space-y-12 animate-in fade-in duration-500 pb-32">
           {sections.map((section, idx) => {
              const visibleFields = section.fields.filter(f => !f.visible || f.visible(values));
              if (visibleFields.length === 0) return null;
              
              return (
-               <div key={idx} className="space-y-6">
-                 <div>
-                   <h3 className="text-sm font-black uppercase tracking-tight text-on-surface mb-1">
+               <div key={idx} className="flex flex-col gap-8 animate-in slide-in-from-bottom-6 fade-in" style={{ animationDelay: (idx * 150) + 'ms', animationFillMode: 'both' }}>
+                 <div className="pb-4 border-b-2 border-border/40">
+                   <h3 className="text-xl font-black text-foreground tracking-tight flex items-center gap-3">
+                     <span className="w-8 h-1.5 bg-primary rounded-full"></span>
                      {section.title}
                    </h3>
                    {section.description && (
-                     <p className="text-xs text-on-surface-variant font-medium">{section.description}</p>
+                     <p className="text-sm font-medium text-muted-foreground mt-2 ml-11">{section.description}</p>
                    )}
                  </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-8 bg-muted/5 p-6 rounded-[2rem] border border-border/30">
                    {section.fields.map(renderField)}
                  </div>
-                 {idx < sections.length - 1 && (
-                   <div className="h-px w-full bg-surface-container-highest shrink-0 mt-10" />
-                 )}
                </div>
              );
           })}
         </div>
 
-        <div className="p-6 bg-surface-container-low border-t border-surface-container-highest/20 flex items-center justify-end gap-4 shrink-0 z-10 w-full">
-           <div className="flex gap-4 w-full">
-            {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel} className="flex-1 font-bold py-4 h-auto rounded-xl">
-                Cancel
-              </Button>
-            )}
-            <Button type="submit" variant="default" className="flex-[2] font-bold py-4 h-auto rounded-xl flex items-center justify-center gap-2" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
-              ) : null}
-              {submitLabel}
-            </Button>
-          </div>
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-6 md:p-8 bg-background/80 backdrop-blur-2xl border-t border-border/50 flex flex-col sm:flex-row items-center justify-end gap-4 rounded-b-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+           {onCancel && (
+             <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto h-14 px-8 text-base font-bold rounded-xl border-border/80 hover:bg-muted/60 text-muted-foreground hover:text-foreground">
+               Cancel Setup
+             </Button>
+           )}
+           <Button type="submit" variant="default" className="w-full sm:w-min whitespace-nowrap h-14 px-10 text-base font-black rounded-xl shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-1 transition-all flex items-center justify-center gap-3" disabled={isSubmitting}>
+             {isSubmitting && <span className="material-symbols-outlined animate-spin text-[1.4rem]">refresh</span>}
+             {submitLabel}
+           </Button>
         </div>
       </form>
     </Form>

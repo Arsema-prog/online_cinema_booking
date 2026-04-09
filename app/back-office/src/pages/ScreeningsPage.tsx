@@ -13,13 +13,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -209,38 +209,39 @@ export default function ScreeningsPage() {
               className="pl-12 bg-background border-border h-14 rounded-2xl w-full shadow-lg font-bold placeholder:text-muted-foreground"
             />
           </div>
-          <Sheet open={open} onOpenChange={handleOpenChange}>
-            <SheetTrigger asChild>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
               <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary/20 font-bold shrink-0">
                 <span className="material-symbols-outlined mr-2">add</span> Schedule Showtime
               </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-card p-0 flex flex-col shadow-2xl">
-              <div className="px-10 py-8 border-b border-border shrink-0 bg-card relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-32 h-32 bg-primary/5 blur-[40px] rounded-full" />
-                <SheetHeader className="relative z-10">
-                  <SheetTitle className="text-3xl font-headline font-black tracking-tight text-foreground flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[2rem] text-primary">videocam</span> Session Config
-                  </SheetTitle>
-                  <SheetDescription className="text-base mt-2 text-muted-foreground font-medium">
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border-none shadow-2xl rounded-[3rem] max-h-[90vh] flex flex-col">
+              <div className="px-12 py-10 border-b border-border/40 shrink-0 relative overflow-hidden backdrop-blur-3xl bg-background/50">
+                <div className="absolute right-0 top-0 w-64 h-64 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
+                <DialogHeader className="relative z-10 text-left">
+                  <DialogTitle className="text-4xl font-headline font-black tracking-tight text-foreground flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[2.5rem] text-primary">videocam</span> Session Config
+                  </DialogTitle>
+                  <DialogDescription className="text-lg mt-3 text-muted-foreground font-medium">
                     Define a new screening session with dynamic time logic.
-                  </SheetDescription>
-                </SheetHeader>
+                  </DialogDescription>
+                </DialogHeader>
               </div>
               
-              <ModernForm
-                form={form as any}
-                schema={screeningSchema}
-                defaultValues={form.getValues()}
-                onSubmit={onSubmit as any}
-                sections={screeningFormSections}
-                isSubmitting={saving}
-                submitLabel={editingScreening ? 'Update Session' : 'Commit Schedule'}
-                onCancel={() => setOpen(false)}
-                className="flex-1 overflow-hidden"
-              />
-            </SheetContent>
-          </Sheet>
+              <div className="flex-1 overflow-y-auto">
+                <ModernForm
+                  form={form as any}
+                  schema={screeningSchema}
+                  defaultValues={form.getValues()}
+                  onSubmit={onSubmit as any}
+                  sections={screeningFormSections}
+                  isSubmitting={saving}
+                  submitLabel={editingScreening ? 'Update Session' : 'Commit Schedule'}
+                  onCancel={() => setOpen(false)}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -278,7 +279,7 @@ export default function ScreeningsPage() {
                 </TableRow>
               ) : (
                 filteredScreenings.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((scr) => (
-                  <TableRow key={scr.id} className="group hover:bg-muted/30 transition-colors border-b-border">
+                  <TableRow key={scr.id} className="group transition-colors border-b-border">
                     <TableCell>
                       <div className="flex items-center gap-4">
                         {scr.movie.posterUrl ? (

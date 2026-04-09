@@ -3,13 +3,13 @@ import type { Snack } from '../types';
 import { getSnacks, createSnack, updateSnack, deleteSnack } from '@/api/snacks';
 import { Button } from '@/components/ui/button';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -178,37 +178,38 @@ export default function SnacksPage() {
             />
           </div>
           {isManager && (
-            <Sheet open={open} onOpenChange={handleOpenChange}>
-              <SheetTrigger asChild>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
+              <DialogTrigger asChild>
                 <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary-container/20 font-bold shrink-0">
                   <span className="material-symbols-outlined mr-2">add</span> Add New
                 </Button>
-              </SheetTrigger>
-              <SheetContent className="sm:max-w-xl overflow-hidden border-l border-surface-container-highest/50 bg-surface-container-lowest p-0 flex flex-col shadow-2xl">
-                <div className="px-10 py-8 border-b border-surface-container-highest/40 shrink-0 bg-surface-container-lowest relative overflow-hidden">
-                  <div className="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 blur-[40px] rounded-full" />
-                  <SheetHeader className="relative z-10">
-                    <SheetTitle className="text-3xl font-headline font-black tracking-tight text-on-surface">
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-surface-container-lowest/95 backdrop-blur-2xl border-none shadow-2xl rounded-[3rem] max-h-[90vh] flex flex-col">
+                <div className="px-12 py-10 border-b border-surface-container-highest/40 shrink-0 relative overflow-hidden backdrop-blur-3xl bg-surface-container-lowest/50">
+                  <div className="absolute right-0 top-0 w-64 h-64 bg-primary-container/20 blur-[80px] rounded-full pointer-events-none" />
+                  <DialogHeader className="relative z-10 text-left">
+                    <DialogTitle className="text-4xl font-headline font-black tracking-tight text-on-surface">
                       {editingSnack ? 'Edit Concession' : 'New Concession'}
-                    </SheetTitle>
-                    <SheetDescription className="text-base mt-2 text-on-surface-variant/80 font-medium">
+                    </DialogTitle>
+                    <DialogDescription className="text-lg mt-3 text-on-surface-variant/80 font-medium">
                       {editingSnack ? 'Modify the specifics for this snack or drink item.' : 'Add a new product offering to your cinema menu.'}
-                    </SheetDescription>
-                  </SheetHeader>
+                    </DialogDescription>
+                  </DialogHeader>
                 </div>
                 
-                <ModernForm
-                  schema={snackSchema}
-                  defaultValues={form.getValues()}
-                  onSubmit={onSubmit as any}
-                  sections={snackFormSections}
-                  isSubmitting={saving}
-                  submitLabel={editingSnack ? 'Update Item' : 'Add to Menu'}
-                  onCancel={() => setOpen(false)}
-                  className="flex-1 overflow-hidden"
-                />
-              </SheetContent>
-            </Sheet>
+                <div className="flex-1 overflow-y-auto">
+                  <ModernForm
+                    schema={snackSchema}
+                    defaultValues={form.getValues()}
+                    onSubmit={onSubmit as any}
+                    sections={snackFormSections}
+                    isSubmitting={saving}
+                    submitLabel={editingSnack ? 'Update Item' : 'Add to Menu'}
+                    onCancel={() => setOpen(false)}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>
