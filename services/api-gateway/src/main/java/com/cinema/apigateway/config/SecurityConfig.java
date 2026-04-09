@@ -22,6 +22,7 @@ public class SecurityConfig {
                 .pathMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/actuator/**").permitAll()
                 .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/core/movies/**").permitAll()
+                .pathMatchers("/api/v1/support/api/auth/register").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
