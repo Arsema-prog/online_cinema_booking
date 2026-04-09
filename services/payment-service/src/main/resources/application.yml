@@ -46,8 +46,13 @@ spring:
   datasource:
     url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=payment
     username: postgres
-    password: postgres
+    password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: ${RABBITMQ_PASSWORD:guest}
   jpa:
     hibernate:
       ddl-auto: update
@@ -55,6 +60,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs}
 
 stripe:
   api-key: ${STRIPE_SECRET_KEY:sk_test_mock}
@@ -62,7 +72,7 @@ stripe:
 
 booking:
   service:
-    url: ${BOOKING_SERVICE_URL:http://localhost:8082}
+    url: ${BOOKING_SERVICE_URL:http://booking-service:8082}
 
 eureka:
   client:

@@ -2,32 +2,28 @@ package com.cinema.paymentservice.service;
 
 import com.cinema.paymentservice.model.Payment;
 import com.cinema.paymentservice.config.RabbitMQConfig;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.cinema.paymentservice.messaging.PaymentOutcomeEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PaymentEventPublisher {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentEventPublisher.class);
 
     private final RabbitTemplate rabbitTemplate;
 
-    public void publishPaymentSucceeded(Payment payment) {
-        Map<String, Object> event = new HashMap<>();
-        event.put("eventId", UUID.randomUUID().toString());
-        event.put("paymentId", payment.getId().toString());
-        event.put("bookingId", payment.getBookingId().toString());
-        event.put("stripeSessionId", payment.getStripeSessionId());
-        event.put("amount", payment.getAmount());
-        event.put("currency", payment.getCurrency());
-        event.put("occurredAt", Instant.now().toString());
+    public PaymentEventPublisher(RabbitTemplate rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
+    }
+
+    public void publishPaymentSucceeded(Payment payment, String stripeEventId) {
+        PaymentOutcomeEvent event = buildBaseEvent(payment, stripeEventId);
 
         try {
             rabbitTemplate.convertAndSend(
@@ -41,14 +37,9 @@ public class PaymentEventPublisher {
         }
     }
 
-    public void publishPaymentFailed(Payment payment, String reason) {
-        Map<String, Object> event = new HashMap<>();
-        event.put("eventId", UUID.randomUUID().toString());
-        event.put("paymentId", payment.getId().toString());
-        event.put("bookingId", payment.getBookingId().toString());
-        event.put("stripeSessionId", payment.getStripeSessionId());
-        event.put("reason", reason);
-        event.put("occurredAt", Instant.now().toString());
+    public void publishPaymentFailed(Payment payment, String stripeEventId, String reason) {
+        PaymentOutcomeEvent event = buildBaseEvent(payment, stripeEventId);
+        event.setReason(reason);
 
         try {
             rabbitTemplate.convertAndSend(
@@ -60,5 +51,18 @@ public class PaymentEventPublisher {
         } catch (Exception e) {
             log.error("Failed to publish payment.failed event", e);
         }
+    }
+
+    private PaymentOutcomeEvent buildBaseEvent(Payment payment, String stripeEventId) {
+        PaymentOutcomeEvent event = new PaymentOutcomeEvent();
+        event.setEventId(UUID.randomUUID().toString());
+        event.setPaymentId(payment.getId());
+        event.setBookingId(payment.getBookingId());
+        event.setStripeEventId(stripeEventId);
+        event.setStripeSessionId(payment.getStripeSessionId());
+        event.setAmount(payment.getAmount());
+        event.setCurrency(payment.getCurrency());
+        event.setOccurredAt(Instant.now());
+        return event;
     }
 }
