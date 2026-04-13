@@ -96,3 +96,21 @@ export interface Snack {
   available: boolean;
   imageUrl?: string;
 }
+
+export interface Ticket {
+  id: string;
+  ticketNumber: string;
+  bookingId: number;
+  userId: number;
+  movieTitle: string;
+  branchName: string;
+  screenName: string;
+  showTime: string;
+  seatNumber: string;
+  price: number;
+  qrObjectKey?: string;
+  pdfObjectKey?: string;
+  status: 'ACTIVE' | 'USED' | 'CANCELLED';
+  issuedAt: string;
+  validatedAt?: string;
+}

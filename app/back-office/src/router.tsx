@@ -9,6 +9,8 @@ import ScreeningsPage from './pages/ScreeningsPage';
 import UsersPage from './pages/UsersPage';
 import RulesPage from './pages/RulesPage';
 import SnacksPage from './pages/SnacksPage';
+import TicketsPage from './pages/TicketsPage';
+import TicketValidationRedirect from './components/TicketValidationRedirect';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleGuard } from './components/RoleGuard';
 import LandingPage from './pages/LandingPage';
@@ -21,6 +23,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/validate-ticket',
+    element: <TicketValidationRedirect />,
   },
   {
     element: <ProtectedRoute />,
@@ -89,6 +95,14 @@ export const router = createBrowserRouter([
             element: (
               <RoleGuard allowedRoles={['ADMIN', 'MANAGER', 'STAFF']}>
                 <SnacksPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'tickets',
+            element: (
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <TicketsPage />
               </RoleGuard>
             ),
           },

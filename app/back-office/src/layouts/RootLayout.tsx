@@ -6,19 +6,21 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { Menu, LogOut, LayoutDashboard, Building2, Film, Monitor, Calendar, Users, FileSignature, ShieldCheck, Clapperboard, CircleDot, ShoppingBasket, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/auth/AuthContext';
 import { ModeToggle } from '@/components/mode-toggle';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { to: '/branches', label: 'Branches', icon: 'store', roles: ['ADMIN'] },
-  { to: '/movies', label: 'Movies', icon: 'movie', roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { to: '/screens', label: 'Screens', icon: 'fullscreen', roles: ['ADMIN', 'MANAGER'] },
-  { to: '/screenings', label: 'Screenings', icon: 'schedule', roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { to: '/snacks', label: 'Inventory', icon: 'movie_filter', roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { to: '/users', label: 'Users', icon: 'group', roles: ['ADMIN', 'MANAGER'] },
-  { to: '/rules', label: 'Pricing', icon: 'request_quote', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
+  { to: '/branches', label: 'Branches', icon: Building2, roles: ['ADMIN'] },
+  { to: '/movies', label: 'Movies', icon: Film, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
+  { to: '/screens', label: 'Screens', icon: Monitor, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/screenings', label: 'Screenings', icon: Calendar, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
+  { to: '/snacks', label: 'Snacks', icon: ShoppingBasket, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
+  { to: '/users', label: 'Users', icon: Users, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/rules', label: 'Pricing', icon: FileSignature, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/tickets', label: 'Tickets', icon: QrCode, roles: ['ADMIN'] },
 ];
 
 export default function RootLayout() {
