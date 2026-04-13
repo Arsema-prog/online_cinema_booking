@@ -1,7 +1,6 @@
-import axios from "axios";
-import { env } from "../env";
+import apiClient from '../httpClient';
 
 export const getScreenings = async () => {
-    const res = await axios.get( `${env.coreServiceUrl}/screenings`);
+    const res = await apiClient.get(`/api/v1/core/screenings`);
     return res.data;
 };

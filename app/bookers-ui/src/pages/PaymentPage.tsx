@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { BookingDetails, getBookingDetails, initiateBookingPayment, updateBookingSnacks } from '../api/bookingApi';
 import { paymentService } from '../services/paymentService';
 import { CreditCard, Loader2, ArrowLeft } from 'lucide-react';
 import { env } from '../env';
 import { getAccessTokenGetter } from '../httpClient';
+import { Button } from '@/components/ui/Button';
 
 export const PaymentPage: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +14,9 @@ export const PaymentPage: React.FC = () => {
   
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookingSummary, setBookingSummary] = useState<BookingDetails | null>(null);
+  const [mockSessionId, setMockSessionId] = useState<string | null>(null);
+  const [completingDemoPayment, setCompletingDemoPayment] = useState(false);
   const normalizedSnacks = Array.isArray(snacks) ? snacks : [];
   const computedSnacksTotal = typeof snacksTotal === 'number'
     ? snacksTotal
@@ -20,9 +25,45 @@ export const PaymentPage: React.FC = () => {
           total + ((item?.snack?.price ?? item?.price ?? 0) * (item?.quantity ?? 0)),
         0
       );
-  const computedTotalAmount = (totalAmount ?? 0) > 0
-    ? totalAmount
-    : (seatTotal || 0) + computedSnacksTotal;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!bookingId) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const loadBookingSummary = async () => {
+      try {
+        const booking = await getBookingDetails(bookingId);
+        if (!cancelled) {
+          setBookingSummary(booking);
+        }
+      } catch (fetchError) {
+        if (!cancelled) {
+          console.error('Failed to load payment summary for booking', fetchError);
+        }
+      }
+    };
+
+    loadBookingSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId]);
+
+  const computedSeatTotal = bookingSummary
+    ? Math.max(bookingSummary.totalAmount - bookingSummary.snacksTotal, 0)
+    : (seatTotal || 0);
+
+  const computedTotalAmount = bookingSummary?.totalAmount && bookingSummary.totalAmount > 0
+    ? bookingSummary.totalAmount
+    : (totalAmount ?? 0) > 0
+      ? totalAmount
+      : computedSeatTotal + computedSnacksTotal;
 
   useEffect(() => {
     if (!bookingId) {
@@ -37,7 +78,7 @@ export const PaymentPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPay, bookingId]);
 
-  const resolveUserEmail = async (token: string | null): Promise<string | null> => {
+  const resolveUserEmail = async (token: string | null | undefined): Promise<string | null> => {
     let email: string | null = null;
 
     if (token) {
@@ -83,25 +124,31 @@ export const PaymentPage: React.FC = () => {
   const handlePayment = async () => {
     setProcessing(true);
     setError(null);
+    setMockSessionId(null);
     try {
       if (!bookingId) {
         throw new Error('Missing booking reference. Please restart booking.');
       }
 
       const snacksTotalToSend = computedSnacksTotal;
-      const totalForPayment = computedTotalAmount;
+      let latestBooking = bookingSummary;
 
       // First, update booking with snacks if any
       if (normalizedSnacks.length > 0) {
-        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/snacks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            snackDetails: normalizedSnacks.map((s: any) => `${s.quantity}x ${s.snack?.name ?? s.name ?? 'Snack'}`).join(', '),
-            snacksTotal: snacksTotalToSend
-          })
-        });
+        latestBooking = await updateBookingSnacks(
+          bookingId,
+          normalizedSnacks.map((s: any) => `${s.quantity}x ${s.snack?.name ?? s.name ?? 'Snack'}`).join(', '),
+          snacksTotalToSend
+        );
+        setBookingSummary(latestBooking);
       }
+
+      const paymentBooking = await initiateBookingPayment(bookingId);
+      setBookingSummary(paymentBooking);
+
+      const totalForPayment = paymentBooking.totalAmount > 0
+        ? paymentBooking.totalAmount
+        : latestBooking?.totalAmount ?? computedTotalAmount;
 
       if (!totalForPayment || totalForPayment <= 0) {
         throw new Error('Total amount is missing or invalid for this booking.');
@@ -109,19 +156,13 @@ export const PaymentPage: React.FC = () => {
 
       const token = getAccessTokenGetter()();
       const userEmail = await resolveUserEmail(token);
-      if (userEmail) {
+      const checkoutEmail = userEmail ?? "";
+      if (checkoutEmail) {
         try {
-          sessionStorage.setItem('bookers_last_checkout_email', userEmail);
+          sessionStorage.setItem('bookers_last_checkout_email', checkoutEmail);
         } catch {}
       }
-      
-      // Ensure booking is marked as payment initiated (best effort)
-      try {
-        await fetch(`${env.bookingServiceUrl}/bookings/${bookingId}/initiate-payment`, { method: 'POST' });
-      } catch (e) {
-        console.warn('Failed to notify booking service about payment initiation', e);
-      }
-      
+
       // Create Stripe checkout session
       const session = await paymentService.createCheckoutSession(
         bookingId,
@@ -132,7 +173,14 @@ export const PaymentPage: React.FC = () => {
         }
       );
 
-      // Hosted checkout URL redirect (redirectToCheckout removed in latest Stripe.js)
+      if (session.sessionId?.startsWith('mock_session_')) {
+        // In local mock mode we keep users on this page and ask for an explicit
+        // payment confirmation click, instead of jumping directly to success.
+        setMockSessionId(session.sessionId);
+        setProcessing(false);
+        return;
+      }
+
       window.location.href = session.url;
       return;
       
@@ -143,64 +191,112 @@ export const PaymentPage: React.FC = () => {
     }
   };
 
+  const handleCompleteDemoPayment = async () => {
+    if (!bookingId || !mockSessionId) {
+      setError('Missing demo payment session. Please retry checkout.');
+      return;
+    }
+
+    setCompletingDemoPayment(true);
+    setError(null);
+    try {
+      await paymentService.completeMockCheckout(mockSessionId);
+      navigate(`/bookers/booking/success?bookingId=${bookingId}&session_id=${mockSessionId}`, {
+        replace: true
+      });
+    } catch (completionError) {
+      console.error('Demo payment completion failed:', completionError);
+      setError((completionError as Error)?.message ?? 'Failed to complete demo payment. Please try again.');
+    } finally {
+      setCompletingDemoPayment(false);
+    }
+  };
+
   if (!bookingId) {
-    return <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen bg-background text-foreground flex items-center justify-center">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-md w-full mx-auto px-4 py-12">
-        <button
+        <Button
+          variant="outline"
           onClick={() => navigate(-1)}
-          className="mb-6 p-2 bg-slate-800 rounded-lg hover:bg-indigo-600 transition-colors inline-flex items-center gap-2"
+          className="mb-6 rounded-lg inline-flex items-center gap-2"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
           Back
-        </button>
+        </Button>
 
-        <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-          <h1 className="text-2xl font-bold mb-6">Payment Summary</h1>
+        <div className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-sm">
+          <h1 className="text-2xl font-headline font-bold mb-6 text-card-foreground">Payment Summary</h1>
           
-          <div className="space-y-4 mb-6">
-            <div className="flex justify-between pb-2 border-b border-slate-700">
-              <span>Seats ({seats?.length})</span>
-              <span>${(seatTotal ?? 0).toFixed(2)}</span>
+          <div className="space-y-4 mb-8">
+            <div className="flex justify-between pb-3 border-b border-border text-sm">
+              <span className="text-muted-foreground font-medium">Seats ({seats?.length})</span>
+              <span className="font-bold">${computedSeatTotal.toFixed(2)}</span>
             </div>
             
             {normalizedSnacks.length > 0 && (
-              <div className="flex justify-between pb-2 border-b border-slate-700">
-                <span>Snacks</span>
-                <span>${computedSnacksTotal.toFixed(2)}</span>
+              <div className="flex justify-between pb-3 border-b border-border text-sm">
+                <span className="text-muted-foreground font-medium">Snacks</span>
+                <span className="font-bold">${computedSnacksTotal.toFixed(2)}</span>
               </div>
             )}
             
             <div className="flex justify-between text-lg font-bold pt-2">
-              <span>Total</span>
-              <span className="text-indigo-400">${computedTotalAmount.toFixed(2)}</span>
+              <span className="text-foreground">Total</span>
+              <span className="text-primary">${computedTotalAmount.toFixed(2)}</span>
             </div>
           </div>
           
-          <button
+          <Button
             onClick={handlePayment}
-            disabled={processing}
-            className="w-full py-3 bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={processing || completingDemoPayment}
+            className="w-full h-12 rounded-xl flex items-center justify-center gap-2 shadow-sm font-bold text-base"
           >
             {processing ? (
-              <Loader2 className="animate-spin" size={20} />
+              <Loader2 className="animate-spin" size={18} />
             ) : (
-              <CreditCard size={20} />
+              <CreditCard size={18} />
             )}
             {processing ? 'Processing...' : 'Pay with Stripe'}
-          </button>
+          </Button>
+
+          {mockSessionId && (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <div className="text-sm font-bold text-amber-700 mb-1">Demo payment mode</div>
+              <p className="text-xs text-amber-700/90 mb-4">
+                Stripe is running in local mock mode. Complete payment explicitly to confirm your seats.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleCompleteDemoPayment}
+                  disabled={completingDemoPayment || processing}
+                  className="flex-1"
+                >
+                  {completingDemoPayment ? 'Confirming...' : 'Complete Demo Payment'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/bookers/booking/cancel?bookingId=${bookingId}`)}
+                  disabled={completingDemoPayment || processing}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
 
           {error && (
-            <div className="mt-4 text-red-300 text-sm bg-red-900/40 border border-red-400/40 rounded-xl p-3">
+            <div className="mt-6 text-destructive text-sm bg-destructive/10 border border-destructive/20 rounded-xl p-3 font-medium text-center">
               {error}
             </div>
           )}
           
-          <p className="text-center text-slate-500 text-sm mt-4">
-            You will be redirected to Stripe secure checkout page
+          <p className="text-center text-muted-foreground text-xs mt-6 uppercase tracking-wider font-bold">
+            You will be redirected to securely complete payment.
           </p>
         </div>
       </div>

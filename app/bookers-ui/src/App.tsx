@@ -2,15 +2,16 @@
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./auth";
 import { AppRoutes } from "./AppRoutes";
+import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css"; 
 export const App = () => {
-   console.log("🟢 App rendered at", new Date().toISOString());
-  
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </QueryProvider>
     </BrowserRouter>
   );
 };

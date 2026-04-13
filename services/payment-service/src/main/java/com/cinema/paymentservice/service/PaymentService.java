@@ -7,10 +7,9 @@ import com.cinema.paymentservice.repository.PaymentRepository;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
-import com.stripe.model.Event;
-import com.stripe.net.Webhook;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.stripe.net.RequestOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.stereotype.Service;
@@ -21,35 +20,56 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
     private final PaymentRepository paymentRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+    private final PaymentEventPublisher eventPublisher;
 
     @Value("${stripe.api-key}")
     private String stripeApiKey;
 
-    @Value("${stripe.webhook-secret}")
-    private String webhookSecret;
-
-    @Value("${booking.service.url:http://localhost:8082}")
+    @Value("${booking.service.url:http://booking-service}")
     private String bookingServiceUrl;
+
+    public PaymentService(
+            PaymentRepository paymentRepository,
+            RestTemplate restTemplate,
+            PaymentEventPublisher eventPublisher
+    ) {
+        this.paymentRepository = paymentRepository;
+        this.restTemplate = restTemplate;
+        this.eventPublisher = eventPublisher;
+    }
 
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeApiKey;
     }
 
-    public CheckoutSessionResponse createCheckoutSession(CreateCheckoutSessionRequest request) throws StripeException {
+    private boolean isMockMode() {
+        return "sk_test_mock".equals(stripeApiKey);
+    }
+
+    public CheckoutSessionResponse createCheckoutSession(
+            CreateCheckoutSessionRequest request,
+            String callerUserId,
+            boolean privilegedCaller
+    ) throws StripeException {
         log.info("Creating checkout session for booking: {}", request.getBookingId());
 
+        BookingCheckoutResponse bookingSnapshot = getBookingSnapshot(request.getBookingId());
+        validateBookingOwnership(bookingSnapshot, request.getBookingId(), callerUserId, privilegedCaller);
+        validateBookingState(bookingSnapshot, request.getBookingId());
+
         Long clientAmount = request.getAmount() != null ? request.getAmount() : 0L;
-        Long amountInCents = resolveAmountFromBooking(request.getBookingId(), clientAmount);
+        Long amountInCents = resolveAmountFromBooking(clientAmount, bookingSnapshot);
         if (amountInCents == null || amountInCents <= 0) {
             throw new IllegalArgumentException("Amount must be greater than zero");
         }
@@ -57,14 +77,26 @@ public class PaymentService {
                 ? request.getCurrency().toUpperCase()
                 : "USD";
 
+        Optional<Payment> existingPending = paymentRepository
+                .findTopByBookingIdAndStatusOrderByCreatedAtDesc(request.getBookingId(), Payment.PaymentStatus.PENDING);
+        if (existingPending.isPresent() && existingPending.get().getStripeSessionId() != null) {
+            notifyBookingPaymentInitiated(request.getBookingId());
+            return reopenExistingCheckoutSession(existingPending.get(), request.getBookingId());
+        }
+
         // For development with mock key, return mock response
-        if (stripeApiKey.equals("sk_test_mock")) {
+        if (isMockMode()) {
             log.info("Using mock checkout session response");
-            String mockUrl = "http://localhost:5174/bookers/booking/success?bookingId=" + request.getBookingId() + "&session_id=mock_" + request.getBookingId();
-            Payment mockPayment = buildPendingPayment(request.getBookingId(), "mock_session_" + request.getBookingId(), amountInCents, normalizedCurrency);
+            String sessionId = "mock_session_" + request.getBookingId();
+            String mockUrl = buildMockCheckoutUrl(request.getBookingId(), sessionId);
+            Payment mockPayment = paymentRepository.findByStripeSessionId(sessionId)
+                    .orElseGet(() -> buildPendingPayment(request.getBookingId(), sessionId, amountInCents, normalizedCurrency));
+            mockPayment.setAmount(amountInCents);
+            mockPayment.setCurrency(normalizedCurrency);
+            mockPayment.setStatus(Payment.PaymentStatus.PENDING);
             paymentRepository.save(mockPayment);
             notifyBookingPaymentInitiated(request.getBookingId());
-            return new CheckoutSessionResponse("mock_session_" + request.getBookingId(), mockUrl);
+            return new CheckoutSessionResponse(sessionId, mockUrl);
         }
 
         // Real Stripe integration
@@ -90,74 +122,56 @@ public class PaymentService {
         metadata.put("bookingId", request.getBookingId().toString());
         params.put("metadata", metadata);
 
-        Session session = Session.create(params);
+        RequestOptions requestOptions = RequestOptions.builder()
+                .setIdempotencyKey("checkout-session:" + request.getBookingId())
+                .build();
 
-        Payment payment = buildPendingPayment(request.getBookingId(), session.getId(), amountInCents, normalizedCurrency);
+        Session session = Session.create(params, requestOptions);
+
+        Payment payment = paymentRepository.findByStripeSessionId(session.getId())
+                .orElseGet(() -> buildPendingPayment(request.getBookingId(), session.getId(), amountInCents, normalizedCurrency));
+        payment.setAmount(amountInCents);
+        payment.setCurrency(normalizedCurrency);
+        payment.setStatus(Payment.PaymentStatus.PENDING);
         paymentRepository.save(payment);
         notifyBookingPaymentInitiated(request.getBookingId());
 
         return new CheckoutSessionResponse(session.getId(), session.getUrl());
     }
 
-    public void handleWebhook(String payload, String sigHeader) throws Exception {
-        log.info("Received webhook: {}", payload);
-
-        Event event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
-
-        switch (event.getType()) {
-            case "checkout.session.completed":
-                handleCheckoutSessionCompleted(event);
-                break;
-            case "checkout.session.async_payment_failed":
-                handlePaymentFailed(event);
-                break;
-            default:
-                log.info("Unhandled event type: {}", event.getType());
+    public CheckoutSessionResponse completeMockCheckout(
+            String sessionId,
+            String callerUserId,
+            boolean privilegedCaller
+    ) {
+        if (!isMockMode()) {
+            throw new IllegalStateException("Mock checkout completion is only available in mock payment mode");
         }
-    }
-
-    private void handleCheckoutSessionCompleted(Event event) {
-        Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (session != null) {
-            String bookingId = session.getMetadata().get("bookingId");
-            log.info("Payment completed for booking: {}", bookingId);
-
-            // Here you would call the booking service to confirm the booking
-            try {
-                if (bookingId != null) {
-                    String url = bookingServiceUrl + "/bookings/" + bookingId + "/confirm";
-                    log.info("Notifying booking service to confirm booking via: {}", url);
-                    restTemplate.postForEntity(url, null, Void.class);
-                    log.info("Booking {} confirmed via booking service", bookingId);
-                } else {
-                    log.warn("No bookingId metadata present on Stripe session {}");
-                }
-            } catch (Exception e) {
-                log.error("Failed to confirm booking {} via booking service: {}", bookingId, e.getMessage());
-            }
+        if (sessionId == null || sessionId.isBlank()) {
+            throw new IllegalArgumentException("Session ID is required");
         }
-    }
 
-    private void handlePaymentFailed(Event event) {
-        Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (session != null) {
-            String bookingId = session.getMetadata().get("bookingId");
-            log.info("Payment failed for booking: {}", bookingId);
+        Payment payment = paymentRepository.findByStripeSessionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Payment not found for session " + sessionId));
 
-            // Here you would cancel the hold in the booking service
-            try {
-                if (bookingId != null) {
-                    String url = bookingServiceUrl + "/bookings/" + bookingId + "/fail";
-                    log.info("Notifying booking service to fail/cancel booking via: {}", url);
-                    restTemplate.postForEntity(url, null, Void.class);
-                    log.info("Booking {} marked failed via booking service", bookingId);
-                } else {
-                    log.warn("No bookingId metadata present on Stripe session {}");
-                }
-            } catch (Exception e) {
-                log.error("Failed to notify booking service to fail booking {}: {}", bookingId, e.getMessage());
-            }
+        BookingCheckoutResponse bookingSnapshot = getBookingSnapshot(payment.getBookingId());
+        validateBookingOwnership(bookingSnapshot, payment.getBookingId(), callerUserId, privilegedCaller);
+        validateBookingState(bookingSnapshot, payment.getBookingId());
+
+        if (payment.getStatus() == Payment.PaymentStatus.SUCCEEDED) {
+            return new CheckoutSessionResponse(sessionId, buildMockCheckoutUrl(payment.getBookingId(), sessionId));
         }
+
+        String mockEventId = "mock_evt_" + UUID.randomUUID();
+        payment.setStripeEventId(mockEventId);
+        payment.setStatus(Payment.PaymentStatus.SUCCEEDED);
+        payment.setFailureReason(null);
+        paymentRepository.save(payment);
+
+        eventPublisher.publishPaymentSucceeded(payment, mockEventId);
+        log.info("Completed mock checkout for booking {}", payment.getBookingId());
+
+        return new CheckoutSessionResponse(sessionId, buildMockCheckoutUrl(payment.getBookingId(), sessionId));
     }
 
     private Payment buildPendingPayment(UUID bookingId, String sessionId, Long amount, String currency) {
@@ -171,29 +185,98 @@ public class PaymentService {
         return payment;
     }
 
-    private Long resolveAmountFromBooking(UUID bookingId, Long requestedAmount) {
-        if (bookingId == null) {
+    private Long resolveAmountFromBooking(Long requestedAmount, BookingCheckoutResponse bookingSnapshot) {
+        if (bookingSnapshot == null || bookingSnapshot.getTotalAmount() == null) {
             return requestedAmount;
         }
 
         try {
-            var response = restTemplate.getForEntity(bookingServiceUrl + "/bookings/" + bookingId, BookingAmountResponse.class);
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().totalAmount() != null) {
-                BigDecimal total = response.getBody().totalAmount();
-                Long cents = total.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValue();
-                log.info("Resolved amount {} cents from booking service for booking {}", cents, bookingId);
-                return cents;
-            }
+            BigDecimal total = bookingSnapshot.getTotalAmount();
+            Long cents = total.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValue();
+            log.info("Resolved amount {} cents from booking service for booking {}", cents, bookingSnapshot.getId());
+            return cents;
         } catch (Exception e) {
-            log.warn("Failed to resolve amount from booking service for {}. Falling back to client amount. Error: {}", bookingId, e.getMessage());
+            log.warn("Failed to resolve booking amount for {}. Falling back to client amount. Error: {}", bookingSnapshot.getId(), e.getMessage());
         }
 
         return requestedAmount;
     }
 
-    // Minimal DTO for booking lookup
-    private record BookingAmountResponse(BigDecimal totalAmount) {}
+    private BookingCheckoutResponse getBookingSnapshot(UUID bookingId) {
+        if (bookingId == null) {
+            throw new IllegalArgumentException("Booking ID is required");
+        }
+
+        try {
+            var response = restTemplate.getForEntity(
+                    bookingServiceUrl + "/bookings/" + bookingId,
+                    BookingCheckoutResponse.class
+            );
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to load booking {} from booking service: {}", bookingId, e.getMessage());
+        }
+
+        throw new IllegalStateException("Unable to load booking details for " + bookingId);
+    }
+
+    private void validateBookingState(BookingCheckoutResponse bookingSnapshot, UUID bookingId) {
+        String status = bookingSnapshot.getStatus();
+        if (status == null || status.isBlank()) {
+            throw new IllegalStateException("Booking " + bookingId + " has no status");
+        }
+
+        if ("CONFIRMED".equals(status)) {
+            throw new IllegalStateException("Booking " + bookingId + " is already confirmed");
+        }
+        if ("FAILED".equals(status) || "EXPIRED".equals(status) || "CANCELLED".equals(status)) {
+            throw new IllegalStateException("Booking " + bookingId + " is not payable in state " + status);
+        }
+        if (!"SEATS_HELD".equals(status) && !"SNACKS_SELECTED".equals(status) && !"PAYMENT_PENDING".equals(status)) {
+            throw new IllegalStateException("Booking " + bookingId + " is not ready for checkout in state " + status);
+        }
+    }
+
+    private void validateBookingOwnership(
+            BookingCheckoutResponse bookingSnapshot,
+            UUID bookingId,
+            String callerUserId,
+            boolean privilegedCaller
+    ) {
+        if (privilegedCaller) {
+            return;
+        }
+
+        if (callerUserId == null || callerUserId.isBlank()) {
+            throw new IllegalStateException("Authenticated user identifier is missing");
+        }
+
+        if (bookingSnapshot.getUserId() == null) {
+            throw new IllegalStateException("Booking " + bookingId + " has no owner");
+        }
+
+        if (!bookingSnapshot.getUserId().toString().equals(callerUserId)) {
+            throw new IllegalStateException("User is not allowed to pay for booking " + bookingId);
+        }
+    }
+
+    private CheckoutSessionResponse reopenExistingCheckoutSession(Payment payment, UUID bookingId) throws StripeException {
+        if (isMockMode()) {
+            return new CheckoutSessionResponse(
+                    payment.getStripeSessionId(),
+                    buildMockCheckoutUrl(bookingId, payment.getStripeSessionId())
+            );
+        }
+
+        Session session = Session.retrieve(payment.getStripeSessionId());
+        return new CheckoutSessionResponse(session.getId(), session.getUrl());
+    }
+
+    private String buildMockCheckoutUrl(UUID bookingId, String sessionId) {
+        return "http://localhost:5174/bookers/booking/success?bookingId=" + bookingId + "&session_id=" + sessionId;
+    }
 
     private void notifyBookingPaymentInitiated(UUID bookingId) {
         if (bookingId == null) {
@@ -203,6 +286,45 @@ public class PaymentService {
             restTemplate.postForEntity(bookingServiceUrl + "/bookings/" + bookingId + "/initiate-payment", null, Void.class);
         } catch (Exception e) {
             log.warn("Failed to notify booking service about payment initiation for {}: {}", bookingId, e.getMessage());
+        }
+    }
+
+    public static class BookingCheckoutResponse {
+        private UUID id;
+        private UUID userId;
+        private String status;
+        private BigDecimal totalAmount;
+
+        public UUID getId() {
+            return id;
+        }
+
+        public void setId(UUID id) {
+            this.id = id;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public UUID getUserId() {
+            return userId;
+        }
+
+        public void setUserId(UUID userId) {
+            this.userId = userId;
+        }
+
+        public BigDecimal getTotalAmount() {
+            return totalAmount;
+        }
+
+        public void setTotalAmount(BigDecimal totalAmount) {
+            this.totalAmount = totalAmount;
         }
     }
 }

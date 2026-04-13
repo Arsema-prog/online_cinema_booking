@@ -14,13 +14,13 @@ export interface Branch {
 export interface Movie {
   id: number;
   title: string;
+  posterUrl?: string;
   genre: string;
   duration: number;
   description?: string;
   director?: string;
   releaseDate?: string;
   rating?: number;
-  posterUrl?: string;
   basePrice?: number;
   isActive?: boolean;
 }

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Service
@@ -28,15 +29,15 @@ public class MovieService {
                 .orElseThrow(() -> new EntityNotFoundException("Movie not found: " + id));
     }
 
-    public Movie createMovie(Movie movie) {
-        if (movie.getPosterUrl() != null && !movie.getPosterUrl().isEmpty() && movie.getPosterUrl().startsWith("http")) {
-            String url = minioService.fetchAndUploadImage(movie.getPosterUrl());
-            movie.setPosterUrl(url);
+    public Movie createMovie(Movie movie, MultipartFile poster) {
+        Movie savedMovie = movieRepository.save(movie);
+        if (poster != null && !poster.isEmpty()) {
+            minioService.uploadMoviePoster(savedMovie.getId(), poster);
         }
-        return movieRepository.save(movie);
+        return savedMovie;
     }
 
-    public Movie updateMovie(Long id, Movie updated) {
+    public Movie updateMovie(Long id, Movie updated, MultipartFile poster) {
         Movie movie = getMovieById(id);
         movie.setTitle(updated.getTitle());
         movie.setGenre(updated.getGenre());
@@ -46,9 +47,13 @@ public class MovieService {
         movie.setReleaseDate(updated.getReleaseDate());
         movie.setRating(updated.getRating());
         movie.setBasePrice(updated.getBasePrice());
-        movie.setPosterUrl(updated.getPosterUrl());
         movie.setIsActive(updated.getIsActive() != null ? updated.getIsActive() : true);
-        return movieRepository.save(movie);
+        
+        Movie savedMovie = movieRepository.save(movie);
+        if (poster != null && !poster.isEmpty()) {
+            minioService.uploadMoviePoster(savedMovie.getId(), poster);
+        }
+        return savedMovie;
     }
 
     public void deleteMovie(Long id) {

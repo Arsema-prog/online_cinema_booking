@@ -1,8 +1,9 @@
-// pages/MoviesPage.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { coreClient } from "../httpClient";
+import { apiClient } from "../httpClient";
 import { Film, Building, MapPin, ChevronRight, Star, Search, X } from 'lucide-react';
+import { env } from '../env';
+import { Input } from "@/components/ui/Input";
 
 const toArray = <T,>(payload: unknown): T[] => {
   if (Array.isArray(payload)) return payload as T[];
@@ -32,9 +33,9 @@ export const MoviesPage: React.FC = () => {
     const fetchPageData = async () => {
       setLoading(true);
       const [moviesRes, cinemasRes, allMoviesRes] = await Promise.allSettled([
-        coreClient.get('/movies/trending'),
-        coreClient.get('/branches'),
-        coreClient.get('/movies')
+        apiClient.get('/api/v1/core/movies/trending'),
+        apiClient.get('/api/v1/core/branches'),
+        apiClient.get('/api/v1/core/movies')
       ]);
 
       if (moviesRes.status === "fulfilled") {
@@ -87,12 +88,12 @@ export const MoviesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-cinema-gradient" style={{ minHeight: '100vh', padding: 20 }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <h1 style={{ color: 'white', fontSize: 32, marginBottom: 24 }}><div className="skeleton" style={{ width: '200px', height: '40px', borderRadius: 8 }}></div></h1>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
+      <div className="min-h-screen bg-background p-8 pt-24">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="skeleton w-64 h-12 rounded-lg" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="glass-card skeleton" style={{ height: 450, borderRadius: 16 }}></div>
+              <div key={i} className="skeleton h-[400px] rounded-2xl" />
             ))}
           </div>
         </div>
@@ -101,80 +102,37 @@ export const MoviesPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-cinema-gradient" style={{ 
-      maxWidth: '100vw', 
-      padding: 20,
-      minHeight: '100vh',
-      width: '100%'
-    }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: "60px" }}>
+    <div className="min-h-screen bg-background p-4 md:p-8 pt-24">
+      <div className="max-w-6xl mx-auto pb-20 space-y-16 animate-fadeIn">
 
         {/* Search Bar */}
-        <div style={{ marginBottom: '40px' }}>
-          <div style={{
-            position: 'relative',
-            maxWidth: '600px',
-            margin: '0 auto'
-          }}>
-            <Search
-              size={20}
-              style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#8b5cf6',
-                pointerEvents: 'none'
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search movies by title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '14px 48px',
-                background: 'rgba(30, 41, 59, 0.8)',
-                border: '1px solid rgba(139, 92, 246, 0.4)',
-                borderRadius: '14px',
-                color: 'white',
-                fontSize: '16px',
-                outline: 'none',
-                boxSizing: 'border-box',
-                backdropFilter: 'blur(8px)',
-                transition: 'border-color 0.2s'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.4)'}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <X size={18} />
-              </button>
-            )}
-          </div>
+        <div className="relative max-w-2xl mx-auto group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5 pointer-events-none group-focus-within:text-primary transition-colors" />
+          <Input
+            id="movie-search"
+            type="text"
+            placeholder="Search movies by title..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 pr-12 h-14 rounded-full bg-card border-border text-lg shadow-sm focus-visible:ring-primary/50"
+            aria-label="Search movies by title"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear movie search"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
-        {/* Search Results or Trending Section */}
-        <div style={{ marginBottom: '60px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <Film style={{ color: '#8b5cf6' }} size={28} />
-            <h2 style={{ fontSize: '28px', margin: 0, color: 'white' }}>
+        {/* Results Section */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <Film className="h-8 w-8 text-primary" />
+            <h2 className="font-headline text-3xl font-bold text-foreground">
               {isSearching
                 ? `Search results for "${searchQuery}"${searching ? '' : ` (${searchResults.length})`}`
                 : 'Trending This Week'
@@ -183,66 +141,56 @@ export const MoviesPage: React.FC = () => {
           </div>
           
           {searching ? (
-            <div style={{ display: 'flex', gap: '24px', paddingBottom: '20px' }}>
-              {[1,2,3].map(i => (
-                <div key={i} className="skeleton" style={{ minWidth: '220px', height: '380px', borderRadius: '16px', flexShrink: 0 }} />
+             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+              {[1,2,3,4].map(i => (
+                 <div key={i} className="skeleton h-[420px] rounded-2xl" />
               ))}
             </div>
           ) : (
-            <div style={{ 
-              display: 'flex', 
-              overflowX: isSearching ? 'visible' : 'auto',
-              flexWrap: isSearching ? 'wrap' : 'nowrap',
-              gap: '24px', 
-              paddingBottom: '20px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#8b5cf6 rgba(255,255,255,0.05)'
-            }}>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {displayMovies.map((movie) => (
-                <div
+                <button
                   key={movie.id}
                   onClick={() => navigate(`/bookers/movies/${movie.id}`, { state: { title: movie.title } })}
-                  style={{
-                    minWidth: '220px',
-                    width: isSearching ? '220px' : undefined,
-                    background: 'rgba(30, 41, 59, 0.7)',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    flexShrink: 0,
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  className="group relative flex flex-col text-left bg-card overflow-hidden rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300"
+                  aria-label={`Open details for ${movie.title || 'movie'}`}
                 >
-                  <div style={{ height: '300px', background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {movie.posterUrl ? (
+                  <div className="relative aspect-[2/3] w-full bg-muted overflow-hidden">
+                    {movie.id ? (
                       <img
-                        src={movie.posterUrl}
+                        src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`}
                         alt={movie.title || 'Movie poster'}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                     ) : (
-                      <span style={{ fontSize: '48px' }}>🎬</span>
+                      <div className="flex items-center justify-center h-full text-5xl">🎬</div>
                     )}
+                    
+                    {/* Dark gradient mapping inside the card top to ensure readability of rating */}
+                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background/80 to-transparent opacity-80" />
+                    
                     {movie.rating != null && (
-                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.8)', padding: '4px 8px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold', color: '#fbbf24' }}>
-                        <Star size={12} fill="#fbbf24" /> {movie.rating.toFixed(1)}
+                      <div className="absolute top-3 right-3 bg-background/90 backdrop-blur-md px-2 py-1 rounded-md flex items-center gap-1.5 border border-border">
+                        <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                        <span className="text-xs font-bold text-foreground">{movie.rating.toFixed(1)}</span>
                       </div>
                     )}
                   </div>
-                  <div style={{ padding: '16px', color: 'white' }}>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{movie.title}</h3>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '13px' }}>
-                      <span>{movie.genre}</span>
-                      <span>{movie.duration}m</span>
+                  
+                  <div className="p-4 flex-1 flex flex-col">
+                    <h3 className="font-headline text-lg font-bold text-card-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{movie.title}</h3>
+                    <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
+                      <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-sm bg-muted text-muted-foreground">{movie.genre || "Action"}</span>
+                      <span className="text-xs font-medium text-muted-foreground">{movie.duration}m</span>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
               {displayMovies.length === 0 && (
-                <div style={{ color: '#94a3b8', textAlign: 'center', width: '100%', padding: '40px 0' }}>
+                <div className="col-span-full py-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border border-border border-dashed">
                   {isSearching ? `No movies found matching "${searchQuery}"` : 'No trending movies available.'}
                 </div>
               )}
@@ -250,48 +198,35 @@ export const MoviesPage: React.FC = () => {
           )}
         </div>
 
-        {/* Cinematic Locations Section */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <Building style={{ color: '#8b5cf6' }} size={28} />
-            <h2 style={{ fontSize: '28px', margin: 0, color: 'white' }}>Available Cinemas</h2>
+        {/* Cinemas Section */}
+        <div className="space-y-6 pt-8">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <Building className="h-8 w-8 text-muted-foreground" />
+            <h2 className="font-headline text-3xl font-bold text-foreground">Available Cinemas</h2>
           </div>
           
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '20px'
-          }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cinemas.map((cinema) => (
-              <div 
+              <button
                 key={cinema.id}
                 onClick={() => navigate(`/bookers/cinemas/${cinema.id}/movies`)}
-                style={{
-                  background: 'rgba(30, 41, 59, 0.6)',
-                  border: '1px solid rgba(139, 92, 246, 0.2)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'background 0.2s, transform 0.2s'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(30, 41, 59, 0.6)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                className="group flex flex-col items-start p-6 bg-card rounded-2xl border border-border hover:border-primary/50 shadow-sm transition-all duration-300"
+                aria-label={`Browse movies for ${cinema.name}`}
               >
-                <div style={{ color: 'white' }}>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600 }}>{cinema.name}</h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '14px' }}>
-                    <MapPin size={14} />
-                    {cinema.address}
+                <div className="flex items-center justify-between w-full mb-4">
+                  <h3 className="font-headline text-xl font-bold text-card-foreground group-hover:text-primary transition-colors">{cinema.name}</h3>
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
                   </div>
                 </div>
-                <ChevronRight style={{ color: '#8b5cf6' }} />
-              </div>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span className="line-clamp-1">{cinema.address}</span>
+                </div>
+              </button>
             ))}
             {cinemas.length === 0 && (
-              <p style={{ color: '#94a3b8' }}>Loading cinemas...</p>
+              <div className="col-span-full py-8 text-muted-foreground">Loading cinemas...</div>
             )}
           </div>
         </div>

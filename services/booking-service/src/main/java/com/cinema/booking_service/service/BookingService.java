@@ -10,6 +10,7 @@ import com.cinema.booking_service.dto.BookingSeatDto;
 import com.cinema.booking_service.dto.HistorySeatDto;
 import com.cinema.booking_service.dto.UserHistoryBookingDto;
 import com.cinema.booking_service.event.SeatStatusEventPublisher;
+import com.cinema.booking_service.messaging.HoldExpirationPublisher;
 import com.cinema.booking_service.model.HoldRequest;
 import com.cinema.booking_service.model.HoldResponse;
 import com.cinema.booking_service.model.SeatAvailability;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -34,7 +36,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.cinema.booking_service.config.RabbitConfig.BOOKING_EXCHANGE;
@@ -51,6 +52,7 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final SeatStatusEventPublisher eventPublisher;
     private final WebSocketService webSocketService;
+    private final HoldExpirationPublisher holdExpirationPublisher;
     private final RabbitTemplate rabbitTemplate;
     private final RestTemplate restTemplate;
     private final UserHistoryStorageService userHistoryStorageService;
@@ -58,10 +60,11 @@ public class BookingService {
     @Value("${core.service.url:http://localhost:8081}")
     private String coreServiceUrl;
 
-    private static final int HOLD_TTL_SECONDS = 120;
+    @Value("${support.service.url:http://support-service:8084}")
+    private String supportServiceUrl;
 
-    // Map to hold thread locks per show to prevent concurrent double-booking
-    private final ConcurrentHashMap<UUID, Object> showLocks = new ConcurrentHashMap<>();
+    @Value("${booking.hold.ttl-seconds:120}")
+    private int holdTtlSeconds;
 
     private List<UUID> getAllSeatsForShow(UUID showId) {
         if (showId == null) {
@@ -93,120 +96,98 @@ public class BookingService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public HoldResponse holdSeats(HoldRequest request) {
-        if (request == null || request.getShowId() == null || request.getSeatIds() == null || request.getUserId() == null) {
+        if (request == null || request.getShowId() == null || request.getSeatIds() == null
+                || request.getSeatIds().isEmpty() || request.getUserId() == null) {
             throw new IllegalArgumentException("Invalid hold request: missing required fields");
         }
 
         log.info("Holding seats for show: {}, seats: {}", request.getShowId(), request.getSeatIds());
 
-        // Get or create a lock for this specific show
-        Object showLock = showLocks.computeIfAbsent(request.getShowId(), k -> new Object());
+        assertNoActiveSeatConflicts(request.getShowId(), request.getSeatIds());
 
-        // Thread-safe block to prevent simultaneous double-booking of the same seats
-        synchronized (showLock) {
-            // 1️⃣ Check if requested seats are already held or booked
-            for (UUID seatId : request.getSeatIds()) {
-                List<SeatHold> existingHolds = seatHoldRepository
-                        .findByShowIdAndSeatIdAndStatusAndExpiresAtAfter(
-                                request.getShowId(),
-                                seatId,
-                                SeatHoldStatus.ACTIVE,
-                                LocalDateTime.now()
-                        );
-                if (!existingHolds.isEmpty()) {
-                    throw new RuntimeException("Seat " + seatId + " is already held or booked.");
-                }
-            }
+        ShowDetails showDetails = fetchShowDetails(request.getShowId());
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(holdTtlSeconds);
 
-            // 2️⃣ Fetch show details from core service (with fallback)
-            ShowDetails showDetails = fetchShowDetails(request.getShowId());
+        Booking booking = Booking.builder()
+                .userId(request.getUserId())
+                .showId(request.getShowId())
+                .movieTitle(showDetails.getMovieTitle())
+                .branchName(showDetails.getBranchName())
+                .screenName(showDetails.getScreenName())
+                .showTime(showDetails.getShowTime())
+                .status(BookingStatus.SEATS_HELD)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .totalAmount(evaluateSeatPricing(request.getSeatIds().size(), showDetails.getShowTime()))
+                .build();
 
-            // 3️⃣ Create booking with all details
-            Booking booking = Booking.builder()
-                    .userId(request.getUserId())
-                    .showId(request.getShowId())
-                    .movieTitle(showDetails.getMovieTitle())
-                    .branchName(showDetails.getBranchName())
-                    .screenName(showDetails.getScreenName())
-                    .showTime(showDetails.getShowTime())
-                    .status(BookingStatus.SEATS_HELD)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .totalAmount(calculateTotalPrice(request.getSeatIds().size()))
-                    .build();
+        Booking savedBooking = bookingRepository.save(booking);
+        UUID bookingId = savedBooking.getId();
 
-            // Let the database generate the ID
-            Booking savedBooking = bookingRepository.save(booking);
-            UUID bookingId = savedBooking.getId();
-            log.info("Created booking with ID: {}", bookingId);
+        List<SeatHold> seatHolds = request.getSeatIds().stream()
+                .map(seatId -> SeatHold.builder()
+                        .id(UUID.randomUUID())
+                        .bookingId(bookingId)
+                        .userId(request.getUserId())
+                        .showId(request.getShowId())
+                        .seatId(seatId)
+                        .status(SeatHoldStatus.ACTIVE)
+                        .expiresAt(expiresAt)
+                        .build())
+                .collect(Collectors.toList());
 
-            // 4️⃣ Create seat holds
-            LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(HOLD_TTL_SECONDS);
-            List<SeatHold> seatHolds = request.getSeatIds().stream()
-                    .map(seatId -> SeatHold.builder()
-                            .id(UUID.randomUUID())
-                            .bookingId(bookingId)
-                            .userId(request.getUserId())
-                            .showId(request.getShowId())
-                            .seatId(seatId)
-                            .status(SeatHoldStatus.ACTIVE)
-                            .expiresAt(expiresAt)
-                            .build())
-                    .collect(Collectors.toList());
+        List<BookingSeat> bookingSeats = request.getSeatIds().stream()
+                .map(seatId -> BookingSeat.builder()
+                        .id(UUID.randomUUID())
+                        .bookingId(bookingId)
+                        .showId(request.getShowId())
+                        .seatId(seatId)
+                        .status(BookingStatus.SEATS_HELD)
+                        .build())
+                .collect(Collectors.toList());
 
+        try {
             seatHoldRepository.saveAll(seatHolds);
-            log.info("Created {} seat holds", seatHolds.size());
-
-            // 5️⃣ Create booking seats
-            List<BookingSeat> bookingSeats = request.getSeatIds().stream()
-                    .map(seatId -> BookingSeat.builder()
-                            .id(UUID.randomUUID())
-                            .bookingId(bookingId)
-                            .showId(request.getShowId())
-                            .seatId(seatId)
-                            .status(BookingStatus.SEATS_HELD)
-                            .build())
-                    .collect(Collectors.toList());
-
             bookingSeatRepository.saveAll(bookingSeats);
-            log.info("Created {} booking seats", bookingSeats.size());
+        } catch (DataIntegrityViolationException ex) {
+            log.warn("Seat hold conflict detected for booking {} on show {}", bookingId, request.getShowId(), ex);
+            throw new IllegalStateException("One or more requested seats are no longer available", ex);
+        }
 
-            // Broadcast WebSocket updates
-            for (UUID seatId : request.getSeatIds()) {
-                webSocketService.broadcastSeatUpdate(
-                    request.getShowId(), 
+        for (UUID seatId : request.getSeatIds()) {
+            webSocketService.broadcastSeatUpdate(
+                    request.getShowId(),
                     SeatAvailability.builder().seatId(seatId).status("HELD").build()
-                );
-            }
+            );
+        }
 
-            // 6️⃣ Build response
-            HoldResponse response = HoldResponse.builder()
-                    .bookingId(bookingId)
-                    .status(savedBooking.getStatus().toString())
-                    .heldSeatIds(request.getSeatIds())
-                    .expiresAt(expiresAt)
-                    .expiresAtEpochMs(expiresAt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
-                    .build();
+        HoldResponse response = HoldResponse.builder()
+                .bookingId(bookingId)
+                .status(savedBooking.getStatus().toString())
+                .heldSeatIds(request.getSeatIds())
+                .expiresAt(expiresAt)
+                .expiresAtEpochMs(expiresAt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+                .build();
 
-            // 7️⃣ Convert UUIDs to numeric IDs for core service
-            List<Long> numericSeatIds = convertUuidToNumericIds(request.getSeatIds());
+        holdExpirationPublisher.scheduleHoldExpiration(
+                bookingId,
+                request.getShowId(),
+                request.getUserId(),
+                expiresAt
+        );
 
-            // 8️⃣ Publish seat held event to RabbitMQ
-            try {
-                eventPublisher.publishSeatHeldEvent(
-                        request.getShowId(),
-                        numericSeatIds,
-                        response.getBookingId(),
-                        request.getUserId().toString()
-                );
-                log.info("Published seat held event");
-            } catch (Exception e) {
-                log.error("Failed to publish seat held event", e);
-                // Don't fail the transaction
-            }
+        try {
+            eventPublisher.publishSeatHeldEvent(
+                    request.getShowId(),
+                    convertUuidToNumericIds(request.getSeatIds()),
+                    response.getBookingId(),
+                    request.getUserId().toString()
+            );
+        } catch (Exception e) {
+            log.error("Failed to publish seat held event", e);
+        }
 
-            return response;
-        } // end synchronized block
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -273,30 +254,25 @@ public class BookingService {
 
         String normalizedUserEmail = (userEmail != null && !userEmail.trim().isEmpty()) ? userEmail.trim() : null;
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
-
-        if (booking.getUserId() == null) {
-            log.warn("Booking {} has null userId", bookingId);
+        Booking booking = getRequiredBooking(bookingId);
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            log.info("Booking {} already confirmed, skipping duplicate confirmation", bookingId);
+            return;
+        }
+        if (isTerminalStatus(booking.getStatus())) {
+            log.warn("Ignoring payment success for booking {} in terminal state {}", bookingId, booking.getStatus());
+            return;
+        }
+        if (!EnumSet.of(BookingStatus.PAYMENT_INITIATED, BookingStatus.PAYMENT_PENDING).contains(booking.getStatus())) {
+            throw new IllegalStateException("Cannot confirm booking from state " + booking.getStatus());
         }
 
-        // Update Booking status
-        booking.setStatus(BookingStatus.CONFIRMED);
-        booking = bookingRepository.save(booking);
-        log.info("Updated booking status to CONFIRMED: {}", bookingId);
-
-        try {
-            eventPublisher.publishSeatReservedEvent(
-                    booking.getShowId(),
-                    getSeatIdsFromBooking(bookingId),
-                    bookingId,
-                    booking.getUserId().toString()
-            );
-            log.info("Published seat reserved event for booking: {}", bookingId);
-        } catch (Exception e) {
-            log.error("Failed to publish seat reserved event", e);
+        List<SeatHold> holds = seatHoldRepository.findByBookingIdAndStatus(bookingId, SeatHoldStatus.ACTIVE);
+        if (holds.isEmpty()) {
+            log.warn("Ignoring payment success for booking {} because no active holds remain", bookingId);
+            return;
         }
-        // Update BookingSeat status
+
         List<BookingSeat> seats = bookingSeatRepository.findByBookingId(bookingId);
         for (BookingSeat seat : seats) {
             if (seat != null) {
@@ -305,29 +281,28 @@ public class BookingService {
         }
         bookingSeatRepository.saveAll(seats);
 
-        // Update SeatHold status
-        List<SeatHold> holds = seatHoldRepository.findByBookingIdAndStatus(bookingId, SeatHoldStatus.ACTIVE);
         for (SeatHold hold : holds) {
             if (hold != null) {
-                hold.setStatus(SeatHoldStatus.EXPIRED);
+                hold.setStatus(SeatHoldStatus.CONVERTED);
             }
         }
         seatHoldRepository.saveAll(holds);
 
-        // Broadcast WebSocket updates
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking = bookingRepository.save(booking);
+        log.info("Updated booking status to CONFIRMED: {}", bookingId);
+
         for (BookingSeat seat : seats) {
             if (seat != null && seat.getSeatId() != null) {
                 webSocketService.broadcastSeatUpdate(
-                    booking.getShowId(),
-                    SeatAvailability.builder().seatId(seat.getSeatId()).status("BOOKED").build()
+                        booking.getShowId(),
+                        SeatAvailability.builder().seatId(seat.getSeatId()).status("BOOKED").build()
                 );
             }
         }
 
-        // Publish booking confirmed event
         publishBookingConfirmedEvent(booking, seats, normalizedUserEmail);
 
-        // Persist user booking history to MinIO for "My Profile / View Bookings"
         List<String> seatNumbers = seats.stream()
                 .filter(Objects::nonNull)
                 .map(BookingSeat::getSeatId)
@@ -335,20 +310,13 @@ public class BookingService {
                 .collect(Collectors.toList());
         userHistoryStorageService.saveConfirmedBooking(booking, seatNumbers);
 
-        // Get details for core service event
-        UUID showId = booking.getShowId();
-        List<Long> numericSeatIds = getSeatIdsFromBooking(bookingId);
-        String userId = booking.getUserId() != null ? booking.getUserId().toString() : "unknown";
-
-        // Publish seat reserved event to core service
         try {
             eventPublisher.publishSeatReservedEvent(
-                    showId,
-                    numericSeatIds,
+                    booking.getShowId(),
+                    getSeatIdsFromBooking(bookingId),
                     bookingId,
-                    userId
+                    booking.getUserId() != null ? booking.getUserId().toString() : "unknown"
             );
-            log.info("Published seat reserved event");
         } catch (Exception e) {
             log.error("Failed to publish seat reserved event", e);
         }
@@ -362,52 +330,16 @@ public class BookingService {
             throw new IllegalArgumentException("Booking ID cannot be null");
         }
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
-
-        booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-
-        // Cancel seats
-        List<BookingSeat> seats = bookingSeatRepository.findByBookingId(bookingId);
-        for (BookingSeat seat : seats) {
-            if (seat != null) {
-                seat.setStatus(BookingStatus.CANCELLED);
-            }
+        Booking booking = getRequiredBooking(bookingId);
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            throw new IllegalStateException("Confirmed bookings must be cancelled through the refund workflow");
         }
-        bookingSeatRepository.saveAll(seats);
-
-        // Get details for event publishing
-        UUID showId = booking.getShowId();
-        List<Long> numericSeatIds = getSeatIdsFromBooking(bookingId);
-        String userId = booking.getUserId() != null ? booking.getUserId().toString() : "unknown";
-
-        // Broadcast WebSocket updates
-        for (BookingSeat seat : seats) {
-            if (seat != null && seat.getSeatId() != null) {
-                webSocketService.broadcastSeatUpdate(
-                    showId,
-                    SeatAvailability.builder().seatId(seat.getSeatId()).status("AVAILABLE").build()
-                );
-            }
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            log.info("Booking {} already cancelled", bookingId);
+            return;
         }
 
-        // Remove holds
-        seatHoldRepository.deleteByBookingId(bookingId);
-
-        // Publish seat cancelled event
-        try {
-            eventPublisher.publishSeatCancelledEvent(
-                    showId,
-                    numericSeatIds,
-                    bookingId,
-                    userId
-            );
-            log.info("Published seat cancelled event");
-        } catch (Exception e) {
-            log.error("Failed to publish seat cancelled event", e);
-        }
-
+        releaseInventory(booking, BookingStatus.CANCELLED, SeatHoldStatus.RELEASED, true);
         log.info("Booking cancelled: {}", bookingId);
     }
 
@@ -500,7 +432,7 @@ public class BookingService {
         
         // Update total amount: base seats + snacks
         int seatCount = bookingSeatRepository.countByBookingId(bookingId);
-        BigDecimal seatsTotal = calculateTotalPrice(seatCount);
+        BigDecimal seatsTotal = evaluateSeatPricing(seatCount, booking.getShowTime());
         booking.setTotalAmount(seatsTotal.add(booking.getSnacksTotal()));
 
         booking.setStatus(BookingStatus.SNACKS_SELECTED);
@@ -510,77 +442,171 @@ public class BookingService {
 
     @Transactional
     public Booking initiatePayment(UUID bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("Booking not found: " + bookingId));
-                
+        Booking booking = getRequiredBooking(bookingId);
+
+        if (booking.getStatus() == BookingStatus.PAYMENT_PENDING || booking.getStatus() == BookingStatus.PAYMENT_INITIATED) {
+            return booking;
+        }
+
         if (booking.getStatus() != BookingStatus.SEATS_HELD && booking.getStatus() != BookingStatus.SNACKS_SELECTED) {
             throw new IllegalStateException("Cannot initiate payment from state: " + booking.getStatus());
         }
+        if (seatHoldRepository.findByBookingIdAndStatus(bookingId, SeatHoldStatus.ACTIVE).isEmpty()) {
+            throw new IllegalStateException("Cannot initiate payment without active seat holds");
+        }
 
-        booking.setStatus(BookingStatus.PAYMENT_INITIATED);
-        log.info("Payment initiated for booking {}", bookingId);
+        booking.setStatus(BookingStatus.PAYMENT_PENDING);
+        log.info("Payment pending for booking {}", bookingId);
         return bookingRepository.save(booking);
     }
 
     @Transactional
     public void failBooking(UUID bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("Booking not found: " + bookingId));
+        Booking booking = getRequiredBooking(bookingId);
 
         if (booking.getStatus() == BookingStatus.CONFIRMED) {
             log.warn("Ignoring payment failure compensation for already confirmed booking {}", bookingId);
             return;
         }
+        if (booking.getStatus() == BookingStatus.FAILED) {
+            log.info("Booking {} already failed", bookingId);
+            return;
+        }
+        if (booking.getStatus() == BookingStatus.EXPIRED || booking.getStatus() == BookingStatus.CANCELLED) {
+            log.info("Booking {} already released in state {}", bookingId, booking.getStatus());
+            return;
+        }
 
-        // Compensation: release seats and holds
-        cancelBooking(bookingId);
-
-        // Mark final saga state as FAILED after compensation succeeds.
-        booking.setStatus(BookingStatus.FAILED);
-        bookingRepository.save(booking);
-
+        releaseInventory(booking, BookingStatus.FAILED, SeatHoldStatus.RELEASED, true);
         log.info("Booking {} failed. Compensation actions executed.", bookingId);
     }
 
     @Scheduled(fixedRate = 10000) // every 10 seconds
     @Transactional
     public void expireHolds() {
-        List<SeatHold> expiredHolds = seatHoldRepository.findByStatusAndExpiresAtBefore(
-                SeatHoldStatus.ACTIVE,
-                LocalDateTime.now()
-        );
+        Set<UUID> expiredBookingIds = seatHoldRepository.findByStatusAndExpiresAtBefore(
+                        SeatHoldStatus.ACTIVE,
+                        LocalDateTime.now()
+                ).stream()
+                .map(SeatHold::getBookingId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        for (SeatHold hold : expiredHolds) {
-            if (hold != null && hold.getBookingId() != null) {
-                hold.setStatus(SeatHoldStatus.EXPIRED);
-                seatHoldRepository.save(hold);
-                
-                // Broadcast WebSocket update
-                if (hold.getSeatId() != null && hold.getShowId() != null) {
-                    webSocketService.broadcastSeatUpdate(
-                        hold.getShowId(),
-                        SeatAvailability.builder().seatId(hold.getSeatId()).status("AVAILABLE").build()
-                    );
-                }
-
-                // Optionally cancel booking if all seats are expired
-                List<SeatHold> activeHolds = seatHoldRepository.findByBookingIdAndStatus(hold.getBookingId(), SeatHoldStatus.ACTIVE);
-                if (activeHolds.isEmpty()) {
-                    try {
-                        cancelBooking(hold.getBookingId());
-                    } catch (Exception e) {
-                        log.error("Failed to cancel booking {} during expiration", hold.getBookingId(), e);
-                    }
-                }
-            }
-        }
-
-        if (!expiredHolds.isEmpty()) {
-            log.info("Expired {} seat holds", expiredHolds.size());
+        for (UUID bookingId : expiredBookingIds) {
+            expireBookingDueToTimeout(bookingId);
         }
     }
 
+    @Transactional
+    public void expireBookingDueToTimeout(UUID bookingId) {
+        Booking booking = getRequiredBooking(bookingId);
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            log.info("Skipping timeout expiration for confirmed booking {}", bookingId);
+            return;
+        }
+        if (booking.getStatus() == BookingStatus.EXPIRED) {
+            log.info("Booking {} already expired", bookingId);
+            return;
+        }
+        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.FAILED) {
+            log.info("Booking {} already released in state {}", bookingId, booking.getStatus());
+            return;
+        }
+
+        releaseInventory(booking, BookingStatus.EXPIRED, SeatHoldStatus.EXPIRED, true);
+        log.info("Booking {} expired after hold timeout", bookingId);
+    }
+
     // ==================== HELPER METHODS ====================
+
+    private Booking getRequiredBooking(UUID bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new EntityNotFoundException("Booking not found: " + bookingId));
+    }
+
+    private void assertNoActiveSeatConflicts(UUID showId, List<UUID> seatIds) {
+        LocalDateTime now = LocalDateTime.now();
+        for (UUID seatId : seatIds) {
+            boolean held = !seatHoldRepository.findByShowIdAndSeatIdAndStatusAndExpiresAtAfter(
+                    showId,
+                    seatId,
+                    SeatHoldStatus.ACTIVE,
+                    now
+            ).isEmpty();
+
+            boolean booked = bookingSeatRepository.findBySeatId(seatId).stream()
+                    .anyMatch(existing -> existing.getShowId() != null
+                            && existing.getShowId().equals(showId)
+                            && EnumSet.of(
+                                    BookingStatus.SEATS_HELD,
+                                    BookingStatus.PAYMENT_INITIATED,
+                                    BookingStatus.PAYMENT_PENDING,
+                                    BookingStatus.CONFIRMED
+                            ).contains(existing.getStatus()));
+
+            if (held || booked) {
+                throw new IllegalStateException("Seat " + seatId + " is already held or booked.");
+            }
+        }
+    }
+
+    private boolean isTerminalStatus(BookingStatus status) {
+        return status == BookingStatus.CONFIRMED
+                || status == BookingStatus.FAILED
+                || status == BookingStatus.EXPIRED
+                || status == BookingStatus.CANCELLED;
+    }
+
+    private void releaseInventory(
+            Booking booking,
+            BookingStatus finalBookingStatus,
+            SeatHoldStatus finalHoldStatus,
+            boolean publishSeatCancellationEvent
+    ) {
+        UUID bookingId = booking.getId();
+        List<BookingSeat> seats = bookingSeatRepository.findByBookingId(bookingId);
+        for (BookingSeat seat : seats) {
+            if (seat != null) {
+                seat.setStatus(finalBookingStatus);
+            }
+        }
+        bookingSeatRepository.saveAll(seats);
+
+        List<SeatHold> activeHolds = seatHoldRepository.findByBookingIdAndStatus(bookingId, SeatHoldStatus.ACTIVE);
+        for (SeatHold hold : activeHolds) {
+            if (hold != null) {
+                hold.setStatus(finalHoldStatus);
+            }
+        }
+        if (!activeHolds.isEmpty()) {
+            seatHoldRepository.saveAll(activeHolds);
+        }
+
+        booking.setStatus(finalBookingStatus);
+        bookingRepository.save(booking);
+
+        for (BookingSeat seat : seats) {
+            if (seat != null && seat.getSeatId() != null) {
+                webSocketService.broadcastSeatUpdate(
+                        booking.getShowId(),
+                        SeatAvailability.builder().seatId(seat.getSeatId()).status("AVAILABLE").build()
+                );
+            }
+        }
+
+        if (publishSeatCancellationEvent && !seats.isEmpty()) {
+            try {
+                eventPublisher.publishSeatCancelledEvent(
+                        booking.getShowId(),
+                        getSeatIdsFromBooking(bookingId),
+                        bookingId,
+                        booking.getUserId() != null ? booking.getUserId().toString() : "unknown"
+                );
+            } catch (Exception e) {
+                log.error("Failed to publish seat cancellation event for booking {}", bookingId, e);
+            }
+        }
+    }
 
     /**
      * Fetches show details from core service
@@ -797,6 +823,37 @@ public class BookingService {
         }
         // Default price per seat is $15.00
         return BigDecimal.valueOf(seatCount * 15.00).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal evaluateSeatPricing(int seatCount, LocalDateTime showTime) {
+        if (seatCount <= 0 || showTime == null) {
+            return calculateTotalPrice(seatCount);
+        }
+
+        try {
+            Map<String, Object> request = new HashMap<>();
+            request.put("seatCount", seatCount);
+            request.put("basePrice", 1500L); // cents per seat
+            request.put("showTime", showTime);
+            request.put("bookingTime", LocalDateTime.now());
+            request.put("currency", "USD");
+
+            String url = supportServiceUrl + "/api/rules/evaluate/price";
+            PricingResponse pricingResponse = restTemplate.postForObject(url, request, PricingResponse.class);
+            if (pricingResponse != null && pricingResponse.getFinalPrice() != null) {
+                return BigDecimal.valueOf(pricingResponse.getFinalPrice())
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to evaluate price via support service, falling back to default price: {}", e.getMessage());
+        }
+
+        return calculateTotalPrice(seatCount);
+    }
+
+    @lombok.Data
+    private static class PricingResponse {
+        private Long finalPrice;
     }
 
     private UserHistoryBookingDto enrichHistoryFromDatabaseIfNeeded(UserHistoryBookingDto dto) {

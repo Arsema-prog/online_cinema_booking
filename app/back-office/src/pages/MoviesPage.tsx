@@ -1,18 +1,4 @@
 import { useEffect, useState } from 'react';
-import { 
-  Film, 
-  Trash2, 
-  Plus, 
-  Search, 
-  Loader2, 
-  Clock, 
-  Star, 
-  Calendar, 
-  Pencil,
-  Clapperboard,
-  BadgeInfo,
-  Type
-} from 'lucide-react';
 import type { Movie } from '@/types';
 import { getMovies, createMovie, updateMovie, deleteMovie } from '@/api/movies';
 import { Button } from '@/components/ui/button';
@@ -25,13 +11,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import * as z from 'zod';
@@ -39,6 +25,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
+import { env } from '../../env';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -47,7 +34,6 @@ const movieSchema = z.object({
   releaseDate: z.string().min(1, 'Release date is required'),
   genre: z.string().min(1, 'Genre is required'),
   rating: z.coerce.number().min(0).max(10),
-  posterUrl: z.string().url('Invalid image URL').optional().or(z.literal('')),
 });
 
 type MovieFormValues = z.infer<typeof movieSchema>;
@@ -66,7 +52,7 @@ export default function MoviesPage() {
 
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema) as any,
-    defaultValues: { title: '', description: '', duration: 0, releaseDate: '', genre: '', rating: 0, posterUrl: '' },
+    defaultValues: { title: '', description: '', duration: 0, releaseDate: '', genre: '', rating: 0 },
   });
 
   const fetchMovies = async () => {
@@ -87,13 +73,15 @@ export default function MoviesPage() {
     fetchMovies();
   }, []);
 
-  const onSubmit = async (values: MovieFormValues) => {
+  const onSubmit = async (values: MovieFormValues, files: Record<string, File | null>) => {
     try {
       setSaving(true);
+      const posterFile = files['poster'] || undefined;
+      
       if (editingMovie) {
-        await updateMovie(editingMovie.id, values);
+        await updateMovie(editingMovie.id, values, posterFile);
       } else {
-        await createMovie(values);
+        await createMovie(values, posterFile);
       }
       setOpen(false);
       form.reset();
@@ -110,8 +98,8 @@ export default function MoviesPage() {
     {
       title: "Core Metadata",
       fields: [
-        { name: "title", label: "Movie Title", type: "text", required: true, placeholder: "e.g. Inception", icon: <Type className="w-4 h-4" />, colSpan: 2 },
-        { name: "genre", label: "Genre", type: "text", required: true, placeholder: "e.g. Sci-Fi, Action", icon: <BadgeInfo className="w-4 h-4" /> },
+        { name: "title", label: "Movie Title", type: "text", required: true, placeholder: "e.g. Inception", icon: <span className="material-symbols-outlined text-[1rem]">title</span>, colSpan: 2 },
+        { name: "genre", label: "Genre", type: "text", required: true, placeholder: "e.g. Sci-Fi, Action", icon: <span className="material-symbols-outlined text-[1rem]">info</span> },
         { name: "rating", label: "Atlas Critics Score", type: "rating", required: true },
         { name: "duration", label: "Screening Time", type: "duration", required: true },
         { name: "releaseDate", label: "Premiere Date", type: "date", required: true },
@@ -120,7 +108,7 @@ export default function MoviesPage() {
     {
       title: "Media & Synopsis",
       fields: [
-        { name: "posterUrl", label: "Official Poster", type: "image", placeholder: "Upload film poster" },
+        { name: "poster", label: "Official Poster", type: "image", placeholder: "Upload film poster" },
         { name: "description", label: "Plot Summary", type: "textarea", placeholder: "Synopsis of the film..." },
       ]
     }
@@ -135,7 +123,6 @@ export default function MoviesPage() {
       releaseDate: movie.releaseDate,
       genre: movie.genre,
       rating: movie.rating || 0,
-      posterUrl: movie.posterUrl || '',
     });
     setOpen(true);
   };
@@ -165,136 +152,149 @@ export default function MoviesPage() {
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight">Movies</h1>
-          <p className="text-muted-foreground mt-1">Manage film catalog and ratings.</p>
+    <div className="animate-in fade-in duration-500 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card rounded-[2rem] p-8 md:p-10 border border-border shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full pointer-events-none" />
+        <div className="relative z-10">
+          <div className="inline-flex rounded-lg bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/20 mb-4">
+             Content Management
+          </div>
+          <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tight text-foreground">Movies</h1>
+          <p className="text-muted-foreground font-medium mt-2">Manage film catalog, metadata, and theatrical ratings.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[1.2rem] text-muted-foreground">search</span>
             <Input 
               placeholder="Search features..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-card border-border h-10 w-64 shadow-sm"
+              className="pl-12 bg-background border-border h-14 rounded-2xl w-full shadow-lg font-bold placeholder:text-muted-foreground"
             />
           </div>
-          <Sheet open={open} onOpenChange={handleOpenChange}>
-            <SheetTrigger asChild>
-              <Button size="lg" className="rounded-md shadow-sm">
-                <Plus className="mr-2 h-5 w-5" /> Register Movie
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-[0_6px_20px_rgba(93,93,255,0.23)] hover:-translate-y-0.5 transition duration-200 font-bold shrink-0">
+                <span className="material-symbols-outlined mr-2">add</span> Register Movie
               </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
-              <div className="px-8 py-8 border-b border-border shrink-0">
-                <SheetHeader>
-                  <SheetTitle className="text-3xl font-extrabold tracking-tight">
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border-none shadow-2xl rounded-[3rem] max-h-[90vh] flex flex-col">
+              <div className="px-12 py-10 border-b border-border/40 shrink-0 relative overflow-hidden backdrop-blur-3xl bg-background/50">
+                <div className="absolute right-0 top-0 w-64 h-64 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
+                <DialogHeader className="relative z-10 text-left">
+                  <DialogTitle className="text-4xl font-headline font-black tracking-tight text-foreground">
                     {editingMovie ? 'Edit Feature' : 'Register New Film'}
-                  </SheetTitle>
-                  <SheetDescription className="text-base mt-2 text-muted-foreground/80">
+                  </DialogTitle>
+                  <DialogDescription className="text-lg mt-3 text-muted-foreground font-medium">
                     {editingMovie ? 'Update metadata for this official selection.' : 'Add a new title to the cinema database.'}
-                  </SheetDescription>
-                </SheetHeader>
+                  </DialogDescription>
+                </DialogHeader>
               </div>
               
-              <ModernForm
-                schema={movieSchema}
-                defaultValues={form.getValues()}
-                onSubmit={onSubmit as any}
-                sections={movieFormSections}
-                isSubmitting={saving}
-                submitLabel={editingMovie ? 'Save Metadata' : 'Launch Feature'}
-                onCancel={() => setOpen(false)}
-                className="flex-1 overflow-hidden"
-              />
-            </SheetContent>
-          </Sheet>
+              <div className="flex-1 overflow-y-auto">
+                <ModernForm
+                  schema={movieSchema}
+                  defaultValues={form.getValues()}
+                  onSubmit={onSubmit as any}
+                  sections={movieFormSections}
+                  isSubmitting={saving}
+                  submitLabel={editingMovie ? 'Save Metadata' : 'Launch Feature'}
+                  onCancel={() => setOpen(false)}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
       {error && (
-        <div className="bg-destructive/10 text-destructive border-l-4 border-destructive p-4 mb-6 rounded-md italic">
+        <div className="bg-destructive/10 text-destructive border-l-4 border-destructive p-4 mb-6 rounded-md italic font-bold">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center py-20 text-muted-foreground font-medium">
-          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" /> Synchronizing film library...
+        <div className="flex justify-center items-center py-24 text-muted-foreground font-medium">
+          <span className="material-symbols-outlined text-4xl animate-spin text-primary mr-3">progress_activity</span> Synchronizing film library...
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden text-sm">
+        <div className="rounded-[1.5rem] bg-card overflow-hidden shadow-2xl border border-border">
           <Table>
             <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="w-16">ID</TableHead>
-                <TableHead>Official Selection</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead>Release</TableHead>
-                <TableHead>Rating</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
+              <TableRow className="border-b-border">
+                <TableHead className="w-16 font-bold text-muted-foreground">ID</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Official Selection</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Details</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Release</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Rating</TableHead>
+                <TableHead className="w-24 text-right font-bold text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredMovies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-24 text-muted-foreground border-none">
                     <div className="flex flex-col items-center">
-                      <Clapperboard className="h-12 w-12 mb-3 opacity-20" />
-                      No films matching your criteria were found.
+                      <span className="material-symbols-outlined text-6xl mb-4 opacity-20" style={{ fontVariationSettings: "'FILL' 1" }}>movie_filter</span>
+                      <span className="font-bold">No films matching your criteria were found.</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredMovies.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((movie) => (
-                  <TableRow key={movie.id} className="group hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-medium text-muted-foreground">#{movie.id}</TableCell>
+                  <TableRow key={movie.id} className="group transition-colors border-b-border">
+                    <TableCell className="font-bold text-muted-foreground/70">#{movie.id}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-4">
-                        {movie.posterUrl ? (
-                          <img src={movie.posterUrl} className="h-14 w-10 object-cover rounded shadow-sm border border-border" alt="" />
-                        ) : (
-                          <div className="h-14 w-10 bg-muted flex items-center justify-center rounded text-muted-foreground">
-                            <Film className="h-5 w-5" />
-                          </div>
-                        )}
+                      <div className="flex items-center gap-5">
+                        <img 
+                          src={`${env.apiGatewayUrl}/api/v1/core/movies/${movie.id}/poster`} 
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }
+                          }}
+                          className="h-[4.5rem] w-12 object-cover rounded-md shadow-md border border-border" 
+                          alt="" 
+                        />
+                        <div style={{display: 'none'}} className="h-[4.5rem] w-12 bg-muted items-center justify-center rounded-md text-muted-foreground/50 border border-border shadow-inner">
+                          <span className="material-symbols-outlined text-xl">movie</span>
+                        </div>
                         <div>
-                          <div className="font-bold text-foreground text-base leading-tight">{movie.title}</div>
-                          <div className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mt-1">{movie.genre}</div>
+                          <div className="font-headline font-black text-foreground text-lg leading-tight">{movie.title}</div>
+                          <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1.5 bg-muted inline-flex px-1.5 py-0.5 rounded">{movie.genre}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center text-xs font-semibold text-muted-foreground">
-                          <Clock className="w-3 h-3 mr-1 opacity-60" /> {Math.floor(movie.duration / 60)}h {movie.duration % 60}m
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center text-xs font-bold text-muted-foreground">
+                          <span className="material-symbols-outlined text-[1rem] mr-1.5 opacity-60">schedule</span> {Math.floor(movie.duration / 60)}h {movie.duration % 60}m
                         </div>
-                        <Badge variant="secondary" className="w-fit text-[9px] font-bold px-1.5 py-0 rounded opacity-70">
+                        <Badge variant="secondary" className="w-fit text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-muted text-foreground border-transparent">
                           {movie.genre.split(',')[0]}
                         </Badge>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center text-xs font-medium text-muted-foreground">
-                        <Calendar className="w-3 h-3 mr-1 opacity-60" />
+                      <div className="flex items-center text-xs font-bold text-muted-foreground">
+                        <span className="material-symbols-outlined text-[1rem] mr-1.5 opacity-60">calendar_month</span>
                         {movie.releaseDate}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
-                        <span className="font-black text-sm">{(movie.rating || 0).toFixed(1)}</span>
+                      <div className="flex items-center gap-1.5 bg-yellow-500/10 w-fit px-2 py-1 rounded-lg border border-yellow-500/20">
+                        <span className="material-symbols-outlined text-[1rem] text-yellow-500" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                        <span className="font-black text-sm text-yellow-500">{(movie.rating || 0).toFixed(1)}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(movie)} className="h-8 w-8 text-primary hover:bg-primary/10">
-                          <Pencil className="h-4 w-4" />
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(movie)} className="h-10 w-10 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl shadow-sm">
+                          <span className="material-symbols-outlined text-[1.2rem]">edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(movie.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(movie.id)} className="h-10 w-10 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl shadow-sm">
+                          <span className="material-symbols-outlined text-[1.2rem]">delete</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -304,15 +304,15 @@ export default function MoviesPage() {
             </TableBody>
           </Table>
           
-          <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
+          <div className="p-5 border-t border-border bg-muted/20 flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground font-bold gap-4">
             <div>
-              Showing {Math.min(filteredMovies.length, (page * itemsPerPage) + 1)} - {Math.min(filteredMovies.length, (page + 1) * itemsPerPage)} of {filteredMovies.length} features
+              Showing <span className="text-foreground">{Math.min(filteredMovies.length, (page * itemsPerPage) + (filteredMovies.length > 0 ? 1 : 0))}</span> - <span className="text-foreground">{Math.min(filteredMovies.length, (page + 1) * itemsPerPage)}</span> of <span className="text-foreground">{filteredMovies.length}</span> features
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border bg-card hover:bg-muted h-10 px-4 rounded-xl shadow-sm">
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= filteredMovies.length} onClick={() => setPage(p => p + 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= filteredMovies.length} onClick={() => setPage(p => p + 1)} className="border-border bg-card hover:bg-muted h-10 px-4 rounded-xl shadow-sm">
                 Next
               </Button>
             </div>

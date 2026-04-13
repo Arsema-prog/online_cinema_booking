@@ -4,7 +4,7 @@ import { env } from '../env';
 export interface BookingHistoryModel {
   id: string;
   movieTitle: string;
-  posterUrl: string;
+  movieId: string;
   cinemaName: string;
   screenNumber: string;
   showTime: string;
@@ -18,7 +18,8 @@ export interface BookingHistoryModel {
   paymentTransactionId?: string;
 }
 
-const HISTORY_API_URL = `${env.bookingServiceUrl}/bookings`;
+const HISTORY_API_URL = `${env.apiGatewayUrl}/api/v1/booking/bookings`;
+const SUPPORT_API_URL = `${env.apiGatewayUrl}/api/v1/support/api/support`;
 
 function decodeUserIdFromToken(token?: string): string | null {
   if (!token) return null;
@@ -86,7 +87,7 @@ export const historyService = {
         return ({
         id: b.id,
         movieTitle: b.movieTitle || 'Booked Movie', // Placeholder till DTO mapping is exact
-        posterUrl: b.posterUrl || 'https://via.placeholder.com/150',
+        movieId: b.movieId || b.movie_id,
         cinemaName: b.cinemaName || b.branchName || '-',
         screenNumber: b.screenNumber || b.screenName || '-',
         showTime: b.showTime,
@@ -113,12 +114,15 @@ export const historyService = {
   async getTicketDownloadUrl(bookingId: string): Promise<string> {
     const token = getAccessTokenGetter()();
     try {
-      const response = await fetch(`http://localhost:8084/api/support/bookings/${bookingId}/ticket-url`, {
+      const response = await fetch(`${SUPPORT_API_URL}/bookings/uuid/${bookingId}/tickets`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to generate secure URL');
-      const data = await response.json();
-      return data.url; // Pre-signed MinIO URL
+      const tickets = await response.json();
+      if (!Array.isArray(tickets) || tickets.length === 0 || !tickets[0]?.pdfObjectKey) {
+        throw new Error('No ticket file found');
+      }
+      return `${SUPPORT_API_URL}/tickets/${tickets[0].id}/qr`;
     } catch (error) {
       console.error('Error generating ticket URL:', error);
       throw error;

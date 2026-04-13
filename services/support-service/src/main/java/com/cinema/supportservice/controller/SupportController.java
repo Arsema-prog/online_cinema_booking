@@ -71,6 +71,13 @@ public class SupportController {
         List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
         return ResponseEntity.ok(tickets);
     }
+
+    @GetMapping("/bookings/uuid/{bookingId}/tickets")
+    public ResponseEntity<List<Ticket>> getTicketsForBookingUuid(@PathVariable UUID bookingId) {
+        Long mappedBookingId = convertToLong(bookingId);
+        List<Ticket> tickets = ticketRepository.findByBookingId(mappedBookingId);
+        return ResponseEntity.ok(tickets);
+    }
     // Staff ticket validation
     @PostMapping("/tickets/{ticketId}/validate")
     public ResponseEntity<Ticket> validateTicket(@PathVariable UUID ticketId) {

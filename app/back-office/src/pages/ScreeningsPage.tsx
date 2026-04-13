@@ -1,19 +1,4 @@
 import { useEffect, useState } from 'react';
-import { 
-  Projector, 
-  Trash2, 
-  Plus, 
-  Search, 
-  Loader2, 
-  Clock, 
-  Star, 
-  Calendar, 
-  BadgeInfo, 
-  ArrowRight, 
-  MonitorPlay, 
-  Pencil,
-  Tag
-} from 'lucide-react';
 import type { Screening, Movie, Screen } from '@/types';
 import { getScreenings, createScreening, updateScreening, deleteScreening } from '@/api/screenings';
 import { getMovies } from '@/api/movies';
@@ -28,13 +13,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -160,9 +145,9 @@ export default function ScreeningsPage() {
     {
       title: "Scheduling & Pricing",
       fields: [
-        { name: "startTime", label: "Opening Credits", type: "date", required: true, icon: <Clock className="w-4 h-4" /> },
-        { name: "endTime", label: "Expected Credits", type: "date", required: true, description: "Auto-calculated with 20min buffer." },
-        { name: "price", label: "Standard Admission ($)", type: "number", required: true, icon: <Tag className="w-4 h-4" /> },
+        { name: "startTime", label: "Opening Credits", type: "datetime-local", required: true, icon: <span className="material-symbols-outlined text-[1rem]">schedule</span> },
+        { name: "endTime", label: "Expected Credits", type: "datetime-local", required: true, description: "Auto-calculated with 20min buffer." },
+        { name: "price", label: "Standard Admission ($)", type: "number", required: true, icon: <span className="material-symbols-outlined text-[1rem]">sell</span> },
       ]
     }
   ];
@@ -204,53 +189,59 @@ export default function ScreeningsPage() {
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight">Showtimes</h1>
-          <p className="text-muted-foreground mt-1">Orchestrate screening schedules and ticket pricing.</p>
+    <div className="animate-in fade-in duration-500 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card rounded-[2rem] p-8 md:p-10 border border-border shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full pointer-events-none" />
+        <div className="relative z-10">
+          <div className="inline-flex rounded-lg bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/20 mb-4">
+             Scheduling Systems
+          </div>
+          <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tight text-foreground">Showtimes</h1>
+          <p className="text-muted-foreground font-medium mt-2">Orchestrate screening schedules and ticket pricing.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[1.2rem] text-muted-foreground">search</span>
             <Input 
               placeholder="Search schedules..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-card border-border h-10 w-64 shadow-sm"
+              className="pl-12 bg-background border-border h-14 rounded-2xl w-full shadow-lg font-bold placeholder:text-muted-foreground"
             />
           </div>
-          <Sheet open={open} onOpenChange={handleOpenChange}>
-            <SheetTrigger asChild>
-              <Button size="lg" className="rounded-md shadow-sm">
-                <Plus className="mr-2 h-5 w-5" /> Schedule Showtime
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="rounded-2xl h-14 px-6 shadow-xl hover:shadow-primary/20 font-bold shrink-0">
+                <span className="material-symbols-outlined mr-2">add</span> Schedule Showtime
               </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-xl overflow-hidden border-l border-border bg-background p-0 flex flex-col shadow-2xl">
-              <div className="px-8 py-8 border-b border-border shrink-0">
-                <SheetHeader>
-                  <SheetTitle className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
-                    <Projector className="h-8 w-8 text-primary" /> Session Config
-                  </SheetTitle>
-                  <SheetDescription className="text-base mt-2 text-muted-foreground/80">
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border-none shadow-2xl rounded-[3rem] max-h-[90vh] flex flex-col">
+              <div className="px-12 py-10 border-b border-border/40 shrink-0 relative overflow-hidden backdrop-blur-3xl bg-background/50">
+                <div className="absolute right-0 top-0 w-64 h-64 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
+                <DialogHeader className="relative z-10 text-left">
+                  <DialogTitle className="text-4xl font-headline font-black tracking-tight text-foreground flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[2.5rem] text-primary">videocam</span> Session Config
+                  </DialogTitle>
+                  <DialogDescription className="text-lg mt-3 text-muted-foreground font-medium">
                     Define a new screening session with dynamic time logic.
-                  </SheetDescription>
-                </SheetHeader>
+                  </DialogDescription>
+                </DialogHeader>
               </div>
               
-              <ModernForm
-                form={form as any}
-                schema={screeningSchema}
-                defaultValues={form.getValues()}
-                onSubmit={onSubmit as any}
-                sections={screeningFormSections}
-                isSubmitting={saving}
-                submitLabel={editingScreening ? 'Update Session' : 'Commit Schedule'}
-                onCancel={() => setOpen(false)}
-                className="flex-1 overflow-hidden"
-              />
-            </SheetContent>
-          </Sheet>
+              <div className="flex-1 overflow-y-auto">
+                <ModernForm
+                  form={form as any}
+                  schema={screeningSchema}
+                  defaultValues={form.getValues()}
+                  onSubmit={onSubmit as any}
+                  sections={screeningFormSections}
+                  isSubmitting={saving}
+                  submitLabel={editingScreening ? 'Update Session' : 'Commit Schedule'}
+                  onCancel={() => setOpen(false)}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -261,82 +252,86 @@ export default function ScreeningsPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center py-20 text-muted-foreground font-medium">
-          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" /> Calibrating showtimes...
+        <div className="flex justify-center items-center py-24 text-muted-foreground font-medium">
+          <span className="material-symbols-outlined text-4xl animate-spin text-primary mr-3">progress_activity</span> Calibrating showtimes...
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden text-sm">
+        <div className="rounded-[1.5rem] bg-card overflow-hidden shadow-2xl border border-border">
           <Table>
             <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Feature Film</TableHead>
-                <TableHead>Timing</TableHead>
-                <TableHead>Venue</TableHead>
-                <TableHead>Fare</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
+              <TableRow className="border-b-border">
+                <TableHead className="font-bold text-muted-foreground">Feature Film</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Timing</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Venue</TableHead>
+                <TableHead className="font-bold text-muted-foreground">Fare</TableHead>
+                <TableHead className="w-24 text-right font-bold text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredScreenings.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-24 text-muted-foreground border-none">
                     <div className="flex flex-col items-center">
-                      <Projector className="h-12 w-12 mb-3 opacity-20" />
-                      No showtimes have been scheduled for this criteria.
+                      <span className="material-symbols-outlined text-6xl mb-4 opacity-20" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
+                      <span className="font-bold text-lg">No showtimes have been scheduled for this criteria.</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredScreenings.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((scr) => (
-                  <TableRow key={scr.id} className="group hover:bg-muted/30 transition-colors">
+                  <TableRow key={scr.id} className="group transition-colors border-b-border">
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        {scr.movie.posterUrl && (
-                          <img src={scr.movie.posterUrl} className="h-10 w-7 rounded-sm border border-border object-cover" alt="" />
+                      <div className="flex items-center gap-4">
+                        {scr.movie.posterUrl ? (
+                          <img src={scr.movie.posterUrl} className="h-12 w-8 rounded overflow-hidden shadow-md object-cover" alt="" />
+                        ) : (
+                           <div className="h-12 w-8 bg-muted rounded flex items-center justify-center">
+                             <span className="material-symbols-outlined text-muted-foreground">movie</span>
+                           </div>
                         )}
                         <div>
-                          <div className="font-bold text-foreground leading-tight">{scr.movie.title}</div>
-                          <div className="text-[10px] text-muted-foreground uppercase flex items-center font-bold tracking-widest gap-1 mt-0.5">
-                            <BadgeInfo className="w-3 h-3" /> {scr.movie.genre.split(',')[0]}
+                          <div className="font-headline font-black text-foreground text-base leading-tight">{scr.movie.title}</div>
+                          <div className="text-[10px] text-muted-foreground uppercase flex items-center font-bold tracking-widest gap-1 mt-1">
+                            <span className="material-symbols-outlined text-[10px]">info</span> {scr.movie.genre.split(',')[0]}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-0.5">
-                        <div className="font-bold flex items-center">
+                        <div className="font-bold flex items-center text-foreground">
                           {new Date(scr.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          <ArrowRight className="mx-2 h-3 w-3 text-muted-foreground opacity-40" />
+                          <span className="material-symbols-outlined mx-2 text-[1rem] text-muted-foreground/50">arrow_forward</span>
                           {new Date(scr.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        <div className="text-xs text-muted-foreground flex items-center">
-                          <Calendar className="w-3 h-3 mr-1 opacity-60" /> {new Date(scr.startTime).toLocaleDateString()}
+                        <div className="text-xs text-muted-foreground flex items-center font-medium mt-1">
+                          <span className="material-symbols-outlined text-[1rem] mr-1 opacity-60">calendar_month</span> {new Date(scr.startTime).toLocaleDateString()}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="font-semibold text-foreground flex items-center">
-                          <MonitorPlay className="w-3 h-3 mr-1.5 opacity-60" /> {scr.screen.name}
+                      <div className="flex flex-col gap-1">
+                        <div className="font-bold text-foreground flex items-center">
+                          <span className="material-symbols-outlined text-[1rem] mr-1.5 opacity-60">tv</span> {scr.screen.name}
                         </div>
-                        <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">
+                        <div className="text-[9px] uppercase font-black text-primary tracking-widest bg-primary/10 px-1.5 py-0.5 rounded w-fit border border-primary/20">
                           {scr.screen.branch.name}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-foreground">${(scr.price || 0).toFixed(2)}</span>
-                        <Star className="w-3 h-3 text-yellow-500 fill-current opacity-60" />
+                        <span className="font-black text-foreground text-base">${(scr.price || 0).toFixed(2)}</span>
+                        <span className="material-symbols-outlined text-yellow-500 text-[1rem]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(scr)} className="h-8 w-8 text-primary hover:bg-primary/10">
-                          <Pencil className="h-4 w-4" />
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(scr)} className="h-10 w-10 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl shadow-sm">
+                          <span className="material-symbols-outlined text-[1.2rem]">edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(scr.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(scr.id)} className="h-10 w-10 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl shadow-sm">
+                          <span className="material-symbols-outlined text-[1.2rem]">delete</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -346,15 +341,15 @@ export default function ScreeningsPage() {
             </TableBody>
           </Table>
           
-          <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
+          <div className="p-5 border-t border-border bg-muted/20 flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground font-bold gap-4">
             <div>
-              Showing {Math.min(filteredScreenings.length, (page * itemsPerPage) + 1)} - {Math.min(filteredScreenings.length, (page + 1) * itemsPerPage)} of {filteredScreenings.length} sessions
+              Showing <span className="text-foreground">{Math.min(filteredScreenings.length, (page * itemsPerPage) + (filteredScreenings.length > 0 ? 1 : 0))}</span> - <span className="text-foreground">{Math.min(filteredScreenings.length, (page + 1) * itemsPerPage)}</span> of <span className="text-foreground">{filteredScreenings.length}</span> sessions
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="border-border bg-card hover:bg-muted h-10 px-4 rounded-xl shadow-sm">
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= filteredScreenings.length} onClick={() => setPage(p => p + 1)} className="border-border h-8 shadow-sm">
+              <Button variant="outline" size="sm" disabled={(page + 1) * itemsPerPage >= filteredScreenings.length} onClick={() => setPage(p => p + 1)} className="border-border bg-card hover:bg-muted h-10 px-4 rounded-xl shadow-sm">
                 Next
               </Button>
             </div>

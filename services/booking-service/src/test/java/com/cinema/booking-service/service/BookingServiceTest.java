@@ -3,6 +3,8 @@ package com.cinema.booking_service.service;
 import com.cinema.booking_service.domain.*;
 import com.cinema.booking_service.domain.enums.BookingStatus;
 import com.cinema.booking_service.domain.enums.SeatHoldStatus;
+import com.cinema.booking_service.event.SeatStatusEventPublisher;
+import com.cinema.booking_service.messaging.HoldExpirationPublisher;
 import com.cinema.booking_service.model.HoldRequest;
 import com.cinema.booking_service.model.HoldResponse;
 import com.cinema.booking_service.repository.*;
@@ -14,6 +16,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -36,6 +41,24 @@ class BookingServiceTest {
     @Mock
     private SeatRepository seatRepository;
 
+    @Mock
+    private SeatStatusEventPublisher eventPublisher;
+
+    @Mock
+    private WebSocketService webSocketService;
+
+    @Mock
+    private HoldExpirationPublisher holdExpirationPublisher;
+
+    @Mock
+    private RabbitTemplate rabbitTemplate;
+
+    @Mock
+    private RestTemplate restTemplate;
+
+    @Mock
+    private UserHistoryStorageService userHistoryStorageService;
+
     @InjectMocks
     private BookingService bookingService;
 
@@ -48,6 +71,9 @@ class BookingServiceTest {
         showId = UUID.randomUUID();
         userId = UUID.randomUUID();
         seatId = UUID.randomUUID();
+        ReflectionTestUtils.setField(bookingService, "coreServiceUrl", "http://core-service:8081");
+        ReflectionTestUtils.setField(bookingService, "supportServiceUrl", "http://support-service:8084");
+        ReflectionTestUtils.setField(bookingService, "holdTtlSeconds", 120);
     }
 
     // ================================
@@ -62,19 +88,31 @@ class BookingServiceTest {
                 .seatIds(List.of(seatId))
                 .build();
 
-        when(seatHoldRepository.findByShowIdAndSeatIdAndStatus(
-                showId, seatId, SeatHoldStatus.ACTIVE))
+        when(seatHoldRepository.findByShowIdAndSeatIdAndStatusAndExpiresAtAfter(
+                eq(showId), eq(seatId), eq(SeatHoldStatus.ACTIVE), any(LocalDateTime.class)))
                 .thenReturn(Collections.emptyList());
+        when(bookingSeatRepository.findBySeatId(seatId)).thenReturn(Collections.emptyList());
+
+        when(restTemplate.getForEntity(anyString(), eq(BookingService.ScreeningDto.class)))
+                .thenThrow(new RuntimeException("core service unavailable"));
+
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> {
+            Booking b = inv.getArgument(0);
+            if (b.getId() == null) b.setId(UUID.randomUUID());
+            return b;
+        });
 
         HoldResponse response = bookingService.holdSeats(request);
 
         assertNotNull(response);
-        assertEquals(BookingStatus.SEATS_HELD, response.getStatus());
+        assertEquals(BookingStatus.SEATS_HELD.toString(), response.getStatus());
         assertEquals(1, response.getHeldSeatIds().size());
 
-        verify(bookingRepository, times(1)).save(any(Booking.class));
+        verify(bookingRepository, atLeastOnce()).save(any(Booking.class));
         verify(seatHoldRepository, times(1)).saveAll(anyList());
         verify(bookingSeatRepository, times(1)).saveAll(anyList());
+        verify(holdExpirationPublisher, times(1))
+                .scheduleHoldExpiration(eq(response.getBookingId()), eq(showId), eq(userId), any(LocalDateTime.class));
     }
 
     // ================================
@@ -89,11 +127,12 @@ class BookingServiceTest {
                 .seatIds(List.of(seatId))
                 .build();
 
-        when(seatHoldRepository.findByShowIdAndSeatIdAndStatus(
-                showId, seatId, SeatHoldStatus.ACTIVE))
+        when(seatHoldRepository.findByShowIdAndSeatIdAndStatusAndExpiresAtAfter(
+                eq(showId), eq(seatId), eq(SeatHoldStatus.ACTIVE), any(LocalDateTime.class)))
                 .thenReturn(List.of(new SeatHold()));
+        when(bookingSeatRepository.findBySeatId(seatId)).thenReturn(Collections.emptyList());
 
-        assertThrows(RuntimeException.class,
+        assertThrows(IllegalStateException.class,
                 () -> bookingService.holdSeats(request));
     }
 
@@ -103,13 +142,8 @@ class BookingServiceTest {
     @Test
     void shouldReturnSeatAvailability() {
 
-        when(seatRepository.findByShowId(showId))
-                .thenReturn(List.of(
-                        Seat.builder().id(seatId).build()
-                ));
-
-        when(seatHoldRepository.findByShowIdAndStatus(
-                showId, SeatHoldStatus.ACTIVE))
+        when(seatHoldRepository.findByShowIdAndStatusAndExpiresAtAfter(
+                eq(showId), eq(SeatHoldStatus.ACTIVE), any(LocalDateTime.class)))
                 .thenReturn(Collections.emptyList());
 
         when(bookingSeatRepository.findByShowId(showId))
@@ -117,7 +151,8 @@ class BookingServiceTest {
 
         List<?> result = bookingService.getAvailableSeats(showId);
 
-        assertEquals(1, result.size());
+        // getAvailableSeats returns HELD/BOOKED seats only (not AVAILABLE seats)
+        assertEquals(0, result.size());
     }
 
     // ================================
@@ -130,7 +165,9 @@ class BookingServiceTest {
 
         Booking booking = Booking.builder()
                 .id(bookingId)
-                .status(BookingStatus.SEATS_HELD)
+                .showId(showId)
+                .userId(userId)
+                .status(BookingStatus.PAYMENT_PENDING)
                 .build();
 
         when(bookingRepository.findById(bookingId))
@@ -146,6 +183,8 @@ class BookingServiceTest {
                 .thenReturn(List.of(
                         SeatHold.builder().bookingId(bookingId).build()
                 ));
+
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
 
         bookingService.confirmBooking(bookingId);
 
@@ -166,6 +205,8 @@ class BookingServiceTest {
 
         Booking booking = Booking.builder()
                 .id(bookingId)
+                .showId(showId)
+                .userId(userId)
                 .status(BookingStatus.SEATS_HELD)
                 .build();
 
@@ -177,13 +218,16 @@ class BookingServiceTest {
                         BookingSeat.builder().bookingId(bookingId).build()
                 ));
 
+        when(seatHoldRepository.findByBookingIdAndStatus(bookingId, SeatHoldStatus.ACTIVE))
+                .thenReturn(List.of(SeatHold.builder().bookingId(bookingId).build()));
+
         bookingService.cancelBooking(bookingId);
 
         assertEquals(BookingStatus.CANCELLED, booking.getStatus());
 
         verify(bookingRepository).save(booking);
         verify(bookingSeatRepository).saveAll(anyList());
-        verify(seatHoldRepository).deleteByBookingId(bookingId);
+        verify(seatHoldRepository).saveAll(anyList());
     }
 
     // ================================
@@ -206,79 +250,45 @@ class BookingServiceTest {
 
         when(seatHoldRepository.findByBookingIdAndStatus(
                 bookingId, SeatHoldStatus.ACTIVE))
-                .thenReturn(Collections.emptyList());
+                .thenReturn(List.of(hold));
 
         when(bookingRepository.findById(bookingId))
                 .thenReturn(Optional.of(
                         Booking.builder()
                                 .id(bookingId)
+                                .showId(showId)
+                                .userId(userId)
                                 .status(BookingStatus.SEATS_HELD)
                                 .build()
                 ));
 
         when(bookingSeatRepository.findByBookingId(bookingId))
-                .thenReturn(Collections.emptyList());
+                .thenReturn(List.of(BookingSeat.builder().bookingId(bookingId).seatId(seatId).showId(showId).build()));
 
         bookingService.expireHolds();
 
         assertEquals(SeatHoldStatus.EXPIRED, hold.getStatus());
-        verify(seatHoldRepository, atLeastOnce()).save(any());
+        verify(seatHoldRepository).saveAll(anyList());
     }
 
     @Test
-    void shouldAllowOnlyOneThreadToHoldSeatConcurrently() throws InterruptedException {
-
-        UUID seatId = UUID.randomUUID();
-
+    void shouldRejectHoldWhenBookingSeatAlreadyActive() {
         HoldRequest request1 = HoldRequest.builder()
                 .showId(showId)
                 .userId(UUID.randomUUID())
                 .seatIds(List.of(seatId))
                 .build();
-
-        HoldRequest request2 = HoldRequest.builder()
-                .showId(showId)
-                .userId(UUID.randomUUID())
-                .seatIds(List.of(seatId))
-                .build();
-
-        // First call returns empty (seat free)
-        when(seatHoldRepository.findByShowIdAndSeatIdAndStatus(
-                showId, seatId, SeatHoldStatus.ACTIVE))
+        when(seatHoldRepository.findByShowIdAndSeatIdAndStatusAndExpiresAtAfter(
+                eq(showId), eq(seatId), eq(SeatHoldStatus.ACTIVE), any(LocalDateTime.class)))
                 .thenReturn(Collections.emptyList());
+        when(bookingSeatRepository.findBySeatId(seatId))
+                .thenReturn(List.of(BookingSeat.builder()
+                        .seatId(seatId)
+                        .showId(showId)
+                        .status(BookingStatus.PAYMENT_PENDING)
+                        .build()));
 
-        int threadCount = 2;
-        List<Throwable> exceptions = Collections.synchronizedList(new ArrayList<>());
-
-        Runnable task1 = () -> {
-            try {
-                bookingService.holdSeats(request1);
-            } catch (Throwable t) {
-                exceptions.add(t);
-            }
-        };
-
-        Runnable task2 = () -> {
-            try {
-                bookingService.holdSeats(request2);
-            } catch (Throwable t) {
-                exceptions.add(t);
-            }
-        };
-
-        Thread thread1 = new Thread(task1);
-        Thread thread2 = new Thread(task2);
-
-        thread1.start();
-        thread2.start();
-
-        thread1.join();
-        thread2.join();
-
-        // In current implementation BOTH may succeed
-        // In correct implementation exactly one should fail
-
-        assertTrue(exceptions.size() <= 1);
+        assertThrows(IllegalStateException.class, () -> bookingService.holdSeats(request1));
     }
 
 }

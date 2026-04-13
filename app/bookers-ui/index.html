@@ -7,6 +7,12 @@
     <title>Bookers UI</title>
   </head>
   <body>
+    <!-- Polyfill for global object required by sockjs-client in Vite -->
+    <script>
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
+    </script>
     <script>
       // Enhanced debugging - capture all navigation attempts
       (function() {

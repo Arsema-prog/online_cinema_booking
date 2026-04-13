@@ -104,11 +104,22 @@ services:
         condition: service_healthy
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   core-service:
     build: ./services/core-service
     ports:
       - "8081:8081"
+    environment:
+      - MINIO_URL=http://minio:9000
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,6 +127,13 @@ services:
         condition: service_healthy
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   booking-service:
     build: ./services/booking-service
@@ -138,6 +156,13 @@ services:
       - MINIO_USER_HISTORY_BUCKET=user-history
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   payment-service:
     build: ./services/payment-service
@@ -153,6 +178,13 @@ services:
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   support-service:
     build: ./services/support-service
@@ -172,8 +204,18 @@ services:
     environment:
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
     networks:
       - cinema_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
 networks:
   cinema_network:

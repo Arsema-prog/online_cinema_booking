@@ -1,6 +1,8 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
+import { Button } from "@/components/ui/Button";
+import { Loader2, CheckCircle2 } from "lucide-react";
 
 interface FormData {
   username: string;
@@ -12,7 +14,7 @@ interface FormData {
 }
 
 export const RegistrationPage: React.FC = () => {
-  const { register, login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,325 +70,157 @@ export const RegistrationPage: React.FC = () => {
     }
   };
 
-  // Add this function inside your RegistrationPage component
-const testBackendConnection = async () => {
-  console.log('🔍 TESTING BACKEND CONNECTION');
-  
-  try {
-    // Test 1: OPTIONS request (CORS preflight)
-    console.log('Test 1: OPTIONS request (CORS preflight)');
-    const optionsResponse = await fetch('http://localhost:8084/api/auth/register', {
-      method: 'OPTIONS',
-      headers: {
-        'Origin': 'http://localhost:5174',
-        'Access-Control-Request-Method': 'POST',
-        'Access-Control-Request-Headers': 'Content-Type'
-      }
-    });
-    
-    console.log('OPTIONS Response Status:', optionsResponse.status);
-    console.log('OPTIONS Response Headers:', [...optionsResponse.headers.entries()]);
-    
-    // Check for CORS headers
-    const allowOrigin = optionsResponse.headers.get('access-control-allow-origin');
-    if (allowOrigin) {
-      console.log('✅ CORS Header present:', allowOrigin);
-    } else {
-      console.log('❌ CORS Header MISSING!');
-    }
-    
-    // Test 2: Simple POST request
-    console.log('\nTest 2: POST request');
-    const postResponse = await fetch('http://localhost:8084/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: 'test_' + Date.now(),
-        email: 'test_' + Date.now() + '@test.com',
-        password: 'password123',
-        firstName: 'Test',
-        lastName: 'User'
-      })
-    });
-    
-    console.log('POST Response Status:', postResponse.status);
-    const text = await postResponse.text();
-    console.log('POST Response Body:', text);
-    
-    try {
-      const json = JSON.parse(text);
-      console.log('Parsed Response:', json);
-    } catch(e) {
-      console.log('Response is not JSON:', text);
-    }
-    
-  } catch (error) {
-    console.error('❌ Connection test failed:', error);
-  }
-};
-
-
   const handleBackToLogin = (): void => {
     navigate('/');
   };
 
- // In your RegistrationPage, when registration is successful, change the button to:
-if (success) {
-  return (
-    <div style={{ 
-      minHeight: "100vh", 
-      display: "flex", 
-      alignItems: "center", 
-      justifyContent: "center", 
-      background: "#020617", 
-      color: "white" 
-    }}>
-      <div style={{ 
-        width: 400, 
-        padding: 32, 
-        borderRadius: 8, 
-        background: "#0f172a", 
-        textAlign: "center" 
-      }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
-        <h2 style={{ color: "#10b981", marginBottom: 16 }}>Registration Successful!</h2>
-        <p style={{ marginBottom: 24, color: "#cbd5f5" }}>
-          Your account has been created. Please log in to continue.
-        </p>
-        <a 
-          href="/" 
-          style={{
-            display: "inline-block",
-            width: "100%",
-            padding: "12px",
-            borderRadius: 4,
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 600,
-            background: "#4f46e5",
-            color: "white",
-            fontSize: 16,
-            textDecoration: "none",
-            textAlign: "center"
-          }}
-        >
-          Go to Login
-        </a>
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fadeIn">
+        <div className="w-full max-w-md p-8 rounded-3xl bg-card border border-border text-center shadow-lg">
+          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/20 shadow-sm">
+            <CheckCircle2 className="w-10 h-10 text-green-500" />
+          </div>
+          <h2 className="text-2xl font-headline font-bold text-foreground mb-4">Registration Successful!</h2>
+          <p className="mb-8 text-muted-foreground text-sm">
+            Your account has been created. Please log in to continue.
+          </p>
+          <Button 
+            onClick={handleBackToLogin}
+            className="w-full text-base font-bold shadow-sm h-12 rounded-xl"
+          >
+            Go to Login
+          </Button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      display: "flex", 
-      alignItems: "center", 
-      justifyContent: "center", 
-      background: "#020617", 
-      color: "white",
-      padding: "20px"
-    }}>
-      <div style={{ 
-        width: 450, 
-        padding: 32, 
-        borderRadius: 8, 
-        background: "#0f172a", 
-        boxShadow: "0 10px 25px rgba(15,23,42,0.8)" 
-      }}>
-        <h1 style={{ fontSize: 28, marginBottom: 8, textAlign: "center" }}>Create Account</h1>
-        <p style={{ marginBottom: 24, textAlign: "center", color: "#cbd5f5" }}>
-          Sign up for online cinema booking
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fadeIn">
+      {/* Decorative background element */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
+      
+      <div className="w-full max-w-[450px] p-8 md:p-10 rounded-3xl bg-card border border-border shadow-xl relative overflow-hidden">
+        
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-headline font-bold mb-2 text-foreground tracking-tight">Create Account</h1>
+          <p className="text-muted-foreground text-sm font-medium">
+            Join ATLAS Cinema today
+          </p>
+        </div>
         
         {error && (
-          <div style={{ 
-            backgroundColor: "#f87171", 
-            color: "white", 
-            padding: "12px", 
-            borderRadius: "4px",
-            marginBottom: "20px",
-            fontSize: "14px"
-          }}>
+          <div className="bg-destructive/10 text-destructive text-sm p-4 rounded-xl mb-6 border border-destructive/20 font-medium text-center">
             {error}
           </div>
         )}
         
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
-              Username *
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="firstName" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">First Name</label>
+              <input
+                id="firstName"
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                autoComplete="given-name"
+                className="w-full rounded-md px-3 bg-muted text-foreground border-border h-11 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="lastName" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Last Name</label>
+              <input
+                id="lastName"
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                autoComplete="family-name"
+                className="w-full rounded-md px-3 bg-muted text-foreground border-border h-11 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="username" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Username *</label>
             <input
+              id="username"
               type="text"
               name="username"
               value={formData.username}
               onChange={handleChange}
               required
               autoComplete="username"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "1px solid #334155",
-                background: "#1e293b",
-                color: "white",
-                fontSize: 14
-              }}
+              className="w-full rounded-md px-3 bg-muted text-foreground border-border h-11 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
             />
           </div>
           
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
-              Email *
-            </label>
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Email *</label>
             <input
+              id="email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
               autoComplete="email"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "1px solid #334155",
-                background: "#1e293b",
-                color: "white",
-                fontSize: 14
-              }}
+              className="w-full rounded-md px-3 bg-muted text-foreground border-border h-11 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
             />
           </div>
           
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
-              First Name
-            </label>
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Password *</label>
             <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              autoComplete="given-name"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "1px solid #334155",
-                background: "#1e293b",
-                color: "white",
-                fontSize: 14
-              }}
-            />
-          </div>
-          
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
-              Last Name
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              autoComplete="family-name"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "1px solid #334155",
-                background: "#1e293b",
-                color: "white",
-                fontSize: 14
-              }}
-            />
-          </div>
-          
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
-              Password *
-            </label>
-            <input
+              id="password"
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
               autoComplete="new-password"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "1px solid #334155",
-                background: "#1e293b",
-                color: "white",
-                fontSize: 14
-              }}
+              className="w-full rounded-md px-3 bg-muted text-foreground border-border h-11 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
             />
           </div>
           
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
-              Confirm Password *
-            </label>
+          <div className="space-y-2 mb-6">
+            <label htmlFor="confirmPassword" className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Confirm Password *</label>
             <input
+              id="confirmPassword"
               type="password"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
               autoComplete="new-password"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "1px solid #334155",
-                background: "#1e293b",
-                color: "white",
-                fontSize: 14
-              }}
+              className="w-full rounded-md px-3 bg-muted text-foreground border-border h-11 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
             />
           </div>
           
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: 4,
-              border: "none",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 600,
-              background: "#4f46e5",
-              color: "white",
-              fontSize: 16,
-              opacity: loading ? 0.7 : 1
-            }}
+            className="w-full h-12 text-base font-bold rounded-xl mt-6 shadow-md"
           >
-            {loading ? "Creating Account..." : "Sign Up"}
-          </button>
+            {loading ? (
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creating Account...</>
+            ) : "Sign Up"}
+          </Button>
         </form>
         
-        <div style={{ marginTop: 20, textAlign: "center", fontSize: 14 }}>
+        <div className="mt-8 text-center text-sm text-muted-foreground font-medium">
           Already have an account?{" "}
           <button
             onClick={handleBackToLogin}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#4f46e5",
-              cursor: "pointer",
-              textDecoration: "underline",
-              fontSize: 14
-            }}
+            className="text-primary hover:text-primary/80 font-bold hover:underline transition-all"
           >
             Sign In
           </button>
-         
         </div>
       </div>
     </div>

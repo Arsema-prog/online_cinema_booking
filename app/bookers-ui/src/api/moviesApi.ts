@@ -1,7 +1,7 @@
 import { Movie } from "../types";
 import { env } from "../env";
 
-const API_URL = env.coreServiceUrl ?? "http://localhost:8081";
+const API_URL = env.apiGatewayUrl ? `${env.apiGatewayUrl}/api/v1/core` : "http://localhost:8090/api/v1/core";
 
 export async function fetchMovies(): Promise<Movie[]> {
   const response = await fetch(`${API_URL}/movies`);

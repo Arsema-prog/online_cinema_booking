@@ -20,7 +20,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs}
 
   rabbitmq:
     host: rabbitmq
@@ -58,16 +58,16 @@ keycloak:
     client-secret: ${KEYCLOAK_CLIENT_SECRET}
 
 minio:
-  endpoint: http://minio:9000
-  access-key: minioadmin
-  secret-key: password123
-  bucket: tickets
+  endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket: ${MINIO_BUCKET:tickets}
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.web.servlet.mvc.method.annotation: DEBUG
-    com.cinema.supportservice: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    org.springframework.web.servlet.mvc.method.annotation: INFO
+    com.cinema.supportservice: INFO
 
 management:
   endpoints:

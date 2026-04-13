@@ -12,7 +12,7 @@ export interface RegistrationData {
 
 // Create a dedicated client for registration
 const registrationClient = axios.create({
-  baseURL: env.supportServiceUrl ?? 'http://localhost:8084',
+  baseURL: env.apiGatewayUrl ?? 'http://localhost:8090',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export const registrationService = {
       console.log('🚀 STARTING REGISTRATION PROCESS');
       console.log('User Data:', { ...userData, password: '***' });
       
-      const response = await registrationClient.post('/api/auth/register', userData);
+      const response = await registrationClient.post('/api/v1/support/api/auth/register', userData);
       
       console.log('✅ REGISTRATION COMPLETED SUCCESSFULLY');
       return response.data;

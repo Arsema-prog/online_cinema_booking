@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Filter, History } from 'lucide-react';
 import { BookingHistoryModel, historyService } from '../services/historyService';
 import { BookingHistoryItem } from '../components/BookingHistoryItem';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 export const BookingHistoryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,42 +27,43 @@ export const BookingHistoryPage: React.FC = () => {
     fetchHistory();
   }, []);
 
-  
-
   const filteredHistory = history.filter(item => filter === 'ALL' || item.status === filter);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-20">
-      <div className="max-w-5xl mx-auto px-4 pt-8">
+    <div className="min-h-screen bg-background text-foreground pb-20 animate-fadeIn">
+      <div className="max-w-5xl mx-auto px-4 pt-24">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6 p-6 md:p-8 bg-card border border-border rounded-3xl shadow-sm">
           <div className="flex items-center gap-4">
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => navigate('/bookers/movies')}
-              className="p-3 bg-slate-800 hover:bg-indigo-600 rounded-xl transition-colors"
+              className="rounded-full shrink-0"
             >
               <ChevronLeft size={20} />
-            </button>
+            </Button>
             <div>
-              <h1 className="text-3xl font-bold flex items-center gap-3">
-                <History className="w-8 h-8 text-indigo-400" /> My Booking History
+              <h1 className="text-3xl font-headline font-bold flex items-center gap-3">
+                <History className="w-8 h-8 text-primary" /> My Booking History
               </h1>
-              <p className="text-slate-400 mt-1">View your past tickets and reservations</p>
+              <p className="text-muted-foreground mt-1 text-sm">View your past tickets and reservations</p>
             </div>
           </div>
 
           {/* Filter Toggles */}
-          <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700">
+          <div className="flex bg-muted p-1 rounded-xl border border-border">
             {['ALL', 'CONFIRMED', 'CANCELLED'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f as any)}
-                className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+                className={cn(
+                  "px-4 py-2 text-xs font-bold rounded-lg transition-all",
                   filter === f 
-                    ? 'bg-slate-700 text-white shadow-sm' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
                 {f.charAt(0) + f.slice(1).toLowerCase()}
               </button>
@@ -70,20 +73,21 @@ export const BookingHistoryPage: React.FC = () => {
 
         {/* List Content */}
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+          <div className="flex justify-center flex-col items-center py-20 gap-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+            <p className="text-muted-foreground font-medium text-sm">Loading history...</p>
           </div>
         ) : filteredHistory.length === 0 ? (
-          <div className="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-12 text-center">
-            <History className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">No bookings found</h3>
-            <p className="text-slate-400">You haven't made any bookings that match this filter yet.</p>
-            <button
+          <div className="bg-card rounded-3xl border border-border border-dashed p-12 text-center shadow-sm">
+            <History className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+            <h3 className="text-xl font-headline font-bold text-foreground mb-2">No bookings found</h3>
+            <p className="text-muted-foreground text-sm">You haven't made any bookings that match this filter yet.</p>
+            <Button
               onClick={() => navigate('/bookers/movies')}
-              className="mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold transition-colors"
+              className="mt-6 font-bold"
             >
               Browse Movies
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="space-y-6">

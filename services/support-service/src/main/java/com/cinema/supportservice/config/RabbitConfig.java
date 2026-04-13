@@ -1,9 +1,11 @@
 package com.cinema.supportservice.config;
 
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,12 +24,35 @@ import java.util.Map;
 @EnableRabbit
 public class RabbitConfig {
 
+    public static final String DEAD_LETTER_EXCHANGE = "booking.dlx";
+    public static final String BOOKING_CONFIRMED_DLQ = "booking.confirmed.queue.dlq";
+
     @Value("${rabbitmq.queue.bookingConfirmed}")
     private String bookingConfirmedQueue;
 
     @Bean
     public Queue bookingConfirmedQueue() {
-        return new Queue(bookingConfirmedQueue, true);
+        return QueueBuilder.durable(bookingConfirmedQueue)
+                .deadLetterExchange(DEAD_LETTER_EXCHANGE)
+                .deadLetterRoutingKey(BOOKING_CONFIRMED_DLQ)
+                .build();
+    }
+
+    @Bean
+    public DirectExchange deadLetterExchange() {
+        return new DirectExchange(DEAD_LETTER_EXCHANGE);
+    }
+
+    @Bean
+    public Queue bookingConfirmedDlq() {
+        return QueueBuilder.durable(BOOKING_CONFIRMED_DLQ).build();
+    }
+
+    @Bean
+    public Binding bookingConfirmedDlqBinding() {
+        return BindingBuilder.bind(bookingConfirmedDlq())
+                .to(deadLetterExchange())
+                .with(BOOKING_CONFIRMED_DLQ);
     }
 
     @Bean
@@ -62,11 +87,4 @@ public class RabbitConfig {
         return converter;
     }
 
-    @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
-                                         MessageConverter messageConverter) {
-        RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(messageConverter);
-        return template;
-    }
 }
