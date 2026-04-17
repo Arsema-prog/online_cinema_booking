@@ -103,4 +103,33 @@ public class SupportController {
 
         return ResponseEntity.ok(ticket);
     }
+
+    /**
+     * Converts a UUID to a Long by extracting the numeric part from the UUID.
+     * Format expected: 00000000-0000-0000-0000-000000000012 -> 12
+     */
+    private Long convertToLong(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+
+        String uuidStr = uuid.toString();
+        // Get the last part after the last hyphen
+        String lastPart = uuidStr.substring(uuidStr.lastIndexOf('-') + 1);
+
+        // Remove leading zeros
+        String numericPart = lastPart.replaceFirst("^0+(?!$)", "");
+
+        if (numericPart.isEmpty()) {
+            return 0L;
+        }
+
+        try {
+            return Long.parseLong(numericPart);
+        } catch (NumberFormatException e) {
+            System.err.println("[ERROR] Failed to convert UUID to Long: " + uuid);
+            // Fallback: use hash code as last resort
+            return (long) Math.abs(uuid.hashCode() % 10000);
+        }
+    }
 }
