@@ -64,9 +64,18 @@ export default function RootLayout() {
               {isActive && (
                 <div className="absolute inset-0 bg-white/5" />
               )}
-              <span className={cn("material-symbols-outlined relative z-10", isActive && "font-bold shadow-sm")} style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}>
-                {item.icon}
-              </span>
+              {(() => {
+                const Icon = item.icon;
+                return (
+                  <Icon 
+                    className={cn(
+                      "w-[22px] h-[22px] relative z-10 transition-all", 
+                      isActive ? "text-primary-foreground drop-shadow-md" : "text-muted-foreground group-hover:text-foreground"
+                    )} 
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                );
+              })()}
               <span className="font-semibold text-sm relative z-10 tracking-wide">{item.label}</span>
             </NavLink>
           );
