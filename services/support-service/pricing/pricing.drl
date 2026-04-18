@@ -1,0 +1,91 @@
+package cinema.pricing
+
+import com.cinema.supportservice.dto.PriceEvaluationRequest;
+import com.cinema.supportservice.dto.PriceEvaluationResponse.BreakdownItem;
+import java.util.List;
+
+global List breakdown;
+
+// 1. Base price (always first)
+rule "Base price"
+    salience 40
+    no-loop true
+    when
+        $req: PriceEvaluationRequest( finalPrice == null, basePrice != null )
+    then
+        long finalPrice = $req.getBasePrice();
+        if ($req.getSeatCount() != null && $req.getSeatCount() > 0) {
+            finalPrice = finalPrice * $req.getSeatCount();
+        }
+
+        modify($req) {
+            setFinalPrice(finalPrice)
+        };
+
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("Base price");
+        item.setDescription("Initial base price applied");
+        item.setAppliedValue($req.getSeatCount() != null ? $req.getSeatCount() : 1);
+        breakdown.add(item);
+end
+
+// 2. VIP multiplier
+rule "VIP multiplier"
+    salience 30
+    no-loop true
+    when
+        $req: PriceEvaluationRequest( seatCategory == "VIP" )
+    then
+        Long current = $req.getFinalPrice();
+
+        modify($req) {
+            setFinalPrice(Math.round(current * 1.5))
+        };
+
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("VIP multiplier");
+        item.setDescription("VIP seats have 1.5x multiplier");
+        item.setAppliedValue(1.5);
+        breakdown.add(item);
+end
+
+// 3. Last-day surcharge
+rule "Last day surcharge"
+    salience 20
+    no-loop true
+    when
+        $req: PriceEvaluationRequest( showTime != null, bookingTime != null,
+                                      showTime.toLocalDate().equals(bookingTime.toLocalDate()) )
+    then
+        Long current = $req.getFinalPrice();
+
+        modify($req) {
+            setFinalPrice(Math.round(current * 1.2))
+        };
+
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("Last day surcharge");
+        item.setDescription("20% surcharge for booking on the show day");
+        item.setAppliedValue(1.2);
+        breakdown.add(item);
+end
+
+// 4. HOLIDAY promo (10% discount)
+rule "HOLIDAY promo 10% off"
+    salience 10
+    no-loop true
+    when
+        $req: PriceEvaluationRequest( promoCode == "HOLIDAY" )
+    then
+        Long current = $req.getFinalPrice();
+
+        modify($req) {
+            setFinalPrice(Math.round(current * 0.9))
+        };
+
+        BreakdownItem item = new BreakdownItem();
+        item.setRuleName("HOLIDAY promo");
+        item.setDescription("10% discount for HOLIDAY promotion");
+        item.setAppliedValue(0.9);
+        breakdown.add(item);
+end
