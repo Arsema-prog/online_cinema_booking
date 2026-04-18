@@ -36,7 +36,9 @@ public class PaymentController {
             CheckoutSessionResponse response = paymentService.createCheckoutSession(
                     request,
                     caller.userId(),
-                    caller.privileged()
+                    caller.email(),
+                    caller.privileged(),
+                    caller.bearerToken()
             );
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -61,7 +63,8 @@ public class PaymentController {
             CheckoutSessionResponse response = paymentService.completeMockCheckout(
                     sessionId,
                     caller.userId(),
-                    caller.privileged()
+                    caller.privileged(),
+                    caller.bearerToken()
             );
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -76,17 +79,25 @@ public class PaymentController {
     private CheckoutCaller resolveCaller(Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String callerUserId = jwt.getSubject();
+        String callerEmail = jwt.getClaimAsString("email");
+        if (callerEmail == null || callerEmail.isBlank()) {
+            String preferred = jwt.getClaimAsString("preferred_username");
+            if (preferred != null && preferred.contains("@")) {
+                callerEmail = preferred;
+            }
+        }
         boolean privileged = authentication.getAuthorities().stream()
                 .map(grantedAuthority -> grantedAuthority.getAuthority())
                 .anyMatch(authority ->
                         "ROLE_ADMIN".equals(authority)
                                 || "ROLE_MANAGER".equals(authority)
                                 || "ROLE_STAFF".equals(authority));
+        String bearerToken = jwt.getTokenValue();
 
-        return new CheckoutCaller(callerUserId, privileged);
+        return new CheckoutCaller(callerUserId, callerEmail, privileged, bearerToken);
     }
 
-    private record CheckoutCaller(String userId, boolean privileged) {}
+    private record CheckoutCaller(String userId, String email, boolean privileged, String bearerToken) {}
 
 //    @PostMapping("/webhook")
 //    public ResponseEntity<String> handleStripeWebhook(@RequestBody String payload,

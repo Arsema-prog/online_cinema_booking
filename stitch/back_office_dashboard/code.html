@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Back Office - Dashboard | The Cinematic Editorial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#171f33",
+                    "primary-container": "#e50914",
+                    "on-surface-variant": "#e9bcb6",
+                    "tertiary-container": "#737272",
+                    "error": "#ffb4ab",
+                    "primary-fixed": "#ffdad5",
+                    "secondary-fixed-dim": "#e9c400",
+                    "primary": "#ffb4aa",
+                    "surface-container-highest": "#2d3449",
+                    "surface-tint": "#ffb4aa",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "surface-container-low": "#131b2e",
+                    "on-secondary-fixed-variant": "#544600",
+                    "primary-fixed-dim": "#ffb4aa",
+                    "surface-container-high": "#222a3d",
+                    "on-background": "#dae2fd",
+                    "inverse-surface": "#dae2fd",
+                    "on-secondary": "#3a3000",
+                    "outline-variant": "#5e3f3b",
+                    "on-primary-fixed-variant": "#930007",
+                    "on-error": "#690005",
+                    "secondary": "#fff9ef",
+                    "secondary-container": "#ffdb3c",
+                    "on-primary-fixed": "#410001",
+                    "inverse-primary": "#c0000c",
+                    "on-secondary-fixed": "#221b00",
+                    "tertiary-fixed": "#e5e2e1",
+                    "outline": "#af8782",
+                    "on-tertiary-container": "#fbf8f7",
+                    "on-error-container": "#ffdad6",
+                    "error-container": "#93000a",
+                    "on-surface": "#dae2fd",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "on-tertiary": "#313030",
+                    "surface-bright": "#31394d",
+                    "secondary-fixed": "#ffe16d",
+                    "on-primary": "#690003",
+                    "surface-dim": "#0b1326",
+                    "tertiary": "#c8c6c5",
+                    "surface-variant": "#2d3449",
+                    "surface": "#0b1326",
+                    "surface-container-lowest": "#060e20",
+                    "inverse-on-surface": "#283044",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "on-secondary-container": "#725f00",
+                    "on-primary-container": "#fff7f6",
+                    "background": "#0b1326"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Epilogue"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1326;
+            color: #dae2fd;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-surface selection:bg-primary/30">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#060e20] flex flex-col py-8 gap-y-1 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-lg font-black text-[#e50914] mb-1">Back Office</h1>
+<p class="text-on-surface-variant text-xs font-medium uppercase tracking-widest opacity-60">Cinema Manager</p>
+</div>
+<nav class="flex-1 px-0">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center px-6 py-3 bg-[#e50914] text-white rounded-r-full mr-4 transition-all group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+<span class="font-inter text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#e9bcb6] hover:bg-[#2d3449] hover:text-white rounded-r-full mr-4 transition-all translate-x-0 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="store">store</span>
+<span class="font-inter text-sm font-medium">Branches</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#e9bcb6] hover:bg-[#2d3449] hover:text-white rounded-r-full mr-4 transition-all translate-x-0 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="movie">movie</span>
+<span class="font-inter text-sm font-medium">Movies</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#e9bcb6] hover:bg-[#2d3449] hover:text-white rounded-r-full mr-4 transition-all translate-x-0 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="fullscreen">fullscreen</span>
+<span class="font-inter text-sm font-medium">Screens</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#e9bcb6] hover:bg-[#2d3449] hover:text-white rounded-r-full mr-4 transition-all translate-x-0 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="schedule">schedule</span>
+<span class="font-inter text-sm font-medium">Screenings</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#e9bcb6] hover:bg-[#2d3449] hover:text-white rounded-r-full mr-4 transition-all translate-x-0 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-inter text-sm font-medium">Bookings</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#e9bcb6] hover:bg-[#2d3449] hover:text-white rounded-r-full mr-4 transition-all translate-x-0 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-inter text-sm font-medium">Verification</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#e9bcb6] hover:bg-[#2d3449] hover:text-white rounded-r-full mr-4 transition-all translate-x-0 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="group">group</span>
+<span class="font-inter text-sm font-medium">Users</span>
+</a>
+</nav>
+<div class="px-6 pt-6 border-t border-surface-container-highest/20 mt-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Admin Avatar" class="w-full h-full object-cover" data-alt="professional portrait of a man in his 40s wearing glasses and a dark blazer, studio lighting, clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvh-KvZRlVmfXNbtxRXR23I9Cao7yEhlWULMguesp0I8oHJJUjUpHYRqinlCP7gHqBLCCFaKPQH0RPD0g11htM384gaaMmuLs4dmrl2RbGaq57qFXqmEo7I8YQ0AAypx0TUnO0hK7pr6XEzH_zi6HCFa6ms6JnOOFH-tJxvJSr-qpj3vD6UQbR9hJSsxgHEfjbJmAAJcH0yC1zxwrxv5YHWkp_-5E9U-MkO-YKDqNkrbDda2X-z8LivltiKPu7o0qtyA0mHujFvos"/>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-bold truncate">Julian Thorne</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-tight">Lead Admin</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-8 py-6 w-full sticky top-0 bg-[#0b1326]/70 backdrop-blur-xl z-40 transition-shadow">
+<div class="flex items-center gap-4">
+<h2 class="text-2xl font-headline font-bold tracking-tight text-on-background">Operational Overview</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-sm">search</span>
+<input class="bg-surface-container-high border-none rounded-xl text-sm pl-10 pr-4 py-2 w-64 focus:ring-1 focus:ring-primary/40 transition-all placeholder:text-on-surface-variant/40" placeholder="Search screenings, movies..." type="text"/>
+</div>
+<div class="flex items-center bg-surface-container-low p-1 rounded-xl">
+<button class="px-4 py-1.5 text-xs font-semibold bg-surface-container-highest text-primary rounded-lg transition-all">Today</button>
+<button class="px-4 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-background transition-all">Weekly</button>
+<button class="px-4 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-background transition-all">Monthly</button>
+</div>
+<div class="flex gap-3">
+<button class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Dashboard Body -->
+<section class="px-8 pb-12">
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+<div class="bg-surface-container-low p-6 rounded-xl relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="confirmation_number">confirmation_number</span>
+</div>
+<span class="text-xs font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded">+12%</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-bold mb-1 opacity-60">Today's Bookings</p>
+<h3 class="text-3xl font-headline font-extrabold text-on-background">1,284</h3>
+<div class="absolute bottom-0 right-0 opacity-5 -mb-4 -mr-4 pointer-events-none">
+<span class="material-symbols-outlined text-9xl" data-icon="confirmation_number">confirmation_number</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-secondary-container/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-secondary-fixed-dim" data-icon="payments">payments</span>
+</div>
+<span class="text-xs font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded">+8.4%</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-bold mb-1 opacity-60">Revenue (Daily)</p>
+<h3 class="text-3xl font-headline font-extrabold text-on-background">$14,502</h3>
+<div class="absolute bottom-0 right-0 opacity-5 -mb-4 -mr-4 pointer-events-none">
+<span class="material-symbols-outlined text-9xl" data-icon="payments">payments</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-surface-container-highest p-2 rounded-lg">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="event_seat">event_seat</span>
+</div>
+<span class="text-xs font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded">-2.1%</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-bold mb-1 opacity-60">Occupancy Rate</p>
+<h3 class="text-3xl font-headline font-extrabold text-on-background">78.5%</h3>
+<div class="absolute bottom-0 right-0 opacity-5 -mb-4 -mr-4 pointer-events-none">
+<span class="material-symbols-outlined text-9xl" data-icon="event_seat">event_seat</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-primary-container/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="star">star</span>
+</div>
+<span class="text-xs font-bold text-on-background bg-surface-container-highest px-2 py-0.5 rounded">NEW</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-bold mb-1 opacity-60">VIP Upgrades</p>
+<h3 class="text-3xl font-headline font-extrabold text-on-background">312</h3>
+<div class="absolute bottom-0 right-0 opacity-5 -mb-4 -mr-4 pointer-events-none">
+<span class="material-symbols-outlined text-9xl" data-icon="star">star</span>
+</div>
+</div>
+</div>
+<!-- Main Dashboard Layout -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Center Analytics -->
+<div class="col-span-12 lg:col-span-8 space-y-8">
+<!-- Trends Chart (Visual Mockup) -->
+<div class="bg-surface-container-low rounded-xl p-8">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h4 class="text-lg font-bold">Bookings Trend</h4>
+<p class="text-xs text-on-surface-variant opacity-60">Hourly distribution of ticket sales</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="text-[10px] uppercase font-bold tracking-widest opacity-60">Online</span>
+</div>
+<div class="flex items-center gap-1.5 ml-4">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-fixed-dim"></span>
+<span class="text-[10px] uppercase font-bold tracking-widest opacity-60">Kiosk</span>
+</div>
+</div>
+</div>
+<!-- Simple Geometric Chart Representation -->
+<div class="relative h-64 w-full flex items-end justify-between gap-2 border-b border-surface-container-highest/30 pb-2">
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[40%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[55%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[75%]"></div>
+<div class="flex-1 bg-primary-container/40 hover:bg-primary-container/60 transition-all rounded-t-sm h-[90%] border-t-2 border-primary"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[60%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[45%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[50%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[70%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[85%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[65%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[40%]"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-all rounded-t-sm h-[30%]"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] uppercase font-bold tracking-widest text-on-surface-variant opacity-40">
+<span>08:00</span>
+<span>12:00</span>
+<span>16:00</span>
+<span>20:00</span>
+<span>00:00</span>
+</div>
+</div>
+<!-- Upcoming Screenings Table -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden">
+<div class="p-6 flex justify-between items-center border-b border-surface-container-highest/10">
+<h4 class="font-bold">Next Screenings (Live)</h4>
+<a class="text-xs font-bold text-primary flex items-center hover:underline" href="#">
+                                Full Schedule <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-bold bg-surface-container">
+<th class="px-6 py-4">Movie</th>
+<th class="px-6 py-4">Time</th>
+<th class="px-6 py-4">Hall</th>
+<th class="px-6 py-4 text-center">Seats</th>
+<th class="px-6 py-4">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-highest/10">
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-10 rounded bg-surface-container-highest overflow-hidden">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="cinematic close-up of a dramatic film poster with intense moody lighting and high contrast shadow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_FjIqj3iWvgLci8o3LQ1ujukKPUKP4vtyKWs2iYlWp4Jy3lttcUC_tlDdOMxqyv6r24CJVcxKo14CQXSPRo6WMtce3fOxUrbthZGJb3_rluFWk63j5s_Rhw2Pe_frXpef-r6gDPZpRru3rH9WEQUZ1JViKTMxFgEKgKJFTKyt-tOLxLM2GtY5-WBdStTcgeqKiGPF5XQLIfHr9XgygQU_h5_LagArEKnECHCJM4EkaQGGgSVsxMmqJQEU0cMKIwdSkibaiQQbmiY"/>
+</div>
+<span class="text-sm font-semibold">Neon Horizon</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium">18:30 <span class="text-[10px] opacity-40 ml-1">(In 15m)</span></td>
+<td class="px-6 py-4 text-sm font-medium">Theater 04</td>
+<td class="px-6 py-4">
+<div class="w-full max-w-[100px] h-1.5 bg-surface-container-highest rounded-full overflow-hidden mx-auto">
+<div class="bg-secondary-fixed-dim h-full w-[95%]"></div>
+</div>
+<p class="text-[10px] text-center mt-1 font-bold">142 / 150</p>
+</td>
+<td class="px-6 py-4">
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-bold uppercase tracking-tighter">Cleaning</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-10 rounded bg-surface-container-highest overflow-hidden">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="vintage cinema film reel and popcorn with moody noir lighting on dark wooden table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2Q9aikPwPt5ahFwXxIDcmF_wtAVqW9c4nAEoIRCmyZpjwhO8X2A22KinhBNq3_KLxjnS-F8s2MoM1WzMrnu5S4rdF1tOfoNUtNG2nHjGYe98vdlyzdCMobutuCT0XU2N9Kx-5Knx4mPYii133RzyDeNrXeq7V2xJhMxCL2KeLpuooZCmWpxt89uCiTV1IPo8sN3MvRQL_HiTe8L9pQ5BA6yMuDsw8hWKo5RIH1kEyw4Am5ko6DUtYEkwiNIsySFjX3n4M_lPHZ1g"/>
+</div>
+<span class="text-sm font-semibold">The Last Echo</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium">19:00 <span class="text-[10px] opacity-40 ml-1">(In 45m)</span></td>
+<td class="px-6 py-4 text-sm font-medium">IMAX 01</td>
+<td class="px-6 py-4">
+<div class="w-full max-w-[100px] h-1.5 bg-surface-container-highest rounded-full overflow-hidden mx-auto">
+<div class="bg-primary-container h-full w-[45%]"></div>
+</div>
+<p class="text-[10px] text-center mt-1 font-bold">184 / 400</p>
+</td>
+<td class="px-6 py-4">
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-bold uppercase tracking-tighter">Open</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-10 rounded bg-surface-container-highest overflow-hidden">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="surreal digital art of a galaxy reflected in a human eye, vibrant purple and gold color palette" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArEwo6uEVdukLnS_1RImtbjq33-AwKDZKkCgYxGo0inCV1rBlCsg6qNWD5BKNlaE4m8fcZy4n0iq7zCTwOTeLXyBamYwoW5x7pC-7Y8oISzpzU6FZJ2nMlR9wJ6bSCa7le7W2ncvX1LeFy1Q1BlvVOvOK5cxSJPFYcM6yjbfr2Dvko3n74ZF4f59r_Xfp0s_Bitd7C934z4jrG7vqFJmrFuIU-Y500spIyxnhXwWE7xtB6PMTP9n3-EluUcxm8A_GKi2TTr0Pfqag"/>
+</div>
+<span class="text-sm font-semibold">Star Dust</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium">19:45 <span class="text-[10px] opacity-40 ml-1">(In 1.5h)</span></td>
+<td class="px-6 py-4 text-sm font-medium">Theater 12</td>
+<td class="px-6 py-4">
+<div class="w-full max-w-[100px] h-1.5 bg-surface-container-highest rounded-full overflow-hidden mx-auto">
+<div class="bg-primary-container h-full w-[70%]"></div>
+</div>
+<p class="text-[10px] text-center mt-1 font-bold">84 / 120</p>
+</td>
+<td class="px-6 py-4">
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-bold uppercase tracking-tighter">Open</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Alerts & Activity -->
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<!-- Alert Panel -->
+<div class="bg-surface-container-low rounded-xl p-6">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-error" data-icon="report">report</span>
+<h4 class="font-bold">Critical Alerts</h4>
+</div>
+<div class="space-y-4">
+<div class="bg-[#e50914]/10 border-l-4 border-[#e50914] p-4 rounded-r-lg">
+<div class="flex justify-between items-start mb-1">
+<h5 class="text-xs font-black uppercase tracking-tight text-on-background">Low Capacity: Neon Horizon</h5>
+<span class="text-[10px] opacity-50">2m ago</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Theater 04 is at 95% occupancy for the 18:30 show. Consider opening Hall 08 for overflow.</p>
+<button class="mt-3 text-[10px] font-bold text-primary hover:underline uppercase tracking-widest">Adjust Schedule</button>
+</div>
+<div class="bg-secondary-container/10 border-l-4 border-secondary-fixed-dim p-4 rounded-r-lg">
+<div class="flex justify-between items-start mb-1">
+<h5 class="text-xs font-black uppercase tracking-tight text-on-background">Snack Bar Stock Alert</h5>
+<span class="text-[10px] opacity-50">15m ago</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Premium Caramel Popcorn stock is below 15% in Branch A. Automatic reorder triggered.</p>
+<button class="mt-3 text-[10px] font-bold text-secondary-fixed-dim hover:underline uppercase tracking-widest">View Inventory</button>
+</div>
+</div>
+</div>
+<!-- Occupancy Heatmap (Mockup) -->
+<div class="bg-surface-container-low rounded-xl p-6">
+<h4 class="font-bold mb-6">Theater Occupancy Heatmap</h4>
+<div class="grid grid-cols-5 gap-2">
+<!-- Heatmap boxes -->
+<div class="aspect-square bg-primary-container rounded-sm flex items-center justify-center text-[10px] font-bold">01</div>
+<div class="aspect-square bg-primary-container/80 rounded-sm flex items-center justify-center text-[10px] font-bold">02</div>
+<div class="aspect-square bg-primary-container/40 rounded-sm flex items-center justify-center text-[10px] font-bold text-on-surface-variant">03</div>
+<div class="aspect-square bg-primary-container rounded-sm flex items-center justify-center text-[10px] font-bold">04</div>
+<div class="aspect-square bg-primary-container/20 rounded-sm flex items-center justify-center text-[10px] font-bold text-on-surface-variant">05</div>
+<div class="aspect-square bg-primary-container/10 rounded-sm flex items-center justify-center text-[10px] font-bold text-on-surface-variant">06</div>
+<div class="aspect-square bg-primary-container/60 rounded-sm flex items-center justify-center text-[10px] font-bold">07</div>
+<div class="aspect-square bg-primary-container/90 rounded-sm flex items-center justify-center text-[10px] font-bold">08</div>
+<div class="aspect-square bg-primary-container/30 rounded-sm flex items-center justify-center text-[10px] font-bold text-on-surface-variant">09</div>
+<div class="aspect-square bg-primary-container rounded-sm flex items-center justify-center text-[10px] font-bold">10</div>
+</div>
+<div class="mt-4 flex justify-between items-center">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-40">Low Density</span>
+<div class="flex-1 h-1 mx-3 bg-gradient-to-r from-primary-container/10 to-primary-container rounded-full"></div>
+<span class="text-[10px] uppercase font-bold text-on-surface-variant opacity-40">Sold Out</span>
+</div>
+</div>
+<!-- Recent Activity -->
+<div class="bg-surface-container-low rounded-xl p-6">
+<h4 class="font-bold mb-6">Staff Activity</h4>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-primary-container mt-1.5 shrink-0"></div>
+<div>
+<p class="text-xs font-semibold"><span class="text-primary">Manager Sarah</span> updated pricing for IMAX screenings</p>
+<p class="text-[10px] text-on-surface-variant opacity-40 mt-1 uppercase tracking-tighter">14:22 • WEB CONSOLE</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-secondary-fixed-dim mt-1.5 shrink-0"></div>
+<div>
+<p class="text-xs font-semibold"><span class="text-secondary-fixed-dim">Floor Team</span> completed Hall 04 maintenance</p>
+<p class="text-[10px] text-on-surface-variant opacity-40 mt-1 uppercase tracking-tighter">13:58 • MOBILE APP</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-2 h-2 rounded-full bg-primary-container mt-1.5 shrink-0"></div>
+<div>
+<p class="text-xs font-semibold"><span class="text-primary">System</span> automatically backed up screening logs</p>
+<p class="text-[10px] text-on-surface-variant opacity-40 mt-1 uppercase tracking-tighter">13:00 • AUTOMATED</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 flex flex-col md:flex-row justify-between items-center border-t border-[#2d3449]/20 bg-[#060e20]">
+<p class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60">© 2024 The Cinematic Editorial. High-End Curation.</p>
+<div class="flex gap-8 mt-6 md:mt-0">
+<a class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Privacy Policy</a>
+<a class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Terms of Service</a>
+<a class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Contact Support</a>
+</div>
+</footer>
+</main>
+<!-- Floating Action Button (Admin Jump) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-transform z-50 group">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+<div class="absolute right-full mr-4 bg-surface-container-highest px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest">
+            New Screening
+        </div>
+</button>
+</body></html>

@@ -7,6 +7,7 @@ public class PaymentOutcomeEvent {
     private String eventId;
     private UUID paymentId;
     private UUID bookingId;
+    private String userEmail;
     private String stripeEventId;
     private String stripeSessionId;
     private Long amount;
@@ -44,6 +45,14 @@ public class PaymentOutcomeEvent {
 
     public void setStripeEventId(String stripeEventId) {
         this.stripeEventId = stripeEventId;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 
     public String getStripeSessionId() {

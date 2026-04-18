@@ -26,6 +26,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
+import { useToast } from '@/hooks/use-toast';
 
 const screeningSchema = z.object({
   movieId: z.coerce.number().min(1, 'Movie is required'),
@@ -50,6 +51,8 @@ export default function ScreeningsPage() {
   const [open, setOpen] = useState(false);
   const [editingScreening, setEditingScreening] = useState<Screening | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const { toast } = useToast();
 
   const form = useForm<ScreeningFormValues>({
     resolver: zodResolver(screeningSchema) as any,
@@ -115,12 +118,24 @@ export default function ScreeningsPage() {
       } else {
         await createScreening(payload);
       }
+
+      toast({
+        title: editingScreening ? 'Screening updated successfully' : 'Screening created successfully',
+        description: movie?.title,
+        variant: 'success',
+      });
+
       setOpen(false);
       form.reset();
       setEditingScreening(null);
       fetchData();
     } catch (err) {
       console.error('Save failed', err);
+      toast({
+        title: 'Failed to save screening',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'error',
+      });
     } finally {
       setSaving(false);
     }
@@ -292,7 +307,7 @@ export default function ScreeningsPage() {
                         <div>
                           <div className="font-headline font-black text-foreground text-base leading-tight">{scr.movie.title}</div>
                           <div className="text-[10px] text-muted-foreground uppercase flex items-center font-bold tracking-widest gap-1 mt-1">
-                            <span className="material-symbols-outlined text-[10px]">info</span> {scr.movie.genre.split(',')[0]}
+                            <span className="material-symbols-outlined text-[10px]">info</span> {scr.movie.tags?.[0]?.genre || 'INFO'}
                           </div>
                         </div>
                       </div>

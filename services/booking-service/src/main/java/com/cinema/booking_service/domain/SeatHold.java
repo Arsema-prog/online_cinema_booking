@@ -10,10 +10,7 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "seat_hold",
-        schema = "booking",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"show_id", "seat_id"})
-        }
+        schema = "booking"
 )
 @Getter
 @Setter

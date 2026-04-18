@@ -207,7 +207,7 @@ export const getScreeningSeats = async (screeningId: number): Promise<ScreeningS
 };
 
 // Get seat UUID mapping for a screening
-export const getSeatUuidMapping = async (screeningId: number): Promise<Record<number, string>> => {
+export const getSeatUuidMapping = async (screeningId: number): Promise<Record<string, string>> => {
   const response = await apiClient.get(`/api/v1/core/screening-seats/screening/${screeningId}/seat-uuids`);
   return response.data;
 };
@@ -274,7 +274,7 @@ export const getSeatPriceQuote = async (params: {
     };
   }
 
-  const response = await apiClient.post<RawSeatPriceQuote>('/api/v1/support/api/rules/evaluate/price', {
+  const response = await apiClient.post<RawSeatPriceQuote>('/api/v1/support/rules/evaluate/price', {
     showId: params.screeningId,
     seatCount: params.seatCount,
     basePrice: 1500,

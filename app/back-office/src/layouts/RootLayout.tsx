@@ -6,7 +6,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, LogOut, LayoutDashboard, Building2, Film, Monitor, Calendar, Users, FileSignature, ShieldCheck, Clapperboard, CircleDot, ShoppingBasket, QrCode } from 'lucide-react';
+import { LayoutDashboard, Building2, Film, Monitor, Calendar, Users, FileSignature, ShoppingBasket, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/auth/AuthContext';
 import { ModeToggle } from '@/components/mode-toggle';
@@ -48,39 +48,31 @@ export default function RootLayout() {
         <p className="text-xs text-muted-foreground uppercase tracking-tighter mt-1 font-bold">Management Suite</p>
       </div>
       <nav className="flex flex-col gap-1 px-3 overflow-y-auto hide-scrollbar flex-1 pb-4">
-        {filteredNavItems.map((item) => {
-          const isActive = location.pathname.startsWith(item.to);
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={cn(
-                'px-4 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 group relative overflow-hidden',
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-[0_0_20px_hsl(var(--primary)/0.3)]'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              {isActive && (
-                <div className="absolute inset-0 bg-white/5" />
-              )}
-              {(() => {
-                const Icon = item.icon;
-                return (
-                  <Icon 
-                    className={cn(
-                      "w-[22px] h-[22px] relative z-10 transition-all", 
-                      isActive ? "text-primary-foreground drop-shadow-md" : "text-muted-foreground group-hover:text-foreground"
-                    )} 
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
-                );
-              })()}
-              <span className="font-semibold text-sm relative z-10 tracking-wide">{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+  {filteredNavItems.map((item) => {
+    const isActive = location.pathname.startsWith(item.to);
+    const Icon = item.icon;
+
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        className={cn(
+          'px-4 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 group relative overflow-hidden',
+          isActive
+            ? 'bg-primary text-primary-foreground shadow-[0_0_20px_hsl(var(--primary)/0.3)]'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        )}
+      >
+        {isActive && <div className="absolute inset-0 bg-white/5" />}
+        <Icon className="relative z-10 h-5 w-5" />
+        <span className="font-semibold text-sm relative z-10 tracking-wide">
+          {item.label}
+        </span>
+      </NavLink>
+    );
+  })}
+</nav>
+
       <div className="mt-auto px-4 pt-4 pb-2 border-t border-border/50">
         <div className="bg-muted rounded-xl p-4 mb-2 flex items-center gap-3">
           <div className="w-10 h-10 shrink-0 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
@@ -97,7 +89,7 @@ export default function RootLayout() {
             className="flex-1 rounded-xl text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive font-bold text-xs uppercase tracking-widest transition-colors"
             onClick={handleLogout}
           >
-            <span className="material-symbols-outlined text-lg mr-2">logout</span> Sign Out
+            <span className="material-symbols-outlined text-lg mr-2">logout</span> Log Out
           </Button>
           <ModeToggle />
         </div>

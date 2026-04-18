@@ -51,6 +51,8 @@ class PaymentServiceTest {
     void shouldReuseExistingPendingMockCheckoutSession() throws Exception {
         UUID bookingId = UUID.randomUUID();
         CreateCheckoutSessionRequest request = buildRequest(bookingId);
+        String userEmail = "test@example.com";
+        String bearerToken = "Bearer mock-token-123";
 
         PaymentService.BookingCheckoutResponse snapshot = new PaymentService.BookingCheckoutResponse();
         snapshot.setId(bookingId);
@@ -63,7 +65,7 @@ class PaymentServiceTest {
         existing.setBookingId(bookingId);
         existing.setStripeSessionId("mock_session_" + bookingId);
         existing.setAmount(4250L);
-        existing.setCurrency("USD");
+        existing.setCurrency("ETB");
         existing.setStatus(Payment.PaymentStatus.PENDING);
         existing.setCreatedAt(Instant.now());
 
@@ -72,10 +74,13 @@ class PaymentServiceTest {
         when(paymentRepository.findTopByBookingIdAndStatusOrderByCreatedAtDesc(bookingId, Payment.PaymentStatus.PENDING))
                 .thenReturn(Optional.of(existing));
 
+        // FIXED: Now passing all 5 required parameters
         CheckoutSessionResponse response = paymentService.createCheckoutSession(
                 request,
-                snapshot.getUserId().toString(),
-                false
+                snapshot.getUserId().toString(),  // callerUserId
+                userEmail,                        // callerEmail
+                false,                            // privilegedCaller
+                bearerToken                       // bearerToken
         );
 
         assertEquals(existing.getStripeSessionId(), response.getSessionId());
@@ -90,6 +95,8 @@ class PaymentServiceTest {
     void shouldRejectCheckoutForConfirmedBooking() {
         UUID bookingId = UUID.randomUUID();
         CreateCheckoutSessionRequest request = buildRequest(bookingId);
+        String userEmail = "test@example.com";
+        String bearerToken = "Bearer mock-token-123";
 
         PaymentService.BookingCheckoutResponse snapshot = new PaymentService.BookingCheckoutResponse();
         snapshot.setId(bookingId);
@@ -99,10 +106,13 @@ class PaymentServiceTest {
 
         when(restTemplate.getForEntity(anyString(), any())).thenReturn(ResponseEntity.ok(snapshot));
 
+        // FIXED: Now passing all 5 required parameters
         assertThrows(IllegalStateException.class, () -> paymentService.createCheckoutSession(
                 request,
-                snapshot.getUserId().toString(),
-                false
+                snapshot.getUserId().toString(),  // callerUserId
+                userEmail,                        // callerEmail
+                false,                            // privilegedCaller
+                bearerToken                       // bearerToken
         ));
         verify(paymentRepository, never()).save(any(Payment.class));
     }
@@ -111,7 +121,7 @@ class PaymentServiceTest {
         CreateCheckoutSessionRequest request = new CreateCheckoutSessionRequest();
         request.setBookingId(bookingId);
         request.setAmount(3000L);
-        request.setCurrency("USD");
+        request.setCurrency("ETB");
         request.setSuccessUrl("http://localhost/success");
         request.setCancelUrl("http://localhost/cancel");
         return request;

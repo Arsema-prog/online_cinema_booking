@@ -27,7 +27,7 @@ export default function LandingPage() {
         <div className="flex items-center gap-4">
           {!isAuthenticated && (
             <Button variant="ghost" onClick={() => navigate('/login')} className="font-bold text-base h-12 px-6">
-              Sign In
+              Log In
             </Button>
           )}
           <Button 

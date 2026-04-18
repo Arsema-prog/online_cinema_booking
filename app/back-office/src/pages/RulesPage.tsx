@@ -25,6 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/auth/AuthContext';
 
 const rulesetSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -35,6 +36,7 @@ const rulesetSchema = z.object({
 type RulesetFormValues = z.infer<typeof rulesetSchema>;
 
 export default function RulesPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [rulesets, setRulesets] = useState<Ruleset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,8 +65,9 @@ export default function RulesPage() {
   };
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
     fetchRulesets();
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   const onSubmit = async (values: RulesetFormValues, files: Record<string, File | null>) => {
     try {

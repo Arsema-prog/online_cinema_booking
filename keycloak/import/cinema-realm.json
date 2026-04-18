@@ -1,0 +1,64 @@
+{
+  "realm": "cinema-realm",
+  "enabled": true,
+  "displayName": "Cinema",
+  "loginWithEmailAllowed": true,
+  "roles": {
+    "realm": [
+      { "name": "ADMIN", "description": "Back-office and API admin" },
+      { "name": "MANAGER", "description": "Manager" },
+      { "name": "STAFF", "description": "Staff" },
+      { "name": "BOOKER", "description": "Public booking app user" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "bookers-ui",
+      "name": "bookers-ui",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:5174/*",
+        "http://127.0.0.1:5174/*"
+      ],
+      "webOrigins": ["+"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "back-office",
+      "name": "back-office",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*"
+      ],
+      "webOrigins": ["+"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "support-service",
+      "name": "support-service",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "support-service-secret-change-me",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"]
+    }
+  ]
+}

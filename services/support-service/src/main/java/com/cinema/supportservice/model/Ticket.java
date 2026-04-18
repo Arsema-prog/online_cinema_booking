@@ -1,9 +1,11 @@
 package com.cinema.supportservice.model;
 
 import com.cinema.supportservice.model.enums.TicketStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.math.BigDecimal;
@@ -75,5 +77,23 @@ public class Ticket {
 
     @Column(name = "validated_at")
     private LocalDateTime validatedAt;
+
+    @Column(name = "is_active", nullable = false)
+    @ColumnDefault("true")
+    private boolean isActive = true;
+
+    @Column(name = "is_used", nullable = false)
+    @ColumnDefault("false")
+    private boolean isUsed = false;
+
+    @Column(name = "used_at")
+    private LocalDateTime usedAt;
+
+    /**
+     * Opaque value encoded in the QR image; valid only if it matches this row in the database.
+     */
+    @JsonIgnore
+    @Column(name = "validation_token", nullable = false, unique = true, length = 80)
+    private String validationToken;
 
 }

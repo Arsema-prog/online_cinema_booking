@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Plus, Minus, SkipForward, Popcorn, Coffee, Beer, Wine, Milk, Cookie, Sparkles, ArrowRight, Trash2, CreditCard, Loader2 } from 'lucide-react';
-import { BookingDetails, cancelBooking, getBookingDetails, getBookingSeats, updateBookingSnacks } from '../api/bookingApi';
+import { BookingDetails, cancelBooking, getBookingDetails, getBookingSeats, updateBookingSnacks, initiateBookingPayment } from '../api/bookingApi';
+import { paymentService } from '../services/paymentService';
+import { env } from '../env';
+import { getAccessTokenGetter } from '../httpClient';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -51,8 +54,11 @@ export const SnackSelectionPage: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentIntent, setPaymentIntent] = useState<'continue' | 'skip'>('continue');
   const [processing, setProcessing] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
+  const [mockSessionId, setMockSessionId] = useState<string | null>(null);
+  const [completingDemoPayment, setCompletingDemoPayment] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [holdExpired, setHoldExpired] = useState(false);
   const [bookingSummary, setBookingSummary] = useState<BookingDetails | null>(null);
@@ -226,12 +232,189 @@ export const SnackSelectionPage: React.FC = () => {
 
   const snacksTotalValue = getCartTotal();
   const checkoutTotal = resolvedSeatTotal + snacksTotalValue;
+  const modalSnacksTotal = paymentIntent === 'skip' ? 0 : snacksTotalValue;
+  const modalGrandTotal = paymentIntent === 'skip' ? resolvedSeatTotal : checkoutTotal;
   const checkoutStatusLabel =
     bookingSummary?.status === 'SNACKS_SELECTED'
       ? 'Concessions saved'
       : bookingSummary?.status === 'PAYMENT_PENDING' || bookingSummary?.status === 'PAYMENT_INITIATED'
         ? 'Redirecting to payment'
         : 'Seats held for checkout';
+
+  const handleSkipSnacks = async () => {
+    if (holdExpired) {
+      alert('Your seat hold has expired. Please start booking again.');
+      navigate('/bookers/movies');
+      return;
+    }
+
+    setProcessing(true);
+    setStripeError(null);
+    try {
+      if (!bookingId) {
+        throw new Error('Missing booking reference. Please restart booking.');
+      }
+
+      setCart([]);
+      const cleared = await updateBookingSnacks(bookingId, '', 0);
+      setBookingSummary(cleared);
+
+      const seatOnlyTotal = Math.max(cleared.totalAmount - cleared.snacksTotal, 0);
+      if (seatOnlyTotal <= 0) {
+        throw new Error('Total amount must be greater than zero');
+      }
+
+      setPaymentIntent('skip');
+      setShowPaymentModal(true);
+    } catch (error: any) {
+      console.error('Skip snacks error:', error);
+      setStripeError(error?.message ?? 'Could not clear snacks. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const resolveUserEmail = async (token: string | null | undefined): Promise<string | null> => {
+    let email: string | null = null;
+
+    if (token) {
+      try {
+        const payload = token.split('.')[1];
+        if (payload) {
+          const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+          email = decoded?.email
+            || (typeof decoded?.preferred_username === 'string' && decoded.preferred_username.includes('@')
+              ? decoded.preferred_username
+              : null);
+        }
+      } catch {}
+    }
+
+    if (!email) {
+      try {
+        const cached = localStorage.getItem('bookers_user_email');
+        if (cached && cached.includes('@')) {
+          email = cached;
+        }
+      } catch {}
+    }
+
+    if (!email && token) {
+      try {
+        const userInfoRes = await fetch(
+          `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/userinfo`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (userInfoRes.ok) {
+          const info = await userInfoRes.json();
+          if (info?.email && typeof info.email === 'string') {
+            email = info.email;
+          }
+        }
+      } catch {}
+    }
+
+    return email;
+  };
+
+  const handleStripePayment = async () => {
+    if (holdExpired) {
+      alert('Your seat hold has expired. Please start booking again.');
+      navigate('/bookers/movies');
+      return;
+    }
+
+    setProcessing(true);
+    setStripeError(null);
+    setMockSessionId(null);
+    try {
+      if (!bookingId) {
+        throw new Error('Missing booking reference. Please restart booking.');
+      }
+
+      const isSkipIntent = paymentIntent === 'skip';
+      const snacksTotalToSend = isSkipIntent ? 0 : snacksTotalValue;
+      let latestBooking = bookingSummary ?? await getBookingDetails(bookingId);
+
+      if (!isSkipIntent && cart.length > 0) {
+        latestBooking = await updateBookingSnacks(
+          bookingId,
+          cart.map(item => `${item.quantity}x ${item.snack.name}`).join(', '),
+          snacksTotalToSend
+        );
+      } else if (
+        latestBooking.snacksTotal > 0 ||
+        (latestBooking.snackDetails && latestBooking.snackDetails.trim().length > 0)
+      ) {
+        latestBooking = await updateBookingSnacks(bookingId, '', 0);
+      }
+
+      setBookingSummary(latestBooking);
+
+      const paymentBooking = await initiateBookingPayment(bookingId);
+      setBookingSummary(paymentBooking);
+
+      const totalForPayment = paymentBooking.totalAmount > 0
+        ? paymentBooking.totalAmount
+        : latestBooking?.totalAmount ?? checkoutTotal;
+
+      if (!totalForPayment || totalForPayment <= 0) {
+        throw new Error('Total amount is missing or invalid for this booking.');
+      }
+
+      const token = getAccessTokenGetter()();
+      const userEmail = await resolveUserEmail(token);
+      const checkoutEmail = userEmail ?? '';
+      if (checkoutEmail) {
+        try {
+          sessionStorage.setItem('bookers_last_checkout_email', checkoutEmail);
+        } catch {}
+      }
+
+      const session = await paymentService.createCheckoutSession(
+        bookingId,
+        totalForPayment,
+        {
+          successUrl: `${window.location.origin}/bookers/booking/success?bookingId=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/bookers/booking/cancel?bookingId=${bookingId}`
+        }
+      );
+
+      if (session.sessionId?.startsWith('mock_session_')) {
+        setMockSessionId(session.sessionId);
+        setProcessing(false);
+        return;
+      }
+
+      window.location.href = session.url;
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      setStripeError(error?.message ?? 'Failed to process payment. Please try again.');
+      setProcessing(false);
+    }
+  };
+
+  const handleCompleteDemoPayment = async () => {
+    if (!bookingId || !mockSessionId) {
+      setStripeError('Missing demo payment session. Please retry checkout.');
+      return;
+    }
+
+    setCompletingDemoPayment(true);
+    setStripeError(null);
+
+    try {
+      await paymentService.completeMockCheckout(mockSessionId);
+      navigate(`/bookers/booking/success?bookingId=${bookingId}&session_id=${mockSessionId}`, {
+        replace: true
+      });
+    } catch (completionError: any) {
+      console.error('Demo payment completion failed:', completionError);
+      setStripeError(completionError?.message ?? 'Failed to complete demo payment. Please try again.');
+    } finally {
+      setCompletingDemoPayment(false);
+    }
+  };
 
   const handleConfirmPayment = async () => {
     if (holdExpired) {
@@ -255,8 +438,14 @@ export const SnackSelectionPage: React.FC = () => {
           cart.map(item => `${item.quantity}x ${item.snack.name}`).join(', '),
           snacksTotalValue
         );
-        setBookingSummary(latestBooking);
+      } else if (
+        bookingSummary &&
+        (bookingSummary.snacksTotal > 0 ||
+          (bookingSummary.snackDetails && bookingSummary.snackDetails.trim().length > 0))
+      ) {
+        latestBooking = await updateBookingSnacks(bookingId, '', 0);
       }
+      setBookingSummary(latestBooking);
 
       const totalAmount = latestBooking?.totalAmount && latestBooking.totalAmount > 0
         ? latestBooking.totalAmount
@@ -266,20 +455,37 @@ export const SnackSelectionPage: React.FC = () => {
         throw new Error('Total amount must be greater than zero');
       }
 
-      navigate('/bookers/payment', {
-        state: {
-          bookingId,
-          seats: seatLabels,
-          seatTotal: resolvedSeatTotal,
-          snacks: cart,
-          snacksTotal: snacksTotalValue,
-          totalAmount
-        }
-      });
+      setProcessing(false);
+      setPaymentIntent('continue');
+      setShowPaymentModal(true);
     } catch (error: any) {
       console.error('Payment error:', error);
       setStripeError(error?.message ?? 'Failed to process payment. Please try again.');
       setProcessing(false);
+    }
+  };
+
+  const handleProceedFromModal = async () => {
+    if (holdExpired) {
+      alert('Your seat hold has expired. Please start booking again.');
+      navigate('/bookers/movies');
+      return;
+    }
+
+    const isSkipIntent = paymentIntent === 'skip';
+    const seatOnlyTotal = resolvedSeatTotal;
+    const grandTotal = isSkipIntent ? seatOnlyTotal : checkoutTotal;
+
+    if (grandTotal <= 0) {
+      setStripeError('Total amount must be greater than zero');
+      return;
+    }
+
+    try {
+      await handleStripePayment();
+    } catch (error: any) {
+      console.error('Proceed to payment error:', error);
+      setStripeError(error?.message ?? 'Failed to process payment. Please try again.');
     }
   };
 
@@ -480,15 +686,15 @@ export const SnackSelectionPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       variant="outline"
-                      onClick={() => setShowPaymentModal(true)}
-                      disabled={holdExpired}
+                      onClick={handleSkipSnacks}
+                      disabled={holdExpired || processing}
                       className="rounded-xl h-12 font-bold gap-2 text-xs"
                     >
                       <SkipForward size={14} /> Skip Snacks
                     </Button>
                     <Button
-                      onClick={() => setShowPaymentModal(true)}
-                      disabled={holdExpired}
+                      onClick={handleConfirmPayment}
+                      disabled={holdExpired || processing}
                       className="rounded-xl h-12 font-bold gap-2 text-xs shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       Continue to Payment <ArrowRight size={14} />
@@ -522,17 +728,17 @@ export const SnackSelectionPage: React.FC = () => {
                 <span className="font-bold text-foreground">${resolvedSeatTotal.toFixed(2)}</span>
               </div>
               
-              {cart.length > 0 && (
+              {paymentIntent !== 'skip' && cart.length > 0 && (
                 <div className="flex justify-between mb-4 pb-4 border-b border-border">
                   <span className="text-muted-foreground text-sm font-medium">Snacks & Drinks</span>
-                  <span className="font-bold text-foreground">${snacksTotalValue.toFixed(2)}</span>
+                  <span className="font-bold text-foreground">${modalSnacksTotal.toFixed(2)}</span>
                 </div>
               )}
 
               <div className="flex justify-between items-center mt-2">
                 <span className="text-base font-bold text-foreground">Grand Total</span>
                 <span className="text-2xl font-black text-primary">
-                  ${checkoutTotal.toFixed(2)}
+                  ${modalGrandTotal.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -547,13 +753,43 @@ export const SnackSelectionPage: React.FC = () => {
                 Go Back
               </Button>
               <Button
-                onClick={handleConfirmPayment}
+                onClick={handleProceedFromModal}
                 disabled={processing || holdExpired}
                 className="flex-1 rounded-xl h-12 gap-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {holdExpired ? 'Hold Expired' : processing ? <><Loader2 className="animate-spin" size={16}/> Processing</> : <><CreditCard size={16} /> Continue</>}
+                {holdExpired
+                  ? 'Hold Expired'
+                  : processing
+                    ? <><Loader2 className="animate-spin" size={16}/> Processing</>
+                    : <><CreditCard size={16} /> {paymentIntent === 'skip' ? 'Continue without snacks' : 'Continue'}</>}
               </Button>
             </div>
+
+            {mockSessionId && (
+              <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                <div className="text-sm font-bold text-amber-700 mb-1">Demo payment mode</div>
+                <p className="text-xs text-amber-700/90 mb-4">
+                  Stripe is running in local mock mode. Complete payment explicitly to confirm your seats.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleCompleteDemoPayment}
+                    disabled={completingDemoPayment || processing}
+                    className="flex-1"
+                  >
+                    {completingDemoPayment ? 'Confirming...' : 'Complete Demo Payment'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/bookers/booking/cancel?bookingId=${bookingId}`)}
+                    disabled={completingDemoPayment || processing}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {stripeError && (
               <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-xs font-medium text-center">

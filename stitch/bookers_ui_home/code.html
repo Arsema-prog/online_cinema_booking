@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#171f33",
+                        "primary-container": "#e50914",
+                        "on-surface-variant": "#e9bcb6",
+                        "tertiary-container": "#737272",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#ffdad5",
+                        "secondary-fixed-dim": "#e9c400",
+                        "primary": "#ffb4aa",
+                        "surface-container-highest": "#2d3449",
+                        "surface-tint": "#ffb4aa",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "surface-container-low": "#131b2e",
+                        "on-secondary-fixed-variant": "#544600",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "surface-container-high": "#222a3d",
+                        "on-background": "#dae2fd",
+                        "inverse-surface": "#dae2fd",
+                        "on-secondary": "#3a3000",
+                        "outline-variant": "#5e3f3b",
+                        "on-primary-fixed-variant": "#930007",
+                        "on-error": "#690005",
+                        "secondary": "#fff9ef",
+                        "secondary-container": "#ffdb3c",
+                        "on-primary-fixed": "#410001",
+                        "inverse-primary": "#c0000c",
+                        "on-secondary-fixed": "#221b00",
+                        "tertiary-fixed": "#e5e2e1",
+                        "outline": "#af8782",
+                        "on-tertiary-container": "#fbf8f7",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "on-surface": "#dae2fd",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "on-tertiary": "#313030",
+                        "surface-bright": "#31394d",
+                        "secondary-fixed": "#ffe16d",
+                        "on-primary": "#690003",
+                        "surface-dim": "#0b1326",
+                        "tertiary": "#c8c6c5",
+                        "surface-variant": "#2d3449",
+                        "surface": "#0b1326",
+                        "surface-container-lowest": "#060e20",
+                        "inverse-on-surface": "#283044",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-secondary-container": "#725f00",
+                        "on-primary-container": "#fff7f6",
+                        "background": "#0b1326"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Epilogue"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .text-shadow-hero {
+            text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #060e20;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3449;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #e50914;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-white">
+<nav class="fixed top-0 w-full z-50 bg-[#0b1326]/70 backdrop-blur-xl flex justify-between items-center px-8 py-4 w-full shadow-[0_40px_60px_-15px_rgba(6,14,32,0.6)]">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-bold tracking-tighter text-[#e50914] font-headline">The Cinematic Editorial</span>
+<div class="hidden md:flex gap-8 items-center font-epilogue tracking-tight">
+<a class="text-[#ffb4aa] border-b-2 border-[#e50914] pb-1" href="#">Movies</a>
+<a class="text-[#e9bcb6] hover:text-white transition-colors" href="#">Cinemas</a>
+<a class="text-[#e9bcb6] hover:text-white transition-colors" href="#">History</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden lg:flex items-center bg-surface-container-high rounded-full px-4 py-1.5 border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-on-surface-variant/50 w-48" placeholder="Search curated films..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant text-sm font-medium hover:text-white transition-colors">Login</button>
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-container/20 scale-95 active:scale-90 transition-transform">Register</button>
+</div>
+</div>
+</nav>
+<main>
+<section class="relative h-[921px] w-full flex items-end overflow-hidden">
+<div class="absolute inset-0">
+<img class="w-full h-full object-cover" data-alt="dramatic wide shot of a futuristic neon-lit city street at night with cinematic rain and moody atmosphere, high contrast" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUSISeSQ25lncTqxFOQNiOZSv24rIKY9cVGP1TUHyRkCakaLLv0oRvD3YSQ8s74Lu9lsvig9gOyYUhrxWGS-zNP2KhmBLq0W941GjwmWO-LpswYQeupa-K3nSBifjvnWkmJlSLWSLmqmWh6g_sSkxRNKVVw7TU32Z-D8H_X4Ocq4d2iCRea9VJjXtcw68IKS91rEOAnC2iF45eLLJfxUp8EYoaoDXRtaUQoE0lpf7WOvZIWz3uluQEwhjzcjHhMqzQinvuLY7kBtU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent"></div>
+</div>
+<div class="relative z-10 px-8 md:px-16 pb-20 max-w-5xl">
+<div class="flex items-center gap-3 mb-6">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Trending Now</span>
+<span class="text-secondary text-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+                        4.9 Editor's Choice
+                    </span>
+</div>
+<h1 class="text-6xl md:text-8xl font-black font-headline text-on-surface tracking-tighter leading-none mb-6 text-shadow-hero">NEON <br/><span class="text-primary">ECHOES</span></h1>
+<p class="text-on-surface-variant text-lg md:text-xl max-w-xl mb-10 leading-relaxed">A visual masterpiece exploring the silence between frequencies in a world that never sleeps. Experience cinema as high art.</p>
+<div class="flex flex-wrap gap-4">
+<button class="bg-primary-container text-on-primary-container px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-container/90 transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined">confirmation_number</span>
+                        Book Experience
+                    </button>
+<button class="bg-surface-container-highest/60 backdrop-blur-md text-white border border-outline-variant/20 px-8 py-4 rounded-xl font-bold hover:bg-surface-container-highest transition-all scale-95 active:scale-90">
+                        View Trailer
+                    </button>
+</div>
+</div>
+</section>
+<section class="py-24 px-8 md:px-16">
+<div class="flex justify-between items-end mb-12">
+<div>
+<h2 class="text-on-surface-variant text-sm font-bold uppercase tracking-[0.3em] mb-2">Curated Collection</h2>
+<h3 class="text-4xl font-black font-headline text-white tracking-tight">Now Playing</h3>
+</div>
+<a class="text-primary text-sm font-bold flex items-center gap-2 group" href="#">
+                    Explore All Films
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="minimalist cinematic poster with deep shadows and one strong focal light source, aesthetic film style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0yLfa6txJvPH0Hj2Mi9NgNh1Ja01zrUnMkVqKdu9iAvdMmFfipDuVTZ-i1LqMTJd6PZ0U4jR-P7YK-Tl5AkqL4jsQltcJXMRwp3Ih64vxF03D9Qi6PZPWYT0rnKiowZ7Wni2-SUGWCif15BtPqK0zvICHEGD4Gl_qqzFV8NVRrllSSWUqDKuAtnslYz-jW9S-e6Ror2KXIvXXeARzd6yexU3ox7o2hLKRljdX44r4XrgiPXypgJaBCsWZtV8DGT4SrKO6jf815U4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+<span class="text-secondary-fixed-dim text-xs font-bold mb-1">DRAMA • 142 MIN</span>
+<h4 class="text-xl font-bold text-white mb-4">The Last Frame</h4>
+<button class="w-full bg-white text-surface-dim py-2.5 rounded-lg text-sm font-black uppercase tracking-wider">Details</button>
+</div>
+</div>
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="avant-garde movie poster featuring surreal architecture and muted pastel colors, editorial photography style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCA2J6EgEhF_M2XocwdiBCEWYfmVJcUBs7DRhWwAY1SVwJeWYtkqi9rKvThVUzw32_6Kf0HXvteSDqVn7jiktyyK_CPz0ARJQhRqftFDEpztXtVOnZzUI3xeTswvukjZcrbc4PconX5hrEIN0Nt6TltBUivCyDtQ1eTqSMaXJeciYBVyTAz8yiJtHPBSA_szAI8uV-uWGXHL-pg1_FHHr6l1WEXPtOVSjKqWpyufufhxzbTk4IYKOOCQFknwtp98d_SFKEOFiIav1A"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+<span class="text-secondary-fixed-dim text-xs font-bold mb-1">SCIFI • 118 MIN</span>
+<h4 class="text-xl font-bold text-white mb-4">Gravity's End</h4>
+<button class="w-full bg-white text-surface-dim py-2.5 rounded-lg text-sm font-black uppercase tracking-wider">Details</button>
+</div>
+</div>
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="moody noir film poster with sharp silhouettes and dramatic high-key lighting, grainy texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyFmeU1TYzC0OUcj6yD968rXkfLC1mHFViirynwcx2MHxk6Vsxf_o1AaHOp7hYb-xwYYy5k9GCt2y2ZWYAUF9L3K8oKMwGa16Q8BsV18qW0AZecs0uHLMaNZcEq3MA2dMs1KFmbQ6vNzT2lGtFVEad6zTRcserUOeJDp43tDFTz9VQyQxDZdoC5xbAQWZTiRlBapAkmPgoZhlp8GrOSyqZG832dw202G0m8Dl0XW7tzGluKHXOm2D2_CShG-gfiv6zBmE1Q3flpdA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+<span class="text-secondary-fixed-dim text-xs font-bold mb-1">THRILLER • 126 MIN</span>
+<h4 class="text-xl font-bold text-white mb-4">Shadow Protocol</h4>
+<button class="w-full bg-white text-surface-dim py-2.5 rounded-lg text-sm font-black uppercase tracking-wider">Details</button>
+</div>
+</div>
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="artistic film poster showing a close up of a thoughtful face through a rainy window, soft focus bokeh background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBROII7pZNbgHWfWjqCdf0AM6jqQ9ZFwv-GWh1XNd0Y35viut_B_dOtAcKjZOp4joE2FAfnM_LQlpzBz-tU41CMhfE2nTIxpBu6xQa4PnuPKIa0IAahzG8-gnJ9KYFwIOSSCxdnMczoFqDC_ZS9qYsv7pG-_-CjFTzxl6DWhSp8WCNIK-rxLzyOfCuShEW-T7ej32_LNWB2E5bw_MmmiRBkgoMGlqtKZSZWM7NCUWj5j7_WB9z3EwMDxuSHN6erbqxkf6Av4JNkls0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+<span class="text-secondary-fixed-dim text-xs font-bold mb-1">ROMANCE • 105 MIN</span>
+<h4 class="text-xl font-bold text-white mb-4">Velvet Evenings</h4>
+<button class="w-full bg-white text-surface-dim py-2.5 rounded-lg text-sm font-black uppercase tracking-wider">Details</button>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-surface-container-low py-24 px-8 md:px-16">
+<div class="mb-16 text-center max-w-3xl mx-auto">
+<h2 class="text-on-surface-variant text-sm font-bold uppercase tracking-[0.3em] mb-4">Elite Venues</h2>
+<h3 class="text-5xl font-black font-headline text-white tracking-tighter mb-6">Our Cinemas</h3>
+<p class="text-on-surface-variant/80">Every location is a sanctuary of sound and vision. Designed for the discerning viewer who seeks more than just a screen.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+<div class="flex flex-col gap-6">
+<div class="aspect-video rounded-2xl overflow-hidden bg-surface-container shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="luxurious modern cinema interior with plush velvet seats, soft ambient gold lighting, and architectural acoustics" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-tYxAEBe6wIeyLT4R0-njmZwSsFi3zdHZyl5sxBg5AysWJK-0EsngyKpdBRHKUpcttShVzQp4UC-P21_1VaEvRBvDLuWKDReFwbBubP9i0OdzoBPvklvrmwPNerXzMIrU3UZrcPw5u4jZSAzWfntQ6DWFP5XJ25Jqhejv9MWQ_Gsl-pudESrhqpw3AaEnxPT2w3gPCvTJIqA35jKBtK2nMrqEqpl8pxClQeKhiJ-wrdRWgqPp7BdPnpNkbggFFKjAPSdqwHS35r0"/>
+</div>
+<div>
+<h4 class="text-2xl font-bold text-white mb-1">The Grand Pavilion</h4>
+<p class="text-on-surface-variant text-sm mb-4">Royal Quarter, Central District</p>
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-[10px] bg-surface-container-highest px-3 py-1 rounded-full text-on-surface font-bold uppercase tracking-wider">IMAX Laser</span>
+<span class="flex items-center gap-1 text-[10px] bg-surface-container-highest px-3 py-1 rounded-full text-on-surface font-bold uppercase tracking-wider">Dolby Atmos</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<div class="aspect-video rounded-2xl overflow-hidden bg-surface-container shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="intimate private screening room with premium leather loungers and minimalist dark wood decor, warm task lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1ci1IGdW7gxSMUTzNrYJTv78fsbzjZ8ofVKb9ibe3tt63o-FdDJGGK9Vl8SckRyvTjHZQe6bakTLoICvqoNmTzML_gAf15akUCWDbGwazoHlNCfyRE3a-vGlSzGv0lOyzzbyOYJb4FB5PYZOQboY0vvZYEBLtYSrAPFxjxmZoImOgvCD6iQYxEzNcJDNqRWm7RjXekeMpC6RXVtg5rjQ3HDYBNp3nF_G-aWzyDLqGd7qH7Gb1WqgvVBoUebT1PyHwxca7jOlr_ro"/>
+</div>
+<div>
+<h4 class="text-2xl font-bold text-white mb-1">Atelier Boutique</h4>
+<p class="text-on-surface-variant text-sm mb-4">Arts District, North 5th</p>
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-[10px] bg-surface-container-highest px-3 py-1 rounded-full text-on-surface font-bold uppercase tracking-wider">Boutique</span>
+<span class="flex items-center gap-1 text-[10px] bg-surface-container-highest px-3 py-1 rounded-full text-on-surface font-bold uppercase tracking-wider">Private Bar</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<div class="aspect-video rounded-2xl overflow-hidden bg-surface-container shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="stunning open-air rooftop cinema with a large high-definition screen under a starry night sky, cozy blankets and fairy lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwbQsZQppkAr2aDHZBBg_-IKV023CZhqgs1EaumduZJBhM5vOFSQAzwWgQo9mc1UnOt9zyqZuwmUmAaKO8LaXauTMr_lhsg1rde4vFKRwvtVr0giqWTUQCsyRYrNCJA_UJucGTltz5swdG22mKRpajDIfpjilWQsDTNNhSnUvVcfxfwm8-0oO-ADCnD1nZDZyhI8y6QR_rw5Iat_XBmnnlHvfVtKgijonF5aK-ytVwoOo1dz__DKCGJOPfDslBN2yfxJT_HeAmdz0"/>
+</div>
+<div>
+<h4 class="text-2xl font-bold text-white mb-1">Skyline Terrace</h4>
+<p class="text-on-surface-variant text-sm mb-4">Empire Plaza Rooftop</p>
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-[10px] bg-surface-container-highest px-3 py-1 rounded-full text-on-surface font-bold uppercase tracking-wider">Rooftop</span>
+<span class="flex items-center gap-1 text-[10px] bg-surface-container-highest px-3 py-1 rounded-full text-on-surface font-bold uppercase tracking-wider">4K Laser</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 px-8 md:px-16 flex justify-center">
+<div class="w-full max-w-6xl relative rounded-[2rem] overflow-hidden p-12 md:p-24 flex flex-col items-center text-center">
+<div class="absolute inset-0 bg-[#e50914]">
+<img class="w-full h-full object-cover opacity-30 mix-blend-overlay" data-alt="abstract artistic background with swirling deep reds and dark navy, soft grain and cinematic blur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtAB55UNx5-f7WRm9JKj9r0BMJC-_8vdFshIB0tljfppzAp3_FmhVmBCBH0qpECE8Tm8E3G1vzpC7TCfma43IQZyNDsgt2zEnOI9KxU7H28322_pGM70oHPrZa2TAdz2KKd39hoz6Xw8cYwtVa-y0n6buNM8Qf9OmWvQcU34dpXijd1BuT3Dy6xGmXKa82rvi5NBFs7f4ZvDxfyhLCE5jU7Uvtc_FJzKK5tiTzvhXEfRKd6wDOhuKndqbK-mmWPW0gJKoEfVwFbf8"/>
+</div>
+<div class="relative z-10">
+<h2 class="text-4xl md:text-6xl font-black font-headline text-white tracking-tighter mb-8 max-w-2xl leading-[1.1]">The Narrative Awaits Your Arrival.</h2>
+<p class="text-primary-fixed text-lg md:text-xl mb-12 max-w-xl mx-auto">Join the inner circle of film enthusiasts. Curate your history, pre-book exclusive screenings, and access the premier lounge.</p>
+<div class="flex flex-col sm:flex-row gap-6 justify-center">
+<button class="bg-white text-surface-dim px-12 py-5 rounded-xl font-black uppercase tracking-widest text-sm hover:bg-secondary-fixed transition-all shadow-2xl">Become a Member</button>
+<button class="bg-transparent border border-white/30 text-white px-12 py-5 rounded-xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all">Sign In</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-[#060e20] w-full py-12 px-8 flex flex-col md:flex-row justify-between items-center border-t border-[#2d3449]/20">
+<div class="flex flex-col items-center md:items-start gap-4 mb-8 md:mb-0">
+<p class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60">© 2024 The Cinematic Editorial. High-End Curation.</p>
+</div>
+<div class="flex gap-8 font-inter text-xs uppercase tracking-widest">
+<a class="text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Privacy Policy</a>
+<a class="text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Terms of Service</a>
+<a class="text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Contact Support</a>
+</div>
+<div class="mt-8 md:mt-0 flex gap-6">
+<span class="material-symbols-outlined text-[#e50914] cursor-pointer hover:scale-110 transition-transform">movie</span>
+<span class="material-symbols-outlined text-[#e50914] cursor-pointer hover:scale-110 transition-transform">theaters</span>
+<span class="material-symbols-outlined text-[#e50914] cursor-pointer hover:scale-110 transition-transform">confirmation_number</span>
+</div>
+</footer>
+</body></html>

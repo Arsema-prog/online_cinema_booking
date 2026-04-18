@@ -1,14 +1,23 @@
 server:
-  port: 8081  # Core service port
+  port: 8081
+
+app:
+  cors:
+    enabled: false
 
 spring:
   application:
     name: core-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/core_db
+    url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=core
     username: postgres
-    password: 4748
+    password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,10 +25,36 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: 5672
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+minio:
+  endpoint: ${MINIO_URL:http://localhost:9000}
+  public-endpoint: ${MINIO_PUBLIC_URL:http://localhost:9000}
+  access-key: ${MINIO_ROOT_USER:minioadmin}
+  secret-key: ${MINIO_ROOT_PASSWORD:minioadmin}
+  bucket: ${MINIO_BUCKET:posters}
+
+rapidapi:
+  imdb:
+    host: ${IMDB_RAPIDAPI_HOST:imdb232.p.rapidapi.com}
+    key: ${IMDB_RAPIDAPI_KEY:3f387322bdmsh1fffd109622014dp18dc43jsn634c4296b6e8}
+

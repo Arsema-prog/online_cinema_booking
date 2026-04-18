@@ -4,7 +4,6 @@ import com.cinema.booking_service.domain.Booking;
 import com.cinema.booking_service.domain.enums.BookingStatus;
 import com.cinema.booking_service.dto.BookingDTO;
 import com.cinema.booking_service.dto.BookingSeatDto;
-import com.cinema.booking_service.dto.ConfirmBookingRequest;
 import com.cinema.booking_service.dto.UserHistoryBookingDto;
 import com.cinema.booking_service.model.HoldRequest;
 import com.cinema.booking_service.model.HoldResponse;
@@ -12,6 +11,8 @@ import com.cinema.booking_service.model.SeatAvailability;
 import com.cinema.booking_service.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -29,8 +30,13 @@ public class BookingController {
     @PostMapping("/hold")
     @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER','STAFF')")
     public ResponseEntity<HoldResponse> holdSeats(@Valid @RequestBody HoldRequest request) {
-        HoldResponse response = bookingService.holdSeats(request);
-        return ResponseEntity.ok(response);
+        try {
+            HoldResponse response = bookingService.holdSeats(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException | DataIntegrityViolationException ex) {
+            // Conflict means seat ownership changed between client read and hold attempt.
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
     }
 
     @GetMapping("/shows/{showId}/seats")
@@ -61,12 +67,17 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
-//    @PostMapping("/{id}/confirm")
-//    public ResponseEntity<Void> confirm(@PathVariable UUID id, @RequestBody ConfirmBookingRequest request) {
-//        bookingService.confirmBooking(id, request.getUserEmail());
-//        return ResponseEntity.ok().build();
-//    }
-//    // NEW: Get all bookings with seat count
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER','STAFF')")
+    public ResponseEntity<Void> confirm(
+            @PathVariable UUID id,
+            @RequestParam(value = "userEmail", required = false) String userEmail
+    ) {
+        bookingService.confirmBooking(id, userEmail);
+        return ResponseEntity.ok().build();
+    }
+
+    // NEW: Get all bookings with seat count
     @GetMapping("/with-seat-count")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','STAFF')")
     public ResponseEntity<List<BookingDTO>> getAllBookingsWithSeatCount() {
@@ -76,7 +87,6 @@ public class BookingController {
 
     // NEW: Get booking by ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER','STAFF')")
     public ResponseEntity<Booking> getBookingById(@PathVariable UUID id) {
         return bookingService.getBookingById(id)
                 .map(ResponseEntity::ok)
@@ -106,7 +116,6 @@ public class BookingController {
     }
 
     @PostMapping("/{id}/initiate-payment")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER','STAFF')")
     public ResponseEntity<Booking> initiatePayment(@PathVariable UUID id) {
         return ResponseEntity.ok(bookingService.initiatePayment(id));
     }

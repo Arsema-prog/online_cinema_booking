@@ -46,21 +46,27 @@ export const BookingHistoryItem: React.FC<Props> = ({ booking }) => {
       
       {/* Poster Thumbnail */}
       <div className="w-full md:w-32 h-48 md:h-auto rounded-2xl overflow-hidden shrink-0 shadow-sm border border-border bg-muted">
-        <img 
-          src={`${env.apiGatewayUrl}/api/v1/core/movies/${booking.movieId}/poster`} 
-          alt={booking.movieTitle} 
-          className="w-full h-full object-cover" 
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-            const parent = e.currentTarget.parentElement;
-            if (parent && !parent.querySelector('.fallback')) {
-              const fallback = document.createElement('div');
-              fallback.className = 'w-full h-full flex justify-center items-center fallback text-2xl filter grayscale opacity-50';
-              fallback.textContent = '🎬';
-              parent.appendChild(fallback);
-            }
-          }}
-        />
+        {booking.movieId ? (
+          <img
+            src={`${env.apiGatewayUrl}/api/v1/core/movies/${booking.movieId}/poster`}
+            alt={booking.movieTitle}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const parent = e.currentTarget.parentElement;
+              if (parent && !parent.querySelector('.fallback')) {
+                const fallback = document.createElement('div');
+                fallback.className = 'w-full h-full flex justify-center items-center fallback text-2xl filter grayscale opacity-50';
+                fallback.textContent = 'Movie';
+                parent.appendChild(fallback);
+              }
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex justify-center items-center fallback text-2xl filter grayscale opacity-50">
+            Movie
+          </div>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col justify-between">

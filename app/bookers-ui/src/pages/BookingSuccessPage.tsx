@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, Download, Calendar, MapPin, Clock, Ticket as TicketIcon, Home, Popcorn } from 'lucide-react';
-import { getBookingDetails, getBookingSeats } from '../api/bookingApi';
+import { confirmBooking, getBookingDetails, getBookingSeats } from '../api/bookingApi';
 import { ticketGeneratorService } from '../services/ticketGeneratorService';
 import { Button } from '@/components/ui/Button';
 
@@ -42,6 +42,7 @@ export const BookingSuccessPage: React.FC = () => {
   const [showEmailNotice, setShowEmailNotice] = useState<boolean>(
     Boolean((location.state as any)?.emailConfirmationRequested || emailFromSession)
   );
+  const [confirmationRequested, setConfirmationRequested] = useState(false);
 
   const displayEmailTarget = (location.state as any)?.emailTarget ?? emailFromSession;
 
@@ -50,6 +51,32 @@ export const BookingSuccessPage: React.FC = () => {
       fetchBookingDetails();
     }
   }, [booking, bookingId]);
+
+  useEffect(() => {
+    if (!bookingId || confirmationRequested) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const finalizeConfirmation = async () => {
+      try {
+        await confirmBooking(bookingId, displayEmailTarget);
+      } catch (error) {
+        console.warn('Booking confirmation follow-up failed after redirect', error);
+      } finally {
+        if (!cancelled) {
+          setConfirmationRequested(true);
+        }
+      }
+    };
+
+    finalizeConfirmation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId, confirmationRequested, displayEmailTarget]);
 
   useEffect(() => {
     if (!showEmailNotice && displayEmailTarget) {

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Booking Confirmed | The Curator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#e9c400",
+                    "primary-container": "#e50914",
+                    "on-secondary-container": "#725f00",
+                    "surface": "#0b1326",
+                    "primary": "#ffb4aa",
+                    "tertiary-fixed": "#e5e2e1",
+                    "surface-container-low": "#131b2e",
+                    "surface-bright": "#31394d",
+                    "surface-dim": "#0b1326",
+                    "on-primary-fixed-variant": "#930007",
+                    "error": "#ffb4ab",
+                    "error-container": "#93000a",
+                    "on-tertiary": "#313030",
+                    "on-primary-fixed": "#410001",
+                    "on-secondary-fixed-variant": "#544600",
+                    "on-secondary-fixed": "#221b00",
+                    "surface-container-lowest": "#060e20",
+                    "on-surface": "#dae2fd",
+                    "on-error": "#690005",
+                    "secondary": "#fff9ef",
+                    "on-primary": "#690003",
+                    "secondary-fixed": "#ffe16d",
+                    "tertiary": "#c8c6c5",
+                    "surface-container-highest": "#2d3449",
+                    "primary-fixed-dim": "#ffb4aa",
+                    "on-primary-container": "#fff7f6",
+                    "surface-container": "#171f33",
+                    "on-tertiary-container": "#fbf8f7",
+                    "primary-fixed": "#ffdad5",
+                    "inverse-surface": "#dae2fd",
+                    "surface-variant": "#2d3449",
+                    "on-surface-variant": "#e9bcb6",
+                    "secondary-container": "#ffdb3c",
+                    "on-secondary": "#3a3000",
+                    "on-background": "#dae2fd",
+                    "surface-tint": "#ffb4aa",
+                    "tertiary-container": "#737272",
+                    "inverse-primary": "#c0000c",
+                    "outline-variant": "#5e3f3b",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "outline": "#af8782",
+                    "background": "#0b1326",
+                    "surface-container-high": "#222a3d",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "on-error-container": "#ffdad6",
+                    "inverse-on-surface": "#283044"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Epilogue"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        }
+      }
+    </script>
+<style>.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+    }
+.grain-overlay {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuCvFsEaQp2e2qcp31ZQhGOHhm1sFYPzM_gC0OZnC-U2Vw2G7PRrdytobwRN-7EndAAcbOFdvkz8XCWZdJ-uuxAgMtBT_Dllt4gwNM1R0jEG1Dcl-HjyXwYuxAEoIERMqwHciVA-O5rfRd_Ms7klNznia8374cJ33uBWWCgoZCTU3WWy3sPkNQc2AAn6uk-KP2b0ig7HOd4w3U9XZjt2UPghWHla0TCY_IxaWdwsVJxUunLVGxGviwLUg1GVwGNbnP-KgCm1CwXXMP0);
+    opacity: 0.05
+    }
+.ticket-cutout-left {
+    clip-path: circle(12px at 0% 50%)
+    }
+.ticket-cutout-right {
+    clip-path: circle(12px at 100% 50%)
+    }
+.editorial-gradient {
+    background: linear-gradient(135deg, #e50914 0%, #930007 100%)
+    }</style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-white">
+<!-- Hero Confirmation Section -->
+<section class="relative min-h-[614px] flex flex-col items-center justify-center pt-24 pb-12 overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-30 grayscale brightness-50" data-alt="Cinematic wide shot of a dark empty luxury cinema hall with glowing ambient red lighting and plush velvet seats in soft focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqVrLCS1076eVB_z12ox8UbJltlr7As0xWTo_Wp7tNNNDm_M1LVLjCSgHPXx3OMzqMQhU2LhYDfecQzzhCOSyzRA9NYZ2uTCmSW50hQgfHmxkF1ZwK2UnUM5y2YAQHDdx8WGW3T4QDLDQJfRzdW60IKWbfPWVPgpPWjy-OsFCrt-l1tG-Mw8AXMs7OkrCxyxoSaCpxhBZ5sBU2pvPu00UAj7QQbhHMhZtzL3gHBbHoWqnIU1OxW63mM0UEnkkVJvX2W7BPxYRrzF0"/>
+<div class="absolute inset-0 bg-gradient-to-b from-surface/0 via-surface/80 to-surface"></div>
+</div>
+<div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
+<div class="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary-container/20 border border-primary/30">
+<span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h1 class="font-headline font-black text-6xl md:text-8xl tracking-tighter uppercase mb-4 text-on-surface">
+                Confirmed
+            </h1>
+<p class="font-headline text-xl md:text-2xl text-on-surface-variant max-w-2xl mx-auto tracking-tight leading-relaxed">
+                Your cinematic journey is secured. We've sent a digital copy of your access pass to your registered email address.
+            </p>
+</div>
+</section>
+<!-- Main Content: Ticket & Summary Layout -->
+<main class="relative z-20 max-w-7xl mx-auto px-6 -mt-20 pb-32">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+<!-- Digital Ticket Card (The Hero Component) -->
+<div class="lg:col-span-7 w-full">
+<div class="bg-surface-container-low rounded-xl overflow-hidden shadow-2xl relative">
+<!-- Ticket Header / Movie Still -->
+<div class="h-64 relative">
+<img class="w-full h-full object-cover" data-alt="Stunning cinematic landscape shot of a neon-lit futuristic city at night with rain and atmospheric deep blue and red tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnDmSr1idq7QqSfh6ux5KCasxbJiDgX98ozNW7kHlbZXBLxfnUSgyqM75Ln3M_dTqrIGRytdTb_HafsI47-CQGJCjmri2dbd89IRhAegHDwE9IaQN-pRSVK_ajDX2RYIpvOwWgLxdIHZBs5A6NReaTTPIQKWCRbCwmd5HnKQyNhrxNUnhrSDRZvUoBTsJYYb8rzKJvbJes1Odrx2LRChpl8DTYvPNeGQ01ORPwhHrgFI0OBt86fn9hHBKEZhLn1eeqFWDsw8t0-fE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute bottom-6 left-8">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-2 inline-block">VIP Premiere</span>
+<h2 class="font-headline font-extrabold text-4xl text-white tracking-tight uppercase">The Midnight Echo</h2>
+</div>
+</div>
+<!-- Ticket Details Body -->
+<div class="p-8 grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-dashed border-outline-variant/30 relative">
+<!-- Pseudo-perforation marks -->
+<div class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-surface rounded-full"></div>
+<div class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-surface rounded-full"></div>
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Date</p>
+<p class="font-headline font-bold text-lg text-secondary">Nov 24, 2024</p>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Time</p>
+<p class="font-headline font-bold text-lg text-secondary">21:30 PM</p>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Hall</p>
+<p class="font-headline font-bold text-lg text-secondary">Grand Imax 01</p>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Seats</p>
+<p class="font-headline font-bold text-lg text-secondary">H12, H13</p>
+</div>
+</div>
+<!-- QR Code and Booking Reference Section -->
+<div class="p-8 flex flex-col md:flex-row items-center justify-between gap-8 bg-surface-container">
+<div class="flex-1 space-y-4">
+<div>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Booking Reference</p>
+<p class="font-mono text-2xl font-bold text-primary tracking-tighter">TC-8849-X2K</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Pass Holder</p>
+<p class="text-on-surface font-medium">Alexander Sterling</p>
+</div>
+</div>
+</div>
+<div class="bg-white p-4 rounded-xl shadow-inner group transition-transform hover:scale-105 duration-300">
+<!-- QR Code Placeholder (Standard Layout) -->
+<div class="w-32 h-32 bg-white relative">
+<div class="absolute inset-0 grid grid-cols-6 grid-rows-6 gap-1 opacity-90">
+<div class="bg-black"></div><div class="bg-black"></div><div class="bg-black"></div><div class="bg-white"></div><div class="bg-black"></div><div class="bg-black"></div>
+<div class="bg-black"></div><div class="bg-white"></div><div class="bg-black"></div><div class="bg-black"></div><div class="bg-white"></div><div class="bg-black"></div>
+<div class="bg-black"></div><div class="bg-black"></div><div class="bg-black"></div><div class="bg-white"></div><div class="bg-black"></div><div class="bg-black"></div>
+<div class="bg-white"></div><div class="bg-black"></div><div class="bg-white"></div><div class="bg-black"></div><div class="bg-white"></div><div class="bg-white"></div>
+<div class="bg-black"></div><div class="bg-white"></div><div class="bg-black"></div><div class="bg-black"></div><div class="bg-black"></div><div class="bg-black"></div>
+<div class="bg-black"></div><div class="bg-black"></div><div class="bg-black"></div><div class="bg-white"></div><div class="bg-white"></div><div class="bg-black"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Actions -->
+<div class="mt-8 flex flex-wrap gap-4">
+<button class="editorial-gradient text-on-primary-container px-8 py-4 rounded-xl font-headline font-bold uppercase tracking-widest text-sm flex items-center gap-3 transition-all hover:brightness-110 active:scale-95 shadow-xl shadow-primary-container/20">
+<span class="material-symbols-outlined">download</span>
+                        Download Ticket (PDF)
+                    </button>
+<button class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-xl font-headline font-bold uppercase tracking-widest text-sm flex items-center gap-3 transition-all hover:bg-surface-bright active:scale-95">
+<span class="material-symbols-outlined">history</span>
+                        Booking History
+                    </button>
+<button class="border border-outline-variant/30 text-on-surface-variant px-8 py-4 rounded-xl font-headline font-bold uppercase tracking-widest text-sm flex items-center gap-3 transition-all hover:text-on-surface active:scale-95">
+<span class="material-symbols-outlined">arrow_back</span>
+                        Return to Movies
+                    </button>
+</div>
+</div>
+<!-- Side Sidebar: Order Summary & Info -->
+<div class="lg:col-span-5 w-full space-y-8">
+<!-- Order Summary Bento -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+<h3 class="font-headline font-bold text-xl mb-6 text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">receipt_long</span>
+                        Order Summary
+                    </h3>
+<div class="space-y-6">
+<!-- Seats -->
+<div class="flex justify-between items-start">
+<div>
+<p class="text-on-surface font-semibold">Premium Lounge Seats (x2)</p>
+<p class="text-xs text-on-surface-variant">Row H | Seats 12, 13</p>
+</div>
+<p class="font-headline font-bold text-on-surface">$48.00</p>
+</div>
+<!-- Snacks -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">local_movies</span>
+<p class="text-sm text-on-surface">Large Gourmet Truffle Popcorn</p>
+</div>
+<p class="text-sm font-bold text-on-surface">$14.50</p>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">local_drink</span>
+<p class="text-sm text-on-surface">Craft Soda Selection (x2)</p>
+</div>
+<p class="text-sm font-bold text-on-surface">$12.00</p>
+</div>
+</div>
+<div class="pt-6 border-t border-outline-variant/20">
+<div class="flex justify-between items-center mb-2">
+<p class="text-on-surface-variant text-sm">Subtotal</p>
+<p class="text-on-surface-variant text-sm font-medium">$74.50</p>
+</div>
+<div class="flex justify-between items-center mb-6">
+<p class="text-on-surface-variant text-sm">Booking Fee</p>
+<p class="text-on-surface-variant text-sm font-medium">$2.50</p>
+</div>
+<div class="flex justify-between items-center bg-surface-container rounded-lg p-4">
+<p class="font-headline font-bold text-lg uppercase tracking-wider text-secondary">Total Paid</p>
+<p class="font-headline font-black text-2xl text-primary">$77.00</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Info Box -->
+<div class="bg-surface-container-high/50 rounded-xl p-8 border border-outline-variant/10">
+<h4 class="text-sm font-bold uppercase tracking-widest text-primary mb-4">Venue Admission</h4>
+<ul class="space-y-4">
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-secondary shrink-0">schedule</span>
+<p class="text-sm text-on-surface-variant leading-relaxed">Please arrive 20 minutes before showtime for gourmet snack collection and seat localization.</p>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-secondary shrink-0">qr_code_scanner</span>
+<p class="text-sm text-on-surface-variant leading-relaxed">Present the QR code on this digital pass or within the app to the cinema curator at the hall entrance.</p>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-secondary shrink-0">info</span>
+<p class="text-sm text-on-surface-variant leading-relaxed">This is a VIP screening. Smart casual dress code is appreciated but not mandatory.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+<!-- Shared Footer from JSON -->
+<footer class="bg-[#060e20] w-full py-12 px-8 tonal-transition-from-surface">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 font-['Inter'] text-sm tracking-wide">
+<div class="text-lg font-bold text-[#e50914] uppercase tracking-tighter">The Curator</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] underline underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Terms of Service</a>
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] underline underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Privacy Policy</a>
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] underline underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Contact Support</a>
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] underline underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Press Kit</a>
+</div>
+<p class="text-[#ffb4aa] opacity-60">© 2024 The Cinematic Editorial. All Rights Reserved.</p>
+</div>
+</footer>
+</body></html>

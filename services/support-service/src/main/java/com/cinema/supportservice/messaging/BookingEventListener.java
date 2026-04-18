@@ -58,7 +58,10 @@ public class BookingEventListener {
             log.info("Duplicate event detected for booking {}, ignoring", event.getBookingId());
         } catch (Exception e) {
             log.error("Failed to process booking event for {}", event.getBookingId(), e);
-            throw e;
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException(e);
         } finally {
             MDC.remove(CorrelationIdFilter.MDC_KEY);
         }

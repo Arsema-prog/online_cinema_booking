@@ -438,7 +438,7 @@ export const BookingPage: React.FC = () => {
               <Info size={16} />
             </div>
             <div>
-              <p className="font-semibold text-foreground">Choose up to 8 seats and continue to concessions.</p>
+              <p className="font-semibold text-foreground">Choose at least 1 and up to 8 seats and continue to concessions.</p>
               <p className="text-sm text-muted-foreground">
                 Green seats are open, amber seats are temporarily held during checkout, and red seats are sold out. Seats become reserved only after Stripe confirms payment.
               </p>
@@ -505,7 +505,6 @@ export const BookingPage: React.FC = () => {
                                  "w-9 h-9 md:w-11 md:h-11 rounded-t-lg rounded-b-sm border font-bold text-xs md:text-sm transition-all duration-200 flex items-center justify-center shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                  getSeatColorClass(seat)
                                )}
-                               title={`Row ${seat.seat.rowLabel}, Seat ${seat.seat.seatNumber} - $${seat.price}`}
                              >
                                {seatNumberLabel}
                              </button>

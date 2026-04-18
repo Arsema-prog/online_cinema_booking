@@ -25,4 +25,4 @@ export const removeRoles = (userId: string, roles: string[]) =>
   apiClient.delete(`/api/v1/support/users/${userId}/roles`, { data: roles });
 
 export const registerUser = (data: { username: string; email: string; firstName: string; lastName: string; password: string; roles: string[] }) => 
-  apiClient.post(`/api/v1/support/users/register`, data);
+  apiClient.post(`/api/v1/support/auth/register`, data);

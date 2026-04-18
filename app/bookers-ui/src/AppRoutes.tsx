@@ -10,7 +10,6 @@ import { BookingPage } from "./pages/BookingPage";
 import { BookingSuccessPage } from './pages/BookingSuccessPage';
 import { BookingCancelPage } from './pages/BookingCancelPage';
 import { SnackSelectionPage } from './pages/SnackSelectionPage';
-import { PaymentPage } from './pages/PaymentPage';
 import { BookingHistoryPage } from "./pages/BookingHistoryPage";
   import { MovieScreeningsPage }  from "./pages/MovieScreeningsPage"  
 const LoadingScreen = () => (
@@ -54,12 +53,6 @@ export const AppRoutes = () => {
       <Route path="/bookers/snacks" element={
   <ProtectedRoute>
     <SnackSelectionPage />
-  </ProtectedRoute>
-} />
-
-<Route path="/bookers/payment" element={
-  <ProtectedRoute>
-    <PaymentPage />
   </ProtectedRoute>
 } />
 

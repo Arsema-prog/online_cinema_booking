@@ -26,6 +26,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
+import { useToast } from '@/hooks/use-toast';
 
 // Schema definition
 const screenSchema = z.object({
@@ -49,6 +50,8 @@ export default function ScreensPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingScreen, setEditingScreen] = useState<Screen | null>(null);
+
+  const { toast } = useToast();
 
   const form = useForm<ScreenFormValues>({
     resolver: zodResolver(screenSchema) as any,
@@ -99,12 +102,24 @@ export default function ScreensPage() {
       } else {
         await createScreen(payload, totalSeats);
       }
+
+      toast({
+        title: editingScreen ? 'Screen updated successfully' : 'Screen created successfully',
+        description: values.name,
+        variant: 'success',
+      });
+
       setOpen(false);
       form.reset();
       setEditingScreen(null);
       fetchData();
     } catch (err) {
       console.error('Save failed', err);
+      toast({
+        title: 'Failed to save screen',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'error',
+      });
     } finally {
       setSaving(false);
     }

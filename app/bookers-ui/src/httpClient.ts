@@ -23,10 +23,19 @@ const createClient = (baseURL?: string, name?: string): AxiosInstance => {
     const fullUrl = `${config.baseURL || ""}${config.url || ""}`;
     console.log(`${name || "client"} - ${config.method?.toUpperCase()} ${fullUrl}`);
 
+    const method = (config.method || "get").toLowerCase();
+    const requestPath = config.url || "";
+    const isPublicCoreGet =
+      method === "get" && requestPath.startsWith("/api/v1/core/");
+
     if (accessTokenGetter) {
       const token = accessTokenGetter();
-      if (token) {
+      if (token && !isPublicCoreGet) {
         config.headers.set("Authorization", `Bearer ${token}`);
+      } else if (isPublicCoreGet) {
+        // Public core read endpoints should not receive stale/expired bearer tokens,
+        // otherwise resource-server auth can still return 401 before permitAll.
+        config.headers.delete("Authorization");
       }
     }
     return config;

@@ -139,6 +139,7 @@ export default function DashboardPage() {
                 <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10 w-full mb-6">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{card.title}</span>
                   <div className={`rounded-xl p-2.5 ${card.bgContainer} ${card.iconColor} border border-white/5`}>
+                  
                     <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>{card.icon}</span>
                   </div>
                 </div>

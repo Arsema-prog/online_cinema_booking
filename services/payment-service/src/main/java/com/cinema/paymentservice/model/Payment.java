@@ -22,6 +22,8 @@ public class Payment {
     @Column(nullable = false)
     private UUID bookingId;
 
+    private String payerEmail;
+
     @Column(nullable = false)
     private Long amount;            // in cents
 
@@ -105,6 +107,14 @@ public class Payment {
 
     public void setFailureReason(String failureReason) {
         this.failureReason = failureReason;
+    }
+
+    public String getPayerEmail() {
+        return payerEmail;
+    }
+
+    public void setPayerEmail(String payerEmail) {
+        this.payerEmail = payerEmail;
     }
 
     public Instant getCreatedAt() {

@@ -28,6 +28,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/ws-booking", "/ws-booking/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/bookings/shows/*/seats").permitAll()
+                        // Internal service-to-service calls from payment-service.
+                        // Public traffic still flows through api-gateway authentication.
+                        .requestMatchers(HttpMethod.GET, "/bookings/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/bookings/*/initiate-payment").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

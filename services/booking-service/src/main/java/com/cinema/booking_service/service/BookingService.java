@@ -89,7 +89,8 @@ public class BookingService {
                                 seat.getNumber()
                         );
                     }
-                    return new BookingSeatDto("UNKNOWN", "?", 0);
+                    String label = getSeatNumber(bs.getSeatId());
+                    return new BookingSeatDto(label, null, 0);
                 })
                 .collect(Collectors.toList());
     }
@@ -104,6 +105,8 @@ public class BookingService {
         log.info("Holding seats for show: {}, seats: {}", request.getShowId(), request.getSeatIds());
 
         assertNoActiveSeatConflicts(request.getShowId(), request.getSeatIds());
+
+        upsertSeatMetadataFromCore(request.getShowId(), request.getSeatIds());
 
         ShowDetails showDetails = fetchShowDetails(request.getShowId());
         LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(holdTtlSeconds);
@@ -357,6 +360,14 @@ public class BookingService {
             return Collections.emptyList();
         }
         List<UserHistoryBookingDto> history = userHistoryStorageService.getUserBookings(userId);
+        if (history.isEmpty()) {
+            log.warn("MinIO history empty for user {}, rebuilding from confirmed bookings in database", userId);
+            return bookingRepository.findByUserId(userId).stream()
+                    .filter(Objects::nonNull)
+                    .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
+                    .map(this::buildHistoryDtoFromBooking)
+                    .collect(Collectors.toList());
+        }
         return history.stream().map(this::enrichHistoryFromDatabaseIfNeeded).collect(Collectors.toList());
     }
 
@@ -671,17 +682,103 @@ public class BookingService {
     }
 
     /**
-     * Extracts numeric ID from UUID format using bit operations
-     * This creates a stable numeric identifier from a UUID
+     * Screening "show" IDs from the UI are synthetic UUID strings of the form
+     * {@code 00000000-0000-0000-0000-XXXXXXXXXXXX} where the last segment is a
+     * <strong>decimal</strong> zero-padded screening id (same contract as core-service
+     * {@code findScreeningIdByUuid}). Java's {@link UUID#fromString} interprets that
+     * segment as hex, so we must parse the string — not the UUID bits.
      */
     private Long extractNumericIdFromUuid(UUID uuid) {
         if (uuid == null) {
             return 0L;
         }
-        // Use XOR of most and least significant bits to generate a numeric ID
+        String uuidStr = uuid.toString();
+        String[] parts = uuidStr.split("-");
+        if (parts.length >= 5) {
+            String lastPart = parts[4];
+            String numericPart = lastPart.replaceFirst("^0+(?!$)", "");
+            if (numericPart.isEmpty()) {
+                numericPart = "0";
+            }
+            try {
+                return Long.parseLong(numericPart);
+            } catch (NumberFormatException ignored) {
+                try {
+                    return Long.parseUnsignedLong(lastPart, 16);
+                } catch (NumberFormatException ignored2) {
+                    // fall through
+                }
+            }
+        }
         long numericId = uuid.getMostSignificantBits() ^ uuid.getLeastSignificantBits();
-        // Ensure it's positive
         return Math.abs(numericId);
+    }
+
+    /**
+     * Core maps each physical seat to {@code new UUID(0L, coreSeatId)} for booking-service.
+     */
+    private long toCoreSeatId(UUID bookingSeatUuid) {
+        if (bookingSeatUuid == null) {
+            return 0L;
+        }
+        if (bookingSeatUuid.getMostSignificantBits() == 0L) {
+            return bookingSeatUuid.getLeastSignificantBits();
+        }
+        return Math.abs(bookingSeatUuid.getMostSignificantBits() ^ bookingSeatUuid.getLeastSignificantBits());
+    }
+
+    private void upsertSeatMetadataFromCore(UUID showId, List<UUID> seatIds) {
+        if (showId == null || seatIds == null || seatIds.isEmpty()) {
+            return;
+        }
+        for (UUID seatUuid : seatIds) {
+            if (seatUuid == null) {
+                continue;
+            }
+            long coreSeatId = toCoreSeatId(seatUuid);
+            if (coreSeatId <= 0) {
+                continue;
+            }
+            try {
+                ResponseEntity<CoreSeatResponse> response = restTemplate.getForEntity(
+                        coreServiceUrl + "/seats/" + coreSeatId,
+                        CoreSeatResponse.class
+                );
+                if (response == null || !response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                    log.warn("Core returned no seat body for coreSeatId {}", coreSeatId);
+                    continue;
+                }
+                CoreSeatResponse body = response.getBody();
+                int number = parseSeatNumberInt(body.getSeatNumber());
+                Seat seat = Seat.builder()
+                        .id(seatUuid)
+                        .showId(showId)
+                        .row(body.getRowLabel() != null ? body.getRowLabel() : "?")
+                        .number(number)
+                        .build();
+                seatRepository.save(seat);
+            } catch (Exception e) {
+                log.warn("Could not sync seat {} (core id {}) from core-service: {}", seatUuid, coreSeatId, e.getMessage());
+            }
+        }
+    }
+
+    private static int parseSeatNumberInt(String seatNumber) {
+        if (seatNumber == null || seatNumber.isBlank()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(seatNumber.replaceAll("[^0-9]", ""));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    @lombok.Data
+    private static class CoreSeatResponse {
+        private Long id;
+        private String seatNumber;
+        private String rowLabel;
     }
 
     /**
@@ -746,10 +843,7 @@ public class BookingService {
 
         return uuidSeatIds.stream()
                 .filter(Objects::nonNull)
-                .map(uuid -> {
-                    // Generate a stable numeric ID from UUID
-                    return Math.abs(uuid.getMostSignificantBits() ^ uuid.getLeastSignificantBits());
-                })
+                .map(this::toCoreSeatId)
                 .collect(Collectors.toList());
     }
 
@@ -773,8 +867,7 @@ public class BookingService {
                         log.warn("Seat ID is null for booking seat: {}", bs.getId());
                         return 0L;
                     }
-                    // Generate numeric ID from UUID
-                    return Math.abs(bs.getSeatId().getMostSignificantBits() ^ bs.getSeatId().getLeastSignificantBits());
+                    return toCoreSeatId(bs.getSeatId());
                 })
                 .filter(id -> id != 0L)
                 .collect(Collectors.toList());
@@ -801,6 +894,27 @@ public class BookingService {
             }
         } catch (Exception e) {
             log.debug("Could not fetch seat from database: {}", e.getMessage());
+        }
+
+        long coreSeatId = toCoreSeatId(seatId);
+        if (coreSeatId > 0) {
+            try {
+                ResponseEntity<CoreSeatResponse> response = restTemplate.getForEntity(
+                        coreServiceUrl + "/seats/" + coreSeatId,
+                        CoreSeatResponse.class
+                );
+                if (response != null && response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    CoreSeatResponse body = response.getBody();
+                    if (body.getRowLabel() != null && body.getSeatNumber() != null) {
+                        return body.getRowLabel() + body.getSeatNumber();
+                    }
+                    if (body.getSeatNumber() != null) {
+                        return body.getSeatNumber();
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("Could not fetch seat from core-service: {}", e.getMessage());
+            }
         }
 
         // Fallback: generate a readable seat number from UUID
@@ -904,6 +1018,33 @@ public class BookingService {
         }
 
         return dto;
+    }
+
+    private UserHistoryBookingDto buildHistoryDtoFromBooking(Booking booking) {
+        List<String> seatNumbers = bookingSeatRepository.findByBookingId(booking.getId()).stream()
+                .filter(Objects::nonNull)
+                .map(BookingSeat::getSeatId)
+                .filter(Objects::nonNull)
+                .map(this::getSeatNumber)
+                .collect(Collectors.toList());
+
+        return UserHistoryBookingDto.builder()
+                .id(booking.getId())
+                .userId(booking.getUserId())
+                .movieTitle(booking.getMovieTitle())
+                .cinemaName(booking.getBranchName())
+                .screenNumber(booking.getScreenName())
+                .showTime(booking.getShowTime())
+                .seats(seatNumbers.stream()
+                        .map(seat -> HistorySeatDto.builder().seatNumber(seat).build())
+                        .collect(Collectors.toList()))
+                .seatCount(seatNumbers.size())
+                .snackDetails(booking.getSnackDetails())
+                .snacksTotal(booking.getSnacksTotal())
+                .totalAmount(booking.getTotalAmount())
+                .status(booking.getStatus() != null ? booking.getStatus().name() : "UNKNOWN")
+                .createdAt(booking.getCreatedAt())
+                .build();
     }
 
     // ==================== INNER CLASSES ====================

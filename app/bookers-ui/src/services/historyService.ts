@@ -19,7 +19,7 @@ export interface BookingHistoryModel {
 }
 
 const HISTORY_API_URL = `${env.apiGatewayUrl}/api/v1/booking/bookings`;
-const SUPPORT_API_URL = `${env.apiGatewayUrl}/api/v1/support/api/support`;
+const SUPPORT_API_URL = `${env.apiGatewayUrl}/api/v1/support`;
 
 function decodeUserIdFromToken(token?: string): string | null {
   if (!token) return null;

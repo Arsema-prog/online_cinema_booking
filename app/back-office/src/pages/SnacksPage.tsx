@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
 import { useAuth } from '@/auth/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const snackSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -33,6 +34,7 @@ type SnackFormValues = z.infer<typeof snackSchema>;
 export default function SnacksPage() {
   const { hasRole } = useAuth();
   const isManager = hasRole('ADMIN') || hasRole('MANAGER') || hasRole('STAFF');
+  const { toast } = useToast();
 
   const [snacks, setSnacks] = useState<Snack[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,12 +109,24 @@ export default function SnacksPage() {
       } else {
         await createSnack(values);
       }
+
+      toast({
+        title: editingSnack ? 'Concession updated successfully' : 'Concession created successfully',
+        description: values.name,
+        variant: 'success',
+      });
+
       setOpen(false);
       form.reset();
       setEditingSnack(null);
       fetchSnacks();
     } catch (err) {
       console.error('Save failed', err);
+      toast({
+        title: 'Failed to save concession',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'error',
+      });
     } finally {
       setSaving(false);
     }

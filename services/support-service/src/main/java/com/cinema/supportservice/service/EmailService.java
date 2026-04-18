@@ -19,10 +19,14 @@ public class EmailService {
     private String fromEmail;
 
     public void sendTicketEmails(String toEmail, List<String> ticketUrls) {
-        StringBuilder body = new StringBuilder("Your tickets are ready!\n\nDownload your tickets using the links below:\n");
-
-        for (String url : ticketUrls) {
-            body.append(url).append("\n");
+        StringBuilder body = new StringBuilder("Your booking was successful.\n\n");
+        if (ticketUrls != null && !ticketUrls.isEmpty()) {
+            body.append("Download your tickets using the links below:\n");
+            for (String url : ticketUrls) {
+                body.append(url).append("\n");
+            }
+        } else {
+            body.append("Your ticket details are being prepared. Please open My Booking History in the app to access your latest ticket details.");
         }
 
         SimpleMailMessage message = new SimpleMailMessage();

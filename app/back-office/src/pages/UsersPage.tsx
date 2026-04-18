@@ -47,7 +47,7 @@ const rolesSchema = z.object({
 });
 
 export default function UsersPage() {
-  const { keycloak, roles: authRoles } = useAuth();
+  const { keycloak, roles: authRoles, isAuthenticated, isLoading: authLoading } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,8 +92,9 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
     fetchUsers();
-  }, [page, search]);
+  }, [authLoading, isAuthenticated, page, search]);
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);

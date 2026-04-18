@@ -1,20 +1,90 @@
+#server:
+#  port: 8083
+#
+#spring:
+#  application:
+#    name: payment-service
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+#      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+#  datasource:
+#    url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=payment
+#    username: postgres
+#    password: ${POSTGRES_PASSWORD:postgres}
+#    driver-class-name: org.postgresql.Driver
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+#stripe:
+#  api-key: ${STRIPE_SECRET_KEY}
+#  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+#
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://discovery-service:8761/eureka/
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info
+#  endpoint:
+#    health:
+#      show-details: always
 server:
-  port: 8083  # Payment Service port
+  port: 8083
 
 spring:
   application:
     name: payment-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/payment_db
+    url: jdbc:postgresql://postgres:5433/cinema_db?currentSchema=payment
     username: postgres
-    password: 4748
+    password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: ${RABBITMQ_PASSWORD:guest}
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/cinema-realm/protocol/openid-connect/certs}
+
+stripe:
+  api-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+booking:
+  service:
+    url: ${BOOKING_SERVICE_URL:http://booking-service:8082}
 
 eureka:
   client:
+    enabled: true
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

@@ -58,6 +58,7 @@ public class PaymentEventPublisher {
         event.setEventId(UUID.randomUUID().toString());
         event.setPaymentId(payment.getId());
         event.setBookingId(payment.getBookingId());
+        event.setUserEmail(payment.getPayerEmail());
         event.setStripeEventId(stripeEventId);
         event.setStripeSessionId(payment.getStripeSessionId());
         event.setAmount(payment.getAmount());

@@ -29,7 +29,7 @@ export default function LoginPage() {
             </div>
             <h1 className="text-4xl font-headline font-black leading-[1.15] relative z-10">Access Control & Administration</h1>
             <p className="mt-5 max-w-md text-sm font-medium leading-7 text-on-surface-variant relative z-10">
-              Authentication is handled securely through Keycloak. Please sign in to verify your identity and roles.
+              Authentication is handled securely through Keycloak. Please log in to verify your identity and roles.
             </p>
           </div>
           <div className="flex flex-col justify-center gap-8 bg-surface-container-lowest px-10 py-12 text-center text-on-surface shadow-[-20px_0_40px_rgba(0,0,0,0.05)] border-l border-surface-container-highest/50 relative z-20">
@@ -39,12 +39,12 @@ export default function LoginPage() {
             <div>
               <h2 className="text-2xl font-headline font-black">Back Office Login</h2>
               <p className="mt-3 text-xs font-semibold leading-6 text-on-surface-variant">
-                Sign in with your centralized account to access administrative tools and pricing systems.
+                Login  with your centralized account to access administrative tools and pricing systems.
               </p>
             </div>
             <Button onClick={login} className="w-full h-14 rounded-xl text-base font-bold shadow-xl hover:-translate-y-1 transition-transform">
               <span className="material-symbols-outlined mr-2">login</span>
-              Secure Sign In
+              Secure Login 
             </Button>
           </div>
         </div>

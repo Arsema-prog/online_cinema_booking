@@ -53,6 +53,7 @@ export interface ModernFormField {
   step?: number;
   disabled?: boolean | ((values: any) => boolean);
   icon?: React.ReactNode;
+  allowManualUrl?: boolean;
   render?: (form: UseFormReturn<any>) => React.ReactNode;
 }
 
@@ -328,21 +329,23 @@ export function ModernForm({
                         />
                       </div>
                       
-                      <div className="relative">
-                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <span className="text-muted-foreground text-[11px] font-black uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">URL</span>
-                         </div>
-                         <Input
-                           placeholder="Paste an external image link..."
-                           className={cn(inputClass, "pl-[4.5rem] font-medium text-sm")}
-                           value={currentUrl || ''}
-                           onChange={(e) => {
-                             form.setValue(field.name, e.target.value);
-                             if (e.target.value) handleFileChange(field.name, null);
-                           }}
-                           disabled={isDisabled}
-                         />
-                      </div>
+                      {field.allowManualUrl !== false && (
+                        <div className="relative">
+                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <span className="text-muted-foreground text-[11px] font-black uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">URL</span>
+                           </div>
+                           <Input
+                             placeholder="Paste an external image link..."
+                             className={cn(inputClass, "pl-[4.5rem] font-medium text-sm")}
+                             value={currentUrl || ''}
+                             onChange={(e) => {
+                               form.setValue(field.name, e.target.value);
+                               if (e.target.value) handleFileChange(field.name, null);
+                             }}
+                             disabled={isDisabled}
+                           />
+                        </div>
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage className="text-xs text-destructive font-semibold mt-2" />

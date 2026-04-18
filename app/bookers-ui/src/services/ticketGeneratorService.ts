@@ -2,6 +2,7 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { env } from '../env';
+import { getAccessTokenGetter } from '../httpClient';
 
 export interface TicketDetails {
   moviePoster: string | undefined;
@@ -19,11 +20,57 @@ export interface TicketDetails {
   snacksTotal?: number;
 }
 
+interface SupportTicketRecord {
+  id: string;
+  status?: string;
+}
+
+const resolveTicketValidationUrl = async (bookingId: string): Promise<string> => {
+  const token = getAccessTokenGetter()();
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+  try {
+    const payloadRes = await fetch(
+      `${env.apiGatewayUrl}/api/v1/support/bookings/uuid/${encodeURIComponent(bookingId)}/tickets/primary-qr-payload`,
+      { headers: authHeaders }
+    );
+    if (payloadRes.ok) {
+      const body = await payloadRes.json() as { payload?: string };
+      if (body?.payload) {
+        return body.payload;
+      }
+    }
+  } catch (error) {
+    console.warn('Structured QR payload endpoint failed; trying ticket list.', error);
+  }
+
+  try {
+    const response = await fetch(`${env.apiGatewayUrl}/api/v1/support/bookings/uuid/${encodeURIComponent(bookingId)}/tickets`, {
+      headers: authHeaders
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch support ticket');
+    }
+
+    const tickets = await response.json() as SupportTicketRecord[];
+    const firstTicket = Array.isArray(tickets) ? tickets[0] : null;
+
+    if (firstTicket?.id) {
+      return `${env.backOfficeUrl}/validate-ticket?ticketId=${encodeURIComponent(firstTicket.id)}`;
+    }
+  } catch (error) {
+    console.warn('Falling back to booking id for QR payload because support ticket lookup failed.', error);
+  }
+
+  return bookingId;
+};
+
 export const ticketGeneratorService = {
   // Generate PDF ticket
   async generateTicket(booking: any): Promise<Blob> {
     const doc = new jsPDF();
-    const qrCodeDataUrl = await QRCode.toDataURL(booking.id);
+    const qrPayload = await resolveTicketValidationUrl(booking.id);
+    const qrCodeDataUrl = await QRCode.toDataURL(qrPayload);
     
     // Real world ticket shape parameters
     const startX = 20;
@@ -180,8 +227,9 @@ export const ticketGeneratorService = {
   },
 
   async getQrCodeUrl(data: string): Promise<string> {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data)}`;
-},
+    const qrPayload = await resolveTicketValidationUrl(data);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPayload)}`;
+  },
  
   async getTicketDetails(bookingId: string): Promise<TicketDetails> {
     try {

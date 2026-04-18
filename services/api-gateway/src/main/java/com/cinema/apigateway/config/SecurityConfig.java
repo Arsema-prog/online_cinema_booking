@@ -1,13 +1,12 @@
 package com.cinema.apigateway.config;
 
-import com.cinema.apigateway.security.KeycloakReactiveJwtAuthenticationConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 @Configuration
@@ -16,30 +15,36 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-        return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeExchange(exchanges -> exchanges
-                        // Public endpoints
-                        .pathMatchers("/actuator/health").permitAll()
-                        // All other requests require authentication
-                        .anyExchange().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakReactiveJwtAuthenticationConverter()))
-                )
-                .build();
+        http
+            .csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .cors(Customizer.withDefaults())
+            .authorizeExchange(exchanges -> exchanges
+                .pathMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
+                .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/api/v1/booking/ws-booking", "/api/v1/booking/ws-booking/**").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/booking/bookings/shows/*/seats").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/core/**").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/support/tickets/*/qr").permitAll()
+                .pathMatchers(
+                    org.springframework.http.HttpMethod.POST,
+                    "/api/v1/support/rules/evaluate/price",
+                    "/api/v1/support/api/rules/evaluate/price"
+                ).permitAll()
+                .pathMatchers("/api/v1/support/api/auth/register").permitAll()
+                .anyExchange().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+        return http.build();
     }
-
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:3000");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
+    public org.springframework.web.cors.reactive.CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfig = new CorsConfiguration();
+        corsConfig.setAllowedOriginPatterns(java.util.List.of("http://localhost:*", "http://127.0.0.1:*"));
+        corsConfig.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfig.setAllowedHeaders(java.util.List.of("*"));
+        corsConfig.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/**", corsConfig);
         return source;
     }
 }

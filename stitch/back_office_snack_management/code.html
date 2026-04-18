@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#e9c400",
+                        "primary-container": "#e50914",
+                        "on-secondary-container": "#725f00",
+                        "surface": "#0b1326",
+                        "primary": "#ffb4aa",
+                        "tertiary-fixed": "#e5e2e1",
+                        "surface-container-low": "#131b2e",
+                        "surface-bright": "#31394d",
+                        "surface-dim": "#0b1326",
+                        "on-primary-fixed-variant": "#930007",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a",
+                        "on-tertiary": "#313030",
+                        "on-primary-fixed": "#410001",
+                        "on-secondary-fixed-variant": "#544600",
+                        "on-secondary-fixed": "#221b00",
+                        "surface-container-lowest": "#060e20",
+                        "on-surface": "#dae2fd",
+                        "on-error": "#690005",
+                        "secondary": "#fff9ef",
+                        "on-primary": "#690003",
+                        "secondary-fixed": "#ffe16d",
+                        "tertiary": "#c8c6c5",
+                        "surface-container-highest": "#2d3449",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "on-primary-container": "#fff7f6",
+                        "surface-container": "#171f33",
+                        "on-tertiary-container": "#fbf8f7",
+                        "primary-fixed": "#ffdad5",
+                        "inverse-surface": "#dae2fd",
+                        "surface-variant": "#2d3449",
+                        "on-surface-variant": "#e9bcb6",
+                        "secondary-container": "#ffdb3c",
+                        "on-secondary": "#3a3000",
+                        "on-background": "#dae2fd",
+                        "surface-tint": "#ffb4aa",
+                        "tertiary-container": "#737272",
+                        "inverse-primary": "#c0000c",
+                        "outline-variant": "#5e3f3b",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "outline": "#af8782",
+                        "background": "#0b1326",
+                        "surface-container-high": "#222a3d",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-error-container": "#ffdad6",
+                        "inverse-on-surface": "#283044"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Epilogue"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Epilogue', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#060e20] flex flex-col gap-2 py-6 z-40">
+<div class="px-6 mb-8">
+<h1 class="text-xl font-black text-[#e50914] tracking-widest">Back Office</h1>
+<p class="text-xs text-on-surface-variant uppercase tracking-tighter mt-1">Management Suite</p>
+</div>
+<nav class="flex flex-col gap-1 px-2">
+<a class="text-[#e9bcb6] hover:bg-[#2d3449] px-4 py-3 rounded-lg flex items-center gap-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<!-- Inventory Active (Snacks management) -->
+<a class="bg-[#e50914] text-[#fff9ef] rounded-lg px-4 py-3 shadow-[0_0_20px_rgba(229,9,20,0.3)] flex items-center gap-3 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="movie_filter" style="font-variation-settings: 'FILL' 1;">movie_filter</span>
+<span class="font-medium text-sm">Inventory</span>
+</a>
+<a class="text-[#e9bcb6] hover:bg-[#2d3449] px-4 py-3 rounded-lg flex items-center gap-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-medium text-sm">Screenings</span>
+</a>
+<a class="text-[#e9bcb6] hover:bg-[#2d3449] px-4 py-3 rounded-lg flex items-center gap-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+<span class="font-medium text-sm">Verification</span>
+</a>
+<a class="text-[#e9bcb6] hover:bg-[#2d3449] px-4 py-3 rounded-lg flex items-center gap-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-medium text-sm">Analytics</span>
+</a>
+<a class="text-[#e9bcb6] hover:bg-[#2d3449] px-4 py-3 rounded-lg flex items-center gap-3 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-4">
+<div class="bg-surface-container-high rounded-xl p-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold">
+                    A
+                </div>
+<div>
+<p class="text-sm font-bold">Admin Profile</p>
+<p class="text-[10px] text-on-surface-variant">System Manager</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 p-10">
+<!-- Header & Search Toolbar -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+<div>
+<h2 class="text-4xl font-extrabold tracking-tight text-on-surface">Snacks Management</h2>
+<p class="text-on-surface-variant mt-2 font-medium">Curate the concession stand inventory for premium screenings.</p>
+</div>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-on-primary-container px-6 py-3 rounded-xl flex items-center gap-2 font-bold transition-all shadow-lg active:scale-95">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                Create New Snack
+            </button>
+</header>
+<!-- Filters Bar -->
+<section class="bg-surface-container-low rounded-2xl p-4 mb-8 flex flex-wrap items-center gap-4">
+<div class="relative flex-1 min-w-[300px]">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-surface-container-high border-none rounded-xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-primary-container transition-all" placeholder="Search by snack name or ingredient..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<select class="bg-surface-container-high border-none rounded-xl py-3 px-6 text-sm focus:ring-2 focus:ring-primary-container transition-all">
+<option>All Categories</option>
+<option>Sweet</option>
+<option>Salty</option>
+<option>Hot Food</option>
+<option>Beverages</option>
+<option>Vegan</option>
+</select>
+<button class="bg-surface-container-highest text-on-surface p-3 rounded-xl hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+</button>
+</div>
+</section>
+<!-- Snacks Inventory Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Snack Card 1 -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<div class="h-48 w-full bg-cover bg-center" data-alt="Close-up of premium golden butter popcorn in a stylized dark striped cinema bucket with dramatic lighting" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBtG4xFzbUWUYalPwScK7Kk4PKoWLfAZXkmvPLA2ZCCe-ztyO2_2rwRmML6J0lRBiH9VZp14wmx3FLpC-ViPZghwzbqk9d642ttVDChV88_3dMgfgbHuykj4uS5iKw4IOKFAUgwWzW2vgzfWldQmMWxrXYoCUTXzx9UGMb7As3eCn8le6WaI7ctznALTTyEna9MEZ19y1ho-6IWqgUgL53qICWWNrxYvVlwMQL2FgFhojAAW11KpMuFVHewvSH7X-XOrx8oEqOTUvc')"></div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-on-surface">Truffle Butter Popcorn</h3>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase px-2 py-1 rounded">Best Seller</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Hand-popped kernels tossed in black truffle oil and sea salt.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-primary font-bold text-xl">$14.00</span>
+<div class="flex items-center gap-3">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Active</span>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Snack Card 2 -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<div class="h-48 w-full bg-cover bg-center" data-alt="Selection of gourmet dark chocolate pralines and artisan sweets on a slate platter with gold flakes" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCse_PoS1DR44NorPBufpf74oMXfQunaTNgpF24tiLVOVCIEPSLAhaNWx_HBl_sFbGEQl5DzRWbLbAQqPBG1cplKHO62SIqoPMfoMUkgfgas40DexovQsO5sSi82Em1lk549DXJ-iLWrkMxzOFbmSfQtRiorsmAW1zosDp0Q1S11NO__dZEyA_FmiIsy8Tb_ulDUq7K77eE3-f4rqDb3k0mwZrcJkZTNLlsN_HmHMudIlYHvK63KUnbihOFklgC9Yd8YjuvcfFMwEA')"></div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-on-surface">Artisan Pralines</h3>
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase px-2 py-1 rounded">Sweet</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Box of 6 handmade chocolates with salted caramel and ganache filling.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-primary font-bold text-xl">$18.50</span>
+<div class="flex items-center gap-3">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Active</span>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Snack Card 3 -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<div class="h-48 w-full bg-cover bg-center" data-alt="Golden crispy french fries served in a designer black box with a side of aioli dipping sauce" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXN_RdQR06NrhC3qYpCSJotJsWiKehlHIU-xnKr9OlUIdXfZmdL-QdIongUAPNS4m8urAOXFxMmu6MfoX2GPLMyJnk86GrR_T8NM8rw6kr2ZFt-IuJ4hqlVC2uc4ekoRaGOnxo1tbltGvB4dkPwfX1qPKdQEp1hON5OLPxtiSKHgpn4oyXvfTpdlIE9m1W8UXYzKHU8h7bzQu7sbPEV2xtySPghyGHbH-RZAw5mYNayJJjCmDMzVoOBB-BIbYi3TSsMSTi3x_YlT8')"></div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-on-surface">Parmesan Fries</h3>
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase px-2 py-1 rounded">Hot Food</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Double-fried rustic potatoes dusted with aged parmesan and rosemary.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-primary font-bold text-xl">$11.00</span>
+<div class="flex items-center gap-3">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Inactive</span>
+<div class="w-10 h-5 bg-surface-container-highest rounded-full relative cursor-pointer">
+<div class="absolute left-0.5 top-0.5 w-4 h-4 bg-on-surface-variant rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Snack Card 4 -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<div class="h-48 w-full bg-cover bg-center" data-alt="Vibrant ruby red hibiscus iced tea in a tall crystal glass with mint garnish and condensation" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCKG6oB4yfvfol8oV_vd4vO18Fox9KhD4hRH1QBlXnR5sfr3bsxVrkoY6sUxrCIdFzOnx29c5LSbdGqEepEVuJI0ohDR7M9VNctqPb7Jifgytmez3JUv3Cs4rmsqVKme4By1a8CsGcfWf-Vw3keK8fo66efwqgGIOP-12hWI3GhWbQfvhHPdeXzqFp_qesf1W51uyyX65nSJ6c1ehKC3w9W3zcdmLFe-3o_2GVMInIC_G3fu0e60ZnCABZDBYEFgfsE4GogMuYyxLk')"></div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-on-surface">Hibiscus Spritz</h3>
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase px-2 py-1 rounded">Beverage</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Refreshing floral infusion with sparkling water and a hint of lime.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-primary font-bold text-xl">$9.00</span>
+<div class="flex items-center gap-3">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Active</span>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Snack Card 5 -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<div class="h-48 w-full bg-cover bg-center" data-alt="Gourmet wagyu beef slider burger with melting cheese and caramelized onions in a brioche bun" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDxLE7vYZsNYu3o0JzEbI22w0gz9V48_dA0b93jP6--m0s6l9e6JLqyOcBAqZm7jKTmSdaW1jZ3VYAdMnj4BqnpmfS-7h5Z3UI9ZRKCh2obuw0dgHU2cuTy-ACQOAQ6aaJE1Xiu9MGdUQpQYXG199AKNARr2fBzPt4pp4Dq6qtieO7ZGSZB-Avlv_l3iZI3DKry8AoY2PhYePRxVouB0uRysP47KJdDS24a6U0Cp3wJIA718pA1BORT1oOtz6E6uzYENqexEwTQQ4w')"></div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-on-surface">Wagyu Sliders</h3>
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase px-2 py-1 rounded">Premium</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Two mini-burgers with caramelized onions and truffle aioli.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-primary font-bold text-xl">$22.00</span>
+<div class="flex items-center gap-3">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Active</span>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Snack Card 6 -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<div class="h-48 w-full bg-cover bg-center" data-alt="Tall glass of organic cold-pressed green juice with cucumber, kale, and apple slices on a wooden table" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC2yYUl5qwdBMUbOExT7jYpss_dDx6vhXmwD1MKq4z7sUrb3Z6DoaqBILAX-XcPVf3zCza1igkMR63kMMI3ygiIaRtkewfqAtaCcUI8BTz9vC7czI92184g6rfI-7L9DqXoT18Gm5w5PNQuET3XMw5qMjsmGkfymXKENlIr4eG1ezaL1y78xHMA1NY_HVmAe99xHMHKMe5128pGGNx0FPl4FilECcRkIJCb1pkCd7XCpJr_B7D-hgjaiP3rTW0CL5hp-8RaleXquNo')"></div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-on-surface">Vitality Green</h3>
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase px-2 py-1 rounded">Vegan</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Cold-pressed cucumber, kale, apple, and ginger. 100% organic.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-primary font-bold text-xl">$12.00</span>
+<div class="flex items-center gap-3">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Active</span>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Create New Snack Drawer (Simulated Overlay) -->
+<div class="fixed inset-0 z-50 flex justify-end pointer-events-none">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-surface/80 backdrop-blur-sm pointer-events-auto"></div>
+<!-- Drawer -->
+<div class="relative w-full max-w-lg bg-surface-container-low h-full shadow-2xl pointer-events-auto flex flex-col p-8 overflow-y-auto">
+<div class="flex justify-between items-center mb-10">
+<h2 class="text-3xl font-black tracking-tight text-on-surface uppercase">Create Snack</h2>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<form class="space-y-8">
+<!-- Image Upload Area -->
+<div>
+<label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">Product Image</label>
+<div class="border-2 border-dashed border-outline-variant rounded-2xl p-10 flex flex-col items-center justify-center bg-surface-container-lowest transition-colors hover:bg-surface-container-high group cursor-pointer">
+<span class="material-symbols-outlined text-4xl text-outline-variant group-hover:text-primary transition-colors mb-4" data-icon="cloud_upload">cloud_upload</span>
+<p class="text-sm font-medium text-on-surface-variant">Drag image here or <span class="text-primary">browse files</span></p>
+<p class="text-[10px] text-on-surface-variant mt-2">Recommended size: 800x600px (JPG/PNG)</p>
+</div>
+</div>
+<!-- Details Inputs -->
+<div class="space-y-6">
+<div class="group">
+<label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">Snack Name</label>
+<input class="w-full bg-surface-container-high border-none rounded-xl py-4 px-5 text-sm focus:ring-2 focus:ring-primary-container transition-all" placeholder="e.g. Vintage Kettle Corn" type="text"/>
+</div>
+<div class="group">
+<label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">Description</label>
+<textarea class="w-full bg-surface-container-high border-none rounded-xl py-4 px-5 text-sm focus:ring-2 focus:ring-primary-container transition-all" placeholder="Describe the flavors, ingredients and allergens..." rows="4"></textarea>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="group">
+<label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">Price ($)</label>
+<input class="w-full bg-surface-container-high border-none rounded-xl py-4 px-5 text-sm focus:ring-2 focus:ring-primary-container transition-all" placeholder="12.00" step="0.01" type="number"/>
+</div>
+<div class="group">
+<label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 group-focus-within:text-primary transition-colors">Category</label>
+<select class="w-full bg-surface-container-high border-none rounded-xl py-4 px-5 text-sm focus:ring-2 focus:ring-primary-container transition-all">
+<option>Select Category</option>
+<option>Sweet</option>
+<option>Salty</option>
+<option>Beverage</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl">
+<div>
+<p class="text-sm font-bold text-on-surface">Publish Immediately</p>
+<p class="text-xs text-on-surface-variant">Visible in the concession catalog</p>
+</div>
+<div class="w-12 h-6 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="pt-6 flex gap-4">
+<button class="flex-1 bg-surface-container-highest text-on-surface font-bold py-4 rounded-xl hover:bg-surface-bright transition-all" type="button">Cancel</button>
+<button class="flex-[2] bg-primary-container text-on-primary-container font-bold py-4 rounded-xl shadow-lg hover:shadow-primary-container/20 transition-all" type="submit">Save &amp; Add to Inventory</button>
+</div>
+</form>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="fixed bottom-0 left-64 right-0 bg-[#060e20] py-6 px-8 flex justify-between items-center z-30">
+<div class="flex items-center gap-4">
+<span class="text-lg font-bold text-[#e50914]">The Curator</span>
+<span class="text-xs text-[#ffb4aa] tracking-wide">© 2024 The Cinematic Editorial. All Rights Reserved.</span>
+</div>
+<div class="flex gap-6">
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] text-xs font-medium underline underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Terms of Service</a>
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] text-xs font-medium underline underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Privacy Policy</a>
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] text-xs font-medium underline underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Contact Support</a>
+</div>
+</footer>
+</body></html>

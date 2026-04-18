@@ -62,6 +62,7 @@ public class ScreeningSeatService {
                 throw new IllegalStateException("Seat " + seat.getSeat().getSeatNumber() + " is already booked or held");
             }
             seat.setIsBooked(true);
+            seat.setStatus(SeatStatus.HELD.name());
             seat.getSeat().setIsAvailable(false);
         }
 
@@ -77,6 +78,7 @@ public class ScreeningSeatService {
 
         for (ScreeningSeat seat : seats) {
             seat.setIsBooked(true);
+            seat.setStatus(SeatStatus.RESERVED.name());
             seat.getSeat().setIsAvailable(false);
         }
 
@@ -98,6 +100,7 @@ public class ScreeningSeatService {
 
         if (Boolean.TRUE.equals(seat.getIsBooked())) {
             seat.setIsBooked(false);
+            seat.setStatus(SeatStatus.AVAILABLE.name());
             seat.getSeat().setIsAvailable(true);
             screeningSeatRepository.save(seat);
             updateScreeningAvailableSeats(seat.getScreening().getId());
@@ -111,6 +114,7 @@ public class ScreeningSeatService {
 
         if (Boolean.TRUE.equals(seat.getIsBooked())) {
             seat.setIsBooked(false);
+            seat.setStatus(SeatStatus.AVAILABLE.name());
             seat.getSeat().setIsAvailable(true);
             screeningSeatRepository.save(seat);
             updateScreeningAvailableSeats(seat.getScreening().getId());
@@ -134,6 +138,7 @@ public class ScreeningSeatService {
             Boolean oldStatus = seat.getIsBooked();
             Boolean newIsBooked = (status == SeatStatus.HELD || status == SeatStatus.RESERVED);
             seat.setIsBooked(newIsBooked);
+            seat.setStatus(status.name());
             log.info("Updated seat {} from {} to {}", seat.getSeat().getSeatNumber(), oldStatus, newIsBooked);
 
             seat.getSeat().setIsAvailable(!newIsBooked);

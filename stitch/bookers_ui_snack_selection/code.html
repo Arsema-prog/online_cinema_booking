@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Snack Selection | The Cinematic Editorial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#690005",
+                        "secondary-container": "#ffdb3c",
+                        "on-tertiary-container": "#fbf8f7",
+                        "surface-dim": "#0b1326",
+                        "secondary": "#fff9ef",
+                        "on-surface-variant": "#e9bcb6",
+                        "tertiary": "#c8c6c5",
+                        "surface-container-high": "#222a3d",
+                        "secondary-fixed-dim": "#e9c400",
+                        "surface-container-highest": "#2d3449",
+                        "surface": "#0b1326",
+                        "error-container": "#93000a",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "surface-container": "#171f33",
+                        "outline-variant": "#5e3f3b",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "on-secondary": "#3a3000",
+                        "surface-container-lowest": "#060e20",
+                        "surface-bright": "#31394d",
+                        "primary-fixed": "#ffdad5",
+                        "on-secondary-container": "#725f00",
+                        "tertiary-container": "#737272",
+                        "outline": "#af8782",
+                        "surface-variant": "#2d3449",
+                        "on-tertiary": "#313030",
+                        "background": "#0b1326",
+                        "tertiary-fixed": "#e5e2e1",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed-variant": "#930007",
+                        "on-primary-fixed": "#410001",
+                        "on-primary": "#690003",
+                        "inverse-primary": "#c0000c",
+                        "primary": "#ffb4aa",
+                        "on-secondary-fixed": "#221b00",
+                        "on-background": "#dae2fd",
+                        "inverse-surface": "#dae2fd",
+                        "on-secondary-fixed-variant": "#544600",
+                        "error": "#ffb4ab",
+                        "surface-tint": "#ffb4aa",
+                        "surface-container-low": "#131b2e",
+                        "on-surface": "#dae2fd",
+                        "secondary-fixed": "#ffe16d",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-container": "#fff7f6",
+                        "inverse-on-surface": "#283044",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "primary-container": "#e50914"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Epilogue"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+        }
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-container selection:text-white">
+<!-- TopNavBar Component -->
+<nav class="fixed top-0 w-full z-50 bg-[#0b1326]/70 backdrop-blur-xl flex justify-between items-center px-8 py-4 w-full max-w-full mx-auto font-['Epilogue'] tracking-tight">
+<div class="text-2xl font-black tracking-tighter text-[#e50914] uppercase">The Cinematic Editorial</div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] transition-colors duration-300" href="#">Movies</a>
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] transition-colors duration-300" href="#">Cinemas</a>
+<a class="text-[#e9bcb6] hover:text-[#ffb4aa] transition-colors duration-300" href="#">Offers</a>
+<a class="text-[#ffb4aa] border-b-2 border-[#e50914] pb-1" href="#">My Bookings</a>
+</div>
+<div class="flex items-center space-x-4">
+<button class="p-2 hover:bg-[#2d3449]/50 transition-colors duration-300 rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[#ffb4aa]">notifications</span>
+</button>
+<button class="p-2 hover:bg-[#2d3449]/50 transition-colors duration-300 rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[#ffb4aa]">account_circle</span>
+</button>
+</div>
+</nav>
+<main class="pt-24 pb-32 min-h-screen px-4 md:px-8 max-w-7xl mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- LEFT COLUMN: Sticky Order Summary -->
+<aside class="lg:col-span-4 sticky top-28 space-y-6">
+<div class="glass-panel p-8 rounded-xl shadow-[0_-10px_40px_rgba(6,14,32,0.6)]">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline text-xl font-bold tracking-tight text-on-surface">Order Summary</h2>
+<div class="flex items-center space-x-2 text-primary-fixed-dim bg-primary-container/20 px-3 py-1 rounded-full">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-xs font-bold font-label">08:45</span>
+</div>
+</div>
+<div class="space-y-6 mb-8">
+<div class="flex flex-col gap-1">
+<span class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Showtime &amp; Screen</span>
+<div class="flex justify-between items-baseline">
+<span class="text-on-surface font-headline font-bold">Screen 01</span>
+<span class="text-on-surface-variant text-sm">Today, 21:00</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Selected Seats</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed-dim text-lg">event_seat</span>
+<span class="text-on-surface font-headline font-bold">H5, H6</span>
+</div>
+</div>
+<div class="h-px bg-outline-variant/15 w-full"></div>
+<div class="space-y-3">
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Tickets (2x)</span>
+<span class="text-on-surface">$32.00</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Snacks</span>
+<span class="text-on-surface">$0.00</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center mb-8 border-t border-outline-variant/15 pt-6">
+<span class="text-on-surface-variant font-bold uppercase tracking-widest text-xs">Total Amount</span>
+<span class="text-3xl font-headline font-black text-on-surface">$32.00</span>
+</div>
+<div class="space-y-4">
+<button class="w-full py-4 bg-gradient-to-tr from-[#e50914] to-[#930007] text-white rounded-xl font-headline font-bold tracking-tight text-lg shadow-xl scale-100 active:scale-95 transition-all">
+                            Proceed to Payment
+                        </button>
+<div class="text-center">
+<a class="text-primary-fixed-dim hover:text-on-primary-container transition-all text-sm font-label" href="#">Skip Snacks</a>
+</div>
+</div>
+</div>
+<!-- Promo Banner -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-secondary-container text-on-secondary-container rounded-full">
+<span class="material-symbols-outlined">stars</span>
+</div>
+<div>
+<p class="text-sm font-bold text-secondary">VIP Member Offer</p>
+<p class="text-xs text-on-surface-variant">Get 20% off all large combos today</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- RIGHT COLUMN: Snack Catalog -->
+<section class="lg:col-span-8">
+<!-- SideNavBar logic as category tabs -->
+<div class="flex flex-col gap-8">
+<header class="flex flex-col gap-2">
+<h1 class="font-headline text-5xl font-black tracking-tighter text-on-surface">Concessions</h1>
+<p class="text-on-surface-variant font-body">Enhance your cinematic experience with our curated selection</p>
+</header>
+<!-- Category Tabs -->
+<div class="flex items-center gap-2 p-1 bg-surface-container-lowest rounded-xl overflow-x-auto no-scrollbar">
+<button class="flex items-center gap-2 bg-[#e50914] text-[#fff9ef] rounded-xl font-bold px-6 py-3 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">icecream</span>
+<span class="font-label text-sm">Popcorn</span>
+</button>
+<button class="flex items-center gap-2 text-[#e9bcb6] hover:bg-[#171f33] rounded-xl px-6 py-3 transition-all whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">local_bar</span>
+<span class="font-label text-sm">Drinks</span>
+</button>
+<button class="flex items-center gap-2 text-[#e9bcb6] hover:bg-[#171f33] rounded-xl px-6 py-3 transition-all whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">bakery_dining</span>
+<span class="font-label text-sm">Candy</span>
+</button>
+<button class="flex items-center gap-2 text-[#e9bcb6] hover:bg-[#171f33] rounded-xl px-6 py-3 transition-all whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">fastfood</span>
+<span class="font-label text-sm">Combos</span>
+</button>
+</div>
+<!-- Bento-ish Grid of Snack Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Snack Card 1 -->
+<div class="group bg-surface-container-low rounded-xl overflow-hidden hover:bg-surface-container transition-all duration-300">
+<div class="h-48 overflow-hidden">
+<img alt="Classic Salted Popcorn" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Close-up of golden salted popcorn in a premium red striped paper bucket with warm cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLwZ7r4aM9LMN2_24qqCrw4kjmBgNRGFpBJLqQN24RbI_480Q4K4569W-ta_lzpRddXI0-Odh1sLCQJq5lr6j16mgnra_VYaHL992_CYSJMPY9HXrw0MnYWAi04tIkylUxV1OzZ1Xcckf0Lc-DHp0mbQl8MFgXzlrZwxUsAgwqCqehmA4m6vYaZp3MGV-ueZBIKLLTi3VSOXpkWlx7WR8dPPmX5nmJ1cEciFdFCy165mGmbqsr0iuqOCY410a1vgwQFC8-KlxGDxo"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline font-bold text-xl text-on-surface">Classic Salted Popcorn</h3>
+<span class="text-secondary-fixed font-bold font-headline">$8.50</span>
+</div>
+<p class="text-on-surface-variant text-sm mb-6 leading-relaxed">Warm, fluffy kernels tossed in melted clarified butter and sea salt.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center bg-surface-container-highest rounded-full p-1 border border-outline-variant/10">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-primary-container/20 text-on-surface transition-all active:scale-90">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="px-4 font-bold text-on-surface font-label">0</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-primary-container text-white shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<span class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant/40">Large size</span>
+</div>
+</div>
+</div>
+<!-- Snack Card 2 -->
+<div class="group bg-surface-container-low rounded-xl overflow-hidden hover:bg-surface-container transition-all duration-300">
+<div class="h-48 overflow-hidden">
+<img alt="Gourmet Caramel" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Gourmet caramel popcorn with rich dark amber glaze drizzled on top, professional food photography with deep shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBOq58fV1bqslFNvOocKMeBrYQUUFuOMX5GhoivV08wVkPVLQDZOibIS2ohKzYLs2LDkJDfEQCkPvNQeBnwK9rWMiUBGMcpSZF3brZRxomny0K382xJBjSchOirLPzBXditm8ZamCCNqeq77Hsr8iPcgaD3GGo3pwPEGPkQRCXToNCXLHtNqgfGxC-96fg-_btAZEHyl7N_JssLgzfkQTyugl4Jhcsz5LKn2NIKsxBjc0Fq8pfGzprxtlQeSUVrpiXCYuy3dVmkBE"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline font-bold text-xl text-on-surface">Gourmet Caramel</h3>
+<span class="text-secondary-fixed font-bold font-headline">$10.50</span>
+</div>
+<p class="text-on-surface-variant text-sm mb-6 leading-relaxed">Deep amber caramel glaze with a touch of Madagascar vanilla.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center bg-surface-container-highest rounded-full p-1 border border-outline-variant/10">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-primary-container/20 text-on-surface transition-all active:scale-90">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="px-4 font-bold text-on-surface font-label">2</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-primary-container text-white shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<span class="text-[10px] uppercase font-black tracking-widest text-primary-fixed-dim">Selected</span>
+</div>
+</div>
+</div>
+<!-- Snack Card 3 (Featured/Wide) -->
+<div class="md:col-span-2 group flex flex-col md:flex-row bg-surface-container-low rounded-xl overflow-hidden hover:bg-surface-container transition-all duration-300">
+<div class="md:w-1/2 h-64 md:h-auto overflow-hidden">
+<img alt="Artisan Nachos" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Heaping plate of artisan corn tortilla chips with melted craft cheese, jalapeños, and fresh salsa in a dark setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBg9ZfSeQbOb6HbodcMKlD-Mf6C7fkNa9YEdalUWvhO2eNem5OloEr_dY1IohbVV2fwjn608EQg-BPviqgqsH4DuVJNGyFiemyu-UhMGUJqJ3xRt0e4LIP-k-gWdOLa7aOV1RsXvS4Fo8EqlwYjsiIBvKh22XYEmR2D5q0WXYVRkhkt2Jr1LCVPUk6pzrKNzgyhtgmoW8pHkAMpeRNvRsB8f9jWt4prO2ALr5WiJbrUOu469CSavmADC-Gqb71zVSqboclKthp5RFU"/>
+</div>
+<div class="md:w-1/2 p-8 flex flex-col justify-center">
+<div class="flex justify-between items-start mb-4">
+<div>
+<span class="text-primary-fixed-dim text-[10px] uppercase font-black tracking-[0.2em] mb-1 block">Chef's Choice</span>
+<h3 class="font-headline font-bold text-2xl text-on-surface">Artisan Nachos</h3>
+</div>
+<span class="text-secondary-fixed font-bold font-headline text-xl">$14.00</span>
+</div>
+<p class="text-on-surface-variant text-sm mb-8 leading-relaxed">Hand-cut tortillas, aged cheddar sauce, house-made pico de gallo, and pickled jalapeños.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center bg-surface-container-highest rounded-full p-2 border border-outline-variant/10">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary-container/20 text-on-surface transition-all active:scale-90">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="px-6 font-bold text-on-surface font-headline text-lg">0</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-container text-white shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-secondary-fixed-dim flex items-center gap-1 text-xs">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span> 
+                                            Best Seller
+                                        </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Snack Card 4 -->
+<div class="group bg-surface-container-low rounded-xl overflow-hidden hover:bg-surface-container transition-all duration-300">
+<div class="h-48 overflow-hidden">
+<img alt="Craft Soda" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A tall glass of ice-cold dark soda with condensation and bubbles, dark moody studio lighting with blue highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJhF2uOQKQ52KlxLi57j-oAbNlnhQr6NvXHmJgecoKGyQ7HeIbxZq0UwisWdp9MxSTBdhaceS91RiGZenE9huB217OsXT6X61npGWZAHwk7YZdfXZtAaWeDq4h3e-Fuip9PzyJoJ5KjixZ4meMZ-q2fED44quFSSVvLGu2jT-zA0ACxtGORZzWcbMRdp2iC_-_d26xxMHwspa486DeNF-sug1n2Rkk_cbulr4BU2bYv_BllbfvoCzP0Ss2-RxM7mlkYVWTfYgF730"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline font-bold text-xl text-on-surface">Craft Soda</h3>
+<span class="text-secondary-fixed font-bold font-headline">$6.50</span>
+</div>
+<p class="text-on-surface-variant text-sm mb-6 leading-relaxed">Small-batch organic cola brewed with natural cane sugar.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center bg-surface-container-highest rounded-full p-1 border border-outline-variant/10">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-primary-container/20 text-on-surface transition-all active:scale-90">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="px-4 font-bold text-on-surface font-label">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-primary-container text-white shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<span class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant/40">500ml</span>
+</div>
+</div>
+</div>
+<!-- Snack Card 5 -->
+<div class="group bg-surface-container-low rounded-xl overflow-hidden hover:bg-surface-container transition-all duration-300">
+<div class="h-48 overflow-hidden">
+<img alt="Mineral Water" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Clear crystal mineral water bottle with fresh bubbles and ice cubes in a high-end minimalist setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGNNDaYV8_M01o5KsdB9u70VumaAbCLzsuPMcEQ16qZgCiBbSuuNGX9QyHdnOQNO-y0qSTqSJR4hUxgzt8DEMOo8CXqEUvZ_YeJrusNliLlVFebIBEE-ElyXx1IyDlH6xtoHOBGOyZZOqe7rWRUCHN9RKwkBZIb0FpRsRnHvgAMhwgOfb-QQuCR-QbU_nYvfkULt3PXFdyly5UOShbZT0GZJPq8YX8bATtfKK7jlblu2948VWJbESLHC69z6BnrbuahfvRr9HvU6E"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline font-bold text-xl text-on-surface">Mineral Water</h3>
+<span class="text-secondary-fixed font-bold font-headline">$4.00</span>
+</div>
+<p class="text-on-surface-variant text-sm mb-6 leading-relaxed">Naturally filtered sparkling or still water from alpine springs.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center bg-surface-container-highest rounded-full p-1 border border-outline-variant/10">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-primary-container/20 text-on-surface transition-all active:scale-90">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="px-4 font-bold text-on-surface font-label">0</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-primary-container text-white shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<span class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant/40">750ml</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar as mobile sticky summary -->
+<footer class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-[#171f33]/80 backdrop-blur-2xl flex justify-between items-center px-6 py-4 rounded-t-3xl shadow-[0_-10px_40px_rgba(6,14,32,0.6)]">
+<div class="flex flex-col items-start">
+<span class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant">Total</span>
+<span class="text-xl font-headline font-black text-on-surface">$32.00</span>
+</div>
+<button class="bg-gradient-to-tr from-[#e50914] to-[#930007] text-white rounded-xl px-8 py-3 font-headline font-bold tracking-tight shadow-lg active:scale-95 transition-all">
+            Payment
+        </button>
+</footer>
+</body></html>

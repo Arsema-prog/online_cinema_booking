@@ -131,17 +131,21 @@ export const PaymentPage: React.FC = () => {
       }
 
       const snacksTotalToSend = computedSnacksTotal;
-      let latestBooking = bookingSummary;
+      let latestBooking = bookingSummary ?? (await getBookingDetails(bookingId));
 
-      // First, update booking with snacks if any
       if (normalizedSnacks.length > 0) {
         latestBooking = await updateBookingSnacks(
           bookingId,
           normalizedSnacks.map((s: any) => `${s.quantity}x ${s.snack?.name ?? s.name ?? 'Snack'}`).join(', '),
           snacksTotalToSend
         );
-        setBookingSummary(latestBooking);
+      } else if (
+        latestBooking.snacksTotal > 0 ||
+        (latestBooking.snackDetails && latestBooking.snackDetails.trim().length > 0)
+      ) {
+        latestBooking = await updateBookingSnacks(bookingId, '', 0);
       }
+      setBookingSummary(latestBooking);
 
       const paymentBooking = await initiateBookingPayment(bookingId);
       setBookingSummary(paymentBooking);

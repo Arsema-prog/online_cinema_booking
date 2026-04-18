@@ -39,7 +39,7 @@ public class PaymentEventListener {
                 log.info("Duplicate payment.succeeded event {}, skipping", event.getEventId());
                 return;
             }
-            bookingService.confirmBooking(event.getBookingId());
+            bookingService.confirmBooking(event.getBookingId(), event.getUserEmail());
             inboxRepository.save(MessageInbox.builder()
                     .eventId(event.getEventId())
                     .eventType("payment.succeeded")

@@ -27,6 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const branchSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -53,6 +54,8 @@ export default function BranchesPage() {
   const [open, setOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const { toast } = useToast();
 
   const form = useForm<BranchFormValues>({
     resolver: zodResolver(branchSchema) as any,
@@ -82,8 +85,18 @@ export default function BranchesPage() {
       setSaving(true);
       if (editingBranch) {
         await updateBranch(editingBranch.id, values);
+        toast({
+          title: 'Branch updated successfully',
+          description: values.name,
+          variant: 'success',
+        });
       } else {
         await createBranch(values);
+        toast({
+          title: 'Branch created successfully',
+          description: values.name,
+          variant: 'success',
+        });
       }
       setOpen(false);
       form.reset();
@@ -91,6 +104,11 @@ export default function BranchesPage() {
       fetchBranches();
     } catch (err) {
       console.error('Save failed', err);
+      toast({
+        title: 'Failed to save branch',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'error',
+      });
     } finally {
       setSaving(false);
     }

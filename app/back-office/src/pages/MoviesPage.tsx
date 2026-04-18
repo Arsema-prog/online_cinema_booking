@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { Movie } from '@/types';
-import { getMovies, createMovie, updateMovie, deleteMovie } from '@/api/movies';
+import type { Movie, Tag } from '@/types';
+import { getMovies, getTags, createMovie, updateMovie, deleteMovie, searchExternalMovies, getExternalMovieDetails } from '@/api/movies';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -18,7 +18,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -26,20 +33,135 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ModernForm } from '@/components/ui/modern-form';
 import type { ModernFormSection } from '@/components/ui/modern-form';
 import { env } from '../../env';
+import { useToast } from '@/hooks/use-toast';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   duration: z.coerce.number().min(1, 'Duration is required'),
   releaseDate: z.string().min(1, 'Release date is required'),
-  genre: z.string().min(1, 'Genre is required'),
+  tagIds: z.array(z.number()).min(1, 'At least one tag is required'),
+  director: z.string().trim().max(255, 'Director name is too long').optional().or(z.literal('')),
+  posterUrl: z.string().trim().max(500, 'Poster URL is too long').optional().or(z.literal('')),
+  basePrice: z.coerce.number().positive('Base price must be greater than 0'),
   rating: z.coerce.number().min(0).max(10),
 });
 
 type MovieFormValues = z.infer<typeof movieSchema>;
 
+const ImdbSearchField = ({ form, tags }: { form: any, tags: Tag[] }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [results, setResults] = useState<Movie[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const { toast } = useToast();
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) return;
+    try {
+      setIsSearching(true);
+      const res = await searchExternalMovies(searchTerm);
+      setResults(res.data || []);
+      if (res.data?.length === 0) {
+         toast({ title: 'No results found', description: 'Try adjusting your search term' });
+      }
+    } catch (e) {
+      toast({ title: 'Search failed', description: 'Could not fetch from IMDb.', variant: 'error' });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelect = async (movie: Movie) => {
+    if (!movie.imdbId) {
+      form.setValue('title', movie.title || '');
+      toast({ title: 'Metadata Imported', description: `Copied partial details for ${movie.title}`, variant: 'success' });
+      setResults([]);
+      setSearchTerm('');
+      return;
+    }
+    
+    try {
+      setIsSearching(true);
+      const res = await getExternalMovieDetails(movie.imdbId);
+      const detailedMovie = res.data as any; // Allow extraction of arbitrary IMDB response params
+      
+      form.setValue('title', detailedMovie.title || '');
+      
+      // Auto-populate multiple mapped tag Ids from DB comparing the string returned by IMDb
+      if (detailedMovie.genre && tags.length > 0) {
+        const genresStr = detailedMovie.genre;
+        const matchedTagIds: number[] = [];
+        tags.forEach(t => {
+           if (genresStr.toLowerCase().includes(t.genre.toLowerCase())) {
+              matchedTagIds.push(t.id);
+           }
+        });
+        if (matchedTagIds.length > 0) form.setValue('tagIds', matchedTagIds);
+      }
+      
+      if (detailedMovie.director) form.setValue('director', detailedMovie.director);
+      if (detailedMovie.releaseDate) form.setValue('releaseDate', detailedMovie.releaseDate);
+      if (detailedMovie.posterUrl) form.setValue('posterUrl', detailedMovie.posterUrl);
+      if (detailedMovie.duration) form.setValue('duration', detailedMovie.duration);
+      if (detailedMovie.description) form.setValue('description', detailedMovie.description);
+      if (detailedMovie.rating) form.setValue('rating', detailedMovie.rating);
+      
+      toast({ title: 'Full details loaded', description: `Successfully loaded data for ${detailedMovie.title}`, variant: 'success' });
+    } catch (e) {
+      toast({ title: 'Fetch failed', description: 'Could not fetch detailed metadata.', variant: 'error' });
+    } finally {
+      setIsSearching(false);
+      setResults([]);
+      setSearchTerm('');
+    }
+  };
+
+  return (
+    <div className="col-span-1 md:col-span-2 rounded-2xl border border-primary/20 bg-primary/5 p-5 mb-2">
+      <div className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-3 flex items-center"><span className="material-symbols-outlined text-[1rem] mr-2">auto_awesome</span> Automated Metadata Import</div>
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        <Input 
+          placeholder="Search original title on IMDb..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
+          className="h-12 bg-background/80 focus-visible:bg-background border-primary/20 hover:border-primary/40 font-bold"
+        />
+        <Button type="button" onClick={handleSearch} disabled={isSearching} className="h-12 px-6 rounded-xl font-bold whitespace-nowrap w-full sm:w-auto shadow-md">
+          {isSearching ? <span className="material-symbols-outlined animate-spin mr-2">refresh</span> : <span className="material-symbols-outlined mr-2">search</span>}
+          Search IMDb
+        </Button>
+      </div>
+      {results.length > 0 && (
+        <div className="mt-4 flex flex-col gap-2 max-h-[18rem] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+          {results.map((m, idx) => (
+            <div key={idx} onClick={() => handleSelect(m)} className="flex items-center gap-4 bg-background/80 hover:bg-background p-3.5 rounded-xl border border-border/80 cursor-pointer transition-all hover:border-primary/40 hover:shadow-md group">
+              {m.posterUrl ? (
+                <img src={m.posterUrl} alt={m.title} className="w-12 h-16 object-cover rounded-md shadow-sm border border-border/50" />
+              ) : (
+                <div className="w-12 h-16 bg-muted flex items-center justify-center rounded-md shadow-sm border border-border/50">
+                  <span className="material-symbols-outlined text-muted-foreground/50">movie</span>
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-foreground group-hover:text-primary transition-colors truncate text-[1.1rem] leading-tight">{m.title}</div>
+                <div className="text-xs font-bold text-muted-foreground mt-1 truncate">
+                  <span className="inline-flex bg-muted px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider mr-2">{m.releaseDate || 'N/A'}</span>
+                  {m.director || 'Unknown Director'}
+                </div>
+              </div>
+              <Button type="button" variant="secondary" size="sm" className="hidden sm:flex rounded-lg px-4 font-bold text-primary bg-primary/10 hover:bg-primary/20 opacity-0 group-hover:opacity-100 transition-all select-none pointer-events-none">Import</Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -50,19 +172,26 @@ export default function MoviesPage() {
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const { toast } = useToast();
+
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema) as any,
-    defaultValues: { title: '', description: '', duration: 0, releaseDate: '', genre: '', rating: 0 },
+    defaultValues: { title: '', description: '', duration: 0, releaseDate: '', tagIds: [], director: '', posterUrl: '', basePrice: 0, rating: 0 },
   });
+
+  const suggestedMovieId = (movies.reduce((max, movie) => Math.max(max, movie.id), 0) || 0) + 1;
+
+  const buildDefaultPosterUrl = (movieId: number | string) => `http://localhost:9000/posters/movie_${movieId}.jpg`;
 
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      const response = await getMovies();
-      setMovies(response.data);
+      const [moviesRes, tagsRes] = await Promise.all([getMovies(), getTags()]);
+      setMovies(moviesRes.data);
+      setTags(tagsRes.data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch movies');
+      setError('Failed to fetch movies or tags');
       console.error(err);
     } finally {
       setLoading(false);
@@ -79,16 +208,28 @@ export default function MoviesPage() {
       const posterFile = files['poster'] || undefined;
       
       if (editingMovie) {
-        await updateMovie(editingMovie.id, values, posterFile);
+        await updateMovie(editingMovie.id, values as any, posterFile);
       } else {
-        await createMovie(values, posterFile);
+        await createMovie(values as any, posterFile);
       }
+
+      toast({
+        title: editingMovie ? 'Movie updated successfully' : 'Movie created successfully',
+        description: values.title,
+        variant: 'success',
+      });
+
       setOpen(false);
       form.reset();
       setEditingMovie(null);
       fetchMovies();
     } catch (err) {
       console.error('Save failed', err);
+      toast({
+        title: 'Failed to save movie',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'error',
+      });
     } finally {
       setSaving(false);
     }
@@ -98,8 +239,86 @@ export default function MoviesPage() {
     {
       title: "Core Metadata",
       fields: [
+        {
+          name: "imdbSearch",
+          label: "IMDb Importer",
+          type: "custom",
+          colSpan: 2,
+          render: (f) => <ImdbSearchField form={f} tags={tags} />
+        },
+        {
+          name: "movieIdPreview",
+          label: "Movie ID",
+          type: "custom",
+          colSpan: 2,
+          render: () => (
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80">Movie ID</div>
+              <div className="mt-1 text-lg font-black text-foreground">
+                {editingMovie ? `#${editingMovie.id}` : `#${suggestedMovieId}`}
+              </div>
+              <div className="mt-1 text-xs font-medium text-muted-foreground">
+                {editingMovie
+                  ? 'This title keeps its existing database ID.'
+                  : 'Estimated next movie ID for poster naming and MinIO uploads.'}
+              </div>
+            </div>
+          )
+        },
         { name: "title", label: "Movie Title", type: "text", required: true, placeholder: "e.g. Inception", icon: <span className="material-symbols-outlined text-[1rem]">title</span>, colSpan: 2 },
-        { name: "genre", label: "Genre", type: "text", required: true, placeholder: "e.g. Sci-Fi, Action", icon: <span className="material-symbols-outlined text-[1rem]">info</span> },
+        { 
+          name: "tagIds", 
+          label: "Genres / Tags", 
+          type: "custom", 
+          colSpan: 2, 
+          render: (f) => (
+            <div className="space-y-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between font-normal text-left h-12 bg-background/50 border-input hover:bg-muted/50 rounded-xl">
+                    <span className="flex items-center gap-2 truncate">
+                      {f.getValues('tagIds')?.length > 0 ? (
+                        <span className="text-foreground font-bold">
+                          {tags.filter(t => (f.getValues('tagIds') || []).includes(t.id)).map(t => t.genre).join(', ')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground font-medium">Select multiple genres...</span>
+                      )}
+                    </span>
+                    <span className="material-symbols-outlined text-[1.2rem] opacity-50">arrow_drop_down</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-[300px] overflow-y-auto z-[100] rounded-xl border-border bg-card shadow-2xl p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+                  <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground opacity-70">Predefined Tags</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border/50 my-1.5" />
+                  {tags.map(t => {
+                    const val = f.getValues('tagIds') || [];
+                    const checked = val.includes(t.id);
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={t.id}
+                        checked={checked}
+                        onSelect={(e) => e.preventDefault()} // Keeps dropdown open after selection
+                        onCheckedChange={(c) => {
+                          if (c) f.setValue('tagIds', [...val, t.id]);
+                          else f.setValue('tagIds', val.filter((id: number) => id !== t.id));
+                        }}
+                        className="font-bold text-foreground py-2 cursor-pointer rounded-lg hover:bg-muted focus:bg-muted text-sm"
+                      >
+                        {t.genre}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {(!f.getValues('tagIds') || f.getValues('tagIds').length === 0) && (
+                <div className="text-xs text-destructive font-bold inline-flex items-center"><span className="material-symbols-outlined text-[14px] mr-1">warning</span> At least one tag is required.</div>
+              )}
+            </div>
+          )
+        },
+        { name: "director", label: "Director", type: "text", placeholder: "e.g. Greta Gerwig", icon: <span className="material-symbols-outlined text-[1rem]">theater_comedy</span>, colSpan: 2 },
+        { name: "basePrice", label: "Base Ticket Price", type: "number", required: true, placeholder: "e.g. 15.00", icon: <span className="material-symbols-outlined text-[1rem]">payments</span> },
         { name: "rating", label: "Atlas Critics Score", type: "rating", required: true },
         { name: "duration", label: "Screening Time", type: "duration", required: true },
         { name: "releaseDate", label: "Premiere Date", type: "date", required: true },
@@ -108,7 +327,23 @@ export default function MoviesPage() {
     {
       title: "Media & Synopsis",
       fields: [
-        { name: "poster", label: "Official Poster", type: "image", placeholder: "Upload film poster" },
+        {
+          name: "poster",
+          label: "Official Poster",
+          type: "image",
+          placeholder: "Upload film poster",
+          description: "Uploading a poster is preferred. The backend now stores the MinIO object key automatically.",
+          allowManualUrl: false
+        },
+        {
+          name: "posterUrl",
+          label: "Poster URL",
+          type: "text",
+          placeholder: buildDefaultPosterUrl(editingMovie?.id ?? suggestedMovieId),
+          description: "Optional fallback. Use the common pattern and change only the movie id if needed.",
+          icon: <span className="material-symbols-outlined text-[1rem]">link</span>,
+          colSpan: 2
+        },
         { name: "description", label: "Plot Summary", type: "textarea", placeholder: "Synopsis of the film..." },
       ]
     }
@@ -121,7 +356,10 @@ export default function MoviesPage() {
       description: movie.description,
       duration: movie.duration,
       releaseDate: movie.releaseDate,
-      genre: movie.genre,
+      tagIds: movie.tags?.map(t => t.id) || [],
+      director: movie.director || '',
+      posterUrl: movie.posterUrl || buildDefaultPosterUrl(movie.id),
+      basePrice: movie.basePrice || 0,
       rating: movie.rating || 0,
     });
     setOpen(true);
@@ -138,16 +376,40 @@ export default function MoviesPage() {
     }
   };
 
-  const filteredMovies = movies.filter(m => 
-    m.title.toLowerCase().includes(search.toLowerCase()) || 
-    m.genre.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredMovies = movies.filter(m => {
+    const searchString = search.toLowerCase();
+    const matchesTitle = m.title.toLowerCase().includes(searchString);
+    const matchesTags = m.tags?.some(t => t.genre.toLowerCase().includes(searchString));
+    return matchesTitle || matchesTags;
+  });
 
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
       setEditingMovie(null);
-      form.reset();
+      form.reset({
+        title: '',
+        description: '',
+        duration: 0,
+        releaseDate: '',
+        tagIds: [],
+        director: '',
+        posterUrl: buildDefaultPosterUrl(suggestedMovieId),
+        basePrice: 0,
+        rating: 0,
+      });
+    } else if (!editingMovie) {
+      form.reset({
+        title: '',
+        description: '',
+        duration: 0,
+        releaseDate: '',
+        tagIds: [],
+        director: '',
+        posterUrl: buildDefaultPosterUrl(suggestedMovieId),
+        basePrice: 0,
+        rating: 0,
+      });
     }
   };
 
@@ -195,6 +457,7 @@ export default function MoviesPage() {
                 <ModernForm
                   schema={movieSchema}
                   defaultValues={form.getValues()}
+                  form={form}
                   onSubmit={onSubmit as any}
                   sections={movieFormSections}
                   isSubmitting={saving}
@@ -262,7 +525,16 @@ export default function MoviesPage() {
                         </div>
                         <div>
                           <div className="font-headline font-black text-foreground text-lg leading-tight">{movie.title}</div>
-                          <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1.5 bg-muted inline-flex px-1.5 py-0.5 rounded">{movie.genre}</div>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {movie.tags?.slice(0, 3).map(t => (
+                              <div key={t.id} className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest bg-muted inline-flex px-1.5 py-0.5 rounded">
+                                {t.genre}
+                              </div>
+                            ))}
+                            {movie.tags && movie.tags.length > 3 && (
+                               <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest bg-muted inline-flex px-1.5 py-0.5 rounded">+{movie.tags.length - 3}</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -271,9 +543,6 @@ export default function MoviesPage() {
                         <div className="flex items-center text-xs font-bold text-muted-foreground">
                           <span className="material-symbols-outlined text-[1rem] mr-1.5 opacity-60">schedule</span> {Math.floor(movie.duration / 60)}h {movie.duration % 60}m
                         </div>
-                        <Badge variant="secondary" className="w-fit text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-muted text-foreground border-transparent">
-                          {movie.genre.split(',')[0]}
-                        </Badge>
                       </div>
                     </TableCell>
                     <TableCell>

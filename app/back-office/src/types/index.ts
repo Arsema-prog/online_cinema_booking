@@ -11,11 +11,18 @@ export interface Branch {
   screens?: Screen[];
 }
 
+export interface Tag {
+  id: number;
+  genre: string;
+}
+
 export interface Movie {
   id: number;
+  imdbId?: string;
   title: string;
   posterUrl?: string;
-  genre: string;
+  tags?: Tag[];
+  tagIds?: number[];
   duration: number;
   description?: string;
   director?: string;

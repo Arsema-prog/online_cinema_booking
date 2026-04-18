@@ -15,6 +15,18 @@ import {
 } from "../api/bookingApi";
 import { env } from "../env";
 
+/** API returns JSON object keys as strings; normalize for numeric core seat id lookups. */
+function normalizeSeatUuidMapping(raw: Record<string, string> | Record<number, string>): Record<number, string> {
+  const out: Record<number, string> = {};
+  for (const [k, v] of Object.entries(raw ?? {})) {
+    const num = Number(k);
+    if (!Number.isNaN(num) && typeof v === "string" && v.length > 0) {
+      out[num] = v;
+    }
+  }
+  return out;
+}
+
 export const useBooking = (screeningId: number) => {
   const [seats, setSeats] = useState<ScreeningSeat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,10 +104,12 @@ export const useBooking = (screeningId: number) => {
         setLoading(true);
         setError(null);
         
-        const [seatsData, uuidMapping] = await Promise.all([
+        const [seatsData, uuidMappingRaw] = await Promise.all([
           getScreeningSeats(screeningId),
           getSeatUuidMapping(screeningId)
         ]);
+
+        const uuidMapping = normalizeSeatUuidMapping(uuidMappingRaw);
         
         console.log('Seats loaded:', seatsData.length);
         console.log('UUID mapping loaded:', Object.keys(uuidMapping).length);

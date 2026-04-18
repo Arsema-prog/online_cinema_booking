@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Cinematic Editorial - Browse Movies</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#171f33",
+                    "primary-container": "#e50914",
+                    "on-surface-variant": "#e9bcb6",
+                    "tertiary-container": "#737272",
+                    "error": "#ffb4ab",
+                    "primary-fixed": "#ffdad5",
+                    "secondary-fixed-dim": "#e9c400",
+                    "primary": "#ffb4aa",
+                    "surface-container-highest": "#2d3449",
+                    "surface-tint": "#ffb4aa",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "surface-container-low": "#131b2e",
+                    "on-secondary-fixed-variant": "#544600",
+                    "primary-fixed-dim": "#ffb4aa",
+                    "surface-container-high": "#222a3d",
+                    "on-background": "#dae2fd",
+                    "inverse-surface": "#dae2fd",
+                    "on-secondary": "#3a3000",
+                    "outline-variant": "#5e3f3b",
+                    "on-primary-fixed-variant": "#930007",
+                    "on-error": "#690005",
+                    "secondary": "#fff9ef",
+                    "secondary-container": "#ffdb3c",
+                    "on-primary-fixed": "#410001",
+                    "inverse-primary": "#c0000c",
+                    "on-secondary-fixed": "#221b00",
+                    "tertiary-fixed": "#e5e2e1",
+                    "outline": "#af8782",
+                    "on-tertiary-container": "#fbf8f7",
+                    "on-error-container": "#ffdad6",
+                    "error-container": "#93000a",
+                    "on-surface": "#dae2fd",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "on-tertiary": "#313030",
+                    "surface-bright": "#31394d",
+                    "secondary-fixed": "#ffe16d",
+                    "on-primary": "#690003",
+                    "surface-dim": "#0b1326",
+                    "tertiary": "#c8c6c5",
+                    "surface-variant": "#2d3449",
+                    "surface": "#0b1326",
+                    "surface-container-lowest": "#060e20",
+                    "inverse-on-surface": "#283044",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "on-secondary-container": "#725f00",
+                    "on-primary-container": "#fff7f6",
+                    "background": "#0b1326"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Epilogue"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b1326; color: #dae2fd; }
+        .font-epilogue { font-family: 'Epilogue', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #060e20; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #2d3449; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface selection:bg-primary-container selection:text-white">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0b1326]/70 backdrop-blur-xl shadow-[0_40px_60px_-15px_rgba(6,14,32,0.6)] flex justify-between items-center px-8 py-4 w-full">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold tracking-tighter text-[#e50914] font-epilogue">The Cinematic Editorial</span>
+<nav class="hidden md:flex items-center gap-6 font-epilogue tracking-tight text-sm">
+<a class="text-[#ffb4aa] border-b-2 border-[#e50914] pb-1" href="#">Movies</a>
+<a class="text-[#e9bcb6] hover:text-white transition-colors" href="#">Cinemas</a>
+<a class="text-[#e9bcb6] hover:text-white transition-colors" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#e9bcb6]/60 text-sm">search</span>
+<input class="bg-surface-container-high text-on-surface text-sm rounded-xl pl-10 pr-4 py-2 border-none focus:ring-1 focus:ring-primary-container w-64 transition-all" placeholder="Search curated cinema..." type="text"/>
+</div>
+<button class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/20 hover:scale-95 active:scale-90 transition-transform">
+<img alt="User Profile" data-alt="close-up portrait of a professional man with a neutral expression in a high-end studio lighting environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiEt0I1UvbPGACZJDk3fyTjFf_YzwHy1fB9I-dkpO3PAlvdfNj_qUmWkV_Pkf1R8Eittx2Js2KKLzjguJDC0ilU9xa6SSBpk0ZqiwRBba__zs2tuKRJyCBWSUVXmY8LAbRZZausEQNMfz9goJm-5EeE5ilI7qbQd0E2rA65kisUeihlHF-vEVXr2VzYzfVNtACK0bTpYsRALA4Zo_2Y2tcZx2b7_OExyjEiPOOsDD1bgH10oISBAWhlbDCGMD1dCftHb8gLaN2v20"/>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-20 px-8 min-h-screen">
+<!-- Hero Filter Section -->
+<section class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-outline-variant/10 pb-8">
+<div>
+<h1 class="text-5xl font-extrabold font-epilogue tracking-tighter text-on-surface mb-2">Available Now</h1>
+<p class="text-on-surface-variant max-w-md">Discover the finest selection of global cinema. Filter by genre or browse our exclusive branch screenings.</p>
+</div>
+<div class="flex flex-wrap gap-3">
+<!-- Genre Select -->
+<div class="relative">
+<select class="appearance-none bg-surface-container-low text-on-surface text-sm font-medium px-4 py-3 pr-10 rounded-xl border-none focus:ring-1 focus:ring-primary-container min-w-[140px] cursor-pointer">
+<option>All Genres</option>
+<option>Noir</option>
+<option>Avant-Garde</option>
+<option>Documentary</option>
+<option>Sci-Fi</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+<!-- Branch Select -->
+<div class="relative">
+<select class="appearance-none bg-surface-container-low text-on-surface text-sm font-medium px-4 py-3 pr-10 rounded-xl border-none focus:ring-1 focus:ring-primary-container min-w-[140px] cursor-pointer">
+<option>Grand Plaza</option>
+<option>The Velvet Room</option>
+<option>Downtown Loft</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">location_on</span>
+</div>
+<!-- Sort -->
+<div class="relative">
+<select class="appearance-none bg-surface-container-low text-on-surface text-sm font-medium px-4 py-3 pr-10 rounded-xl border-none focus:ring-1 focus:ring-primary-container min-w-[140px] cursor-pointer">
+<option>Release Date</option>
+<option>Highest Rated</option>
+<option>Price: Low-High</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">sort</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Movie Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-12">
+<!-- Movie Card 1 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="Neon Nights" class="w-full h-full object-cover" data-alt="cinematic shot of a rainy city street at night with vibrant neon signs reflected in puddles, high contrast film aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsDmEZlYEJ1W36mGP3GqomqizdOYMEU9xZwnfkNBAuKeFmjzDz7Amat5J8iYy22WWbNM-THEy-ihASbm2Ngro6onGX-ly2vLXkGV7z2HXpxiYLNJT5YOYvIPBK-mSXAOxu0ZdNeYJRXrs0tHGJeVRsxMLJ4sinyYo-kSn8lGQi3I0hj-ihIFn_EPzh6OGZ5jy6aGXIdVKjwbkA3gXEu6NsKaPsqRWtTJscVEb8cMRNHItQqE91AucPheA2W1SayxXXt83TMl90FO0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+<div class="absolute bottom-4 left-4 flex items-center gap-2">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">4K Ultra</span>
+</div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">Neon Nights: Tokyo</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">4.9</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Cyberpunk</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>124 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$14.50</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+<!-- Movie Card 2 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="The Silent Actor" class="w-full h-full object-cover" data-alt="dramatic black and white portrait of an actor looking into a spotlight with soft smoke tendrils in the air" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpHdhPAt1-ja0XYbTSJ3IXoQXqnba_wKbIfOO8zPqAaeZAeFQH3TwzPQ1fm6EOjTsIZzKTUb-HXMMDsI4bzR2CtAqyFrfMAmhTgkbkonqrsFmaGGc23cphEYyw9zCOtkbrQ_v7JSMAqXlIQXQ4XTec5BPRxmZMiBr7c20kRxjBTESW9flUDjZu1qqexIBgySK0NmRjkgUdMWFJsqVv9lM8wGXIX0VYCqX5njaAJ0n1g0GLB_pyyXOph5QMA2o0Pz4-to-0ST536Pw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+<div class="absolute bottom-4 left-4 flex items-center gap-2">
+<span class="bg-surface-container-highest text-on-surface text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Premiere</span>
+</div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">The Silent Actor</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">4.7</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Drama</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>108 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$12.00</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+<!-- Movie Card 3 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="Orbitals" class="w-full h-full object-cover" data-alt="stylized cosmic view of a distant planet with rings and glowing nebulae in deep purple and indigo tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK90rPj2PrYRPb4qXSna56HS_lkvZcPKEbZS9PyaCrg_0sSPKYUcVeHIeoplB0pSUyavDAZpZOn9msQpLpqOvJZEcjNW92krfLaLYLj3Pc_b_TBENwkquBh2az4i_DXH9iABlsRV4vsehgB1E-UBEbKuuh37ZFLOzFTU-DhZNmb55ZqDjH_oRjwVBmbAvByy31gQxblMD-GKV87cbGYpqRfByR_CvB9x6ot1aiRCNhJpZyDwZzZ8ghfx_OBS1DxeO3M89TU84CIv8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+<div class="absolute bottom-4 left-4 flex items-center gap-2">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">IMAX</span>
+</div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">Orbitals</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">4.5</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Sci-Fi</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>142 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$18.90</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+<!-- Movie Card 4 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="Velvet Curtains" class="w-full h-full object-cover" data-alt="close-up of luxurious heavy red velvet curtains in an ornate classic theater with soft golden light spill" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBz2F_Xrt5Fo0QyO6sbd2WqMeGtSyaibK1Ydl8qLLoIciyfoBCGEBKYHrpCxFs-OA79nWcK-L5RssUH8dI97NqVaLaOuTjbge1zOLctQJ60rgQ9xC-rLNQ-sQKJUa7_J4T0ZKmeWZo8dQZLFwjpi6hE_2krhIqsdEx5rpeeXZHSw_Vkgd_iv5qhQtgPrmDc3IA0GA0asv-Xdui2Fma6xMjSwTE6qQM5KZEA1LoaYYiLhqvz0pyWjxz6VSBhkYox8pHOZSqgamykqU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+<div class="absolute bottom-4 left-4 flex items-center gap-2">
+<span class="bg-surface-container-highest text-on-surface text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Curated</span>
+</div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">Velvet Curtains</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">5.0</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Avant-Garde</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>92 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$22.00</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+<!-- Movie Card 5 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="Ghost of Shinjuku" class="w-full h-full object-cover" data-alt="night time street view of Shinjuku crossing with long exposure car light trails and high-speed motion blur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8AFNaQ4AoaUy2Mz93iWRczL0sofJOdFTp9f_IKFLV5zs07DKqq_CBS6hzHxKbWwprhXe_b-njDuouig_j9Wg1RsGSOFB93LQ97tLoU9YefS2UUdodZqd9Kf6Mfav17vnNuMK6gjfzGE_qB34W_Ldly9ZQj1m7ZxiePcjonI3pLT6LVZeZ3polrCrQmuO4BlS3sBPnBCA-hpher45jhaNcXQoMV634orenYYOoweVLrKBYj5NlYpBCeU_Gm_OwYAt_JXVeHyKql4c"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">Ghost of Shinjuku</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">4.2</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Action</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>115 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$15.00</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+<!-- Movie Card 6 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="The Last Frame" class="w-full h-full object-cover" data-alt="vintage 35mm film camera on a wooden desk with golden hour sun hitting the lens, dust motes in the light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmX8GeDI0RW05vm7dKmc_Tkqt6IRV8dADI1ncP1hcPPhu0a4qe0v_jCbIKKwfa6gGOQkX9aX7ZNWEgwpKJZiD1EZ2sh1abM_LdgXOW1BuZlUNM4kITr2ZhbgFTj-125aWVuOdzYygCTfJBi5qI50mInhqmuE43UehD6AC0VV938_h8HzfGaMXf4mFiQ8HHBrCjIQGvf2_y3m3grUKkAq5uD4OWe5RPSSRQlApEF9sXwVrnwtNRbsjLr23pxnFwQoBWIcMmIZKkeKA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">The Last Frame</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">4.8</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Documentary</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>88 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$11.50</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+<!-- Movie Card 7 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="Symphony of Lights" class="w-full h-full object-cover" data-alt="orchestra conductor's hands with baton mid-motion against a dark background with stage lighting creating flare" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAQxQ8RpoFwboiVoXIEsAiCavH3Hn6c9_3efTBM8SnyXGP32bx40Kpd677oZUUvCy2lj0miUj80IPAScOnQU3gg6wmkTxGMZgnXheNaiwa7BKsgzZV2Sz53LjxTUkAJifOIs7Nn9RDKsMtpLjq4LLFT_iAj2S5Fw_U-VIrPq9zJlSHBnW3-SzguxJn-8rTn1Z4P8en6S6JIKfRsBxjR8GkDXpmnBI0RRG0EgIqOs2rRAJEst2lMLePNnD992IhxQ89P75uNsCL7kU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">Symphony of Lights</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">4.6</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Musical</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>135 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$16.00</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+<!-- Movie Card 8 -->
+<article class="group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-surface-container-low transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl">
+<img alt="Monolith" class="w-full h-full object-cover" data-alt="minimalist monolithic structure standing alone in a desolate desert at sunset, deep shadows and glowing orange light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKiuiunB7ZmiLgl0QqesGLZp4aUND2dLgB2CrcjbACSouPrSlmbr0DltnqDYNF4UvzYz8rtXpsXy6RbwH-o9GJI7NDDgKkaFrn_UTogfkYzFG_Ru7C4V2Bo7ALiXRsa2gIJ5HtaWqIXZU8qcm17wPIoiwgVzyR6lmFBDQs7_xzBnfdvnFCtYMH28yFManlpGMjHU-UW56rNYDE4SeYDXWWmF6ByqANbNyfdmJp9qatnM5y9bD2QJcDnKoSzNK73_SXQ6aw1gLJ-9U"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+</div>
+<div class="space-y-1 px-1">
+<div class="flex justify-between items-start">
+<h3 class="font-epilogue text-xl font-bold tracking-tight text-on-surface leading-tight">Monolith</h3>
+<div class="flex items-center text-secondary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold ml-1">4.4</span>
+</div>
+</div>
+<div class="flex items-center text-xs text-on-surface-variant gap-2 font-medium">
+<span>Mystery</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/40"></span>
+<span>112 min</span>
+</div>
+<div class="pt-3 flex items-center justify-between">
+<span class="text-primary font-bold text-lg">$13.50</span>
+<button class="bg-primary-container hover:bg-on-primary-fixed-variant text-white text-xs font-bold py-2 px-4 rounded-xl transition-all scale-95 active:scale-90">View Showtimes</button>
+</div>
+</div>
+</article>
+</section>
+<!-- Pagination -->
+<nav class="mt-24 flex items-center justify-center gap-4">
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-white hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<div class="flex items-center gap-2">
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-primary-container text-white font-bold">1</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-white transition-all">2</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-white transition-all">3</button>
+<span class="text-on-surface-variant px-2">...</span>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-white transition-all">12</button>
+</div>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:text-white hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</nav>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 bg-[#060e20] flex flex-col md:flex-row justify-between items-center border-t border-[#2d3449]/20">
+<p class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60">© 2024 The Cinematic Editorial. High-End Curation.</p>
+<div class="flex gap-8 mt-6 md:mt-0">
+<a class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Privacy Policy</a>
+<a class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Terms of Service</a>
+<a class="font-inter text-xs uppercase tracking-widest text-[#e9bcb6]/60 hover:text-[#ffb4aa] transition-colors" href="#">Contact Support</a>
+</div>
+</footer>
+</body></html>
